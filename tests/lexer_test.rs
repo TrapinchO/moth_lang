@@ -3,6 +3,11 @@ mod tests {
     use moth_lang::lexer::*;
 
     #[test]
+    fn empty() {
+        assert_eq!(vec![Token{pos:0, line:1, typ:TokenType::Eof}], lex(""));
+    }
+
+    #[test]
     fn lex_number() {
         let n = "10";
         let t = lex(n);
@@ -11,9 +16,33 @@ mod tests {
 
     #[test]
     fn lex_identifier() {
+        let idents = [
+            ("test", "test"),
+            ("TeSt", "TeSt"),
+            ("test123", "test123"),
+        ];
+
+        for (s, r) in idents {
+            let tok = lex(s);
+            assert_eq!(tok[0].typ, TokenType::Identifier(r.to_string()));
+        }
         let n = "hello";
         let t = lex(n);
         assert_eq!(t[0].typ, TokenType::Identifier("hello".to_string()))
+    }
+
+    #[test]
+    fn lex_string() {
+        let strings = [
+            ("\"\"", ""),
+            ("\"test\"", "test"),
+            ("\"hello world\"", "hello world"),
+        ];
+
+        for (s, r) in strings {
+            let tok = lex(s);
+            assert_eq!(tok[0].typ, TokenType::String(r.to_string()));
+        }
     }
 
     #[test]
@@ -25,16 +54,9 @@ mod tests {
             ("/", TokenType::Slash),
         ];
 
-        for (s, t) in symbols {
+        for (s, r) in symbols {
             let lexed = lex(s);
-            assert_eq!(
-                lexed[0],
-                Token {
-                    pos: 0,
-                    line: 1,
-                    typ: t
-                }
-            )
+            assert_eq!(lexed[0].typ, r)
         }
     }
 }
