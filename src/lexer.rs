@@ -34,7 +34,7 @@ pub fn lex(code: &str) -> Vec<Token> {
                 '/' => TokenType::Slash,
                 ' ' => {
                     idx += 1;
-                    continue
+                    continue;
                 }
                 '\n' => {
                     line += 1;
@@ -44,18 +44,22 @@ pub fn lex(code: &str) -> Vec<Token> {
                 }
                 n if n.is_digit(10) => {
                     let (num, idx2) = lex_number(&code[idx..]);
-                    idx += idx2-1;
-                    pos += (idx2-1) as i32;
+                    idx += idx2 - 1;
+                    pos += (idx2 - 1) as i32;
                     TokenType::Number(num)
-                },
+                }
                 s if s.is_alphanumeric() => {
                     let (string, idx2) = lex_identifier(&code[idx..]);
-                    idx += idx2-1;
-                    pos += (idx2-1) as i32;
+                    idx += idx2 - 1;
+                    pos += (idx2 - 1) as i32;
                     TokenType::Identifier(string)
-                },
-                unknown => panic!("Unknown character: {} at pos {} on line {}", unknown, pos, line)
-        }});
+                }
+                unknown => panic!(
+                    "Unknown character: {} at pos {} on line {}",
+                    unknown, pos, line
+                ),
+            },
+        });
         idx += 1;
         pos += 1;
     }
@@ -63,7 +67,7 @@ pub fn lex(code: &str) -> Vec<Token> {
     tokens.push(Token {
         pos,
         line,
-        typ: TokenType::Eof
+        typ: TokenType::Eof,
     });
     tokens
 }
