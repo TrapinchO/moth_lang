@@ -25,54 +25,50 @@ pub fn lex(code: &str) -> Vec<Token> {
     let mut line = 1;
     let mut pos = 0;
     while idx < code.len() {
-        tokens.push(Token {
-            pos,
-            line,
-            typ: match chars[idx] {
-                '+' => TokenType::Plus,
-                '-' => TokenType::Minus,
-                '*' => TokenType::Star,
-                '/' => TokenType::Slash,
-                ' ' => {
-                    idx += 1;
-                    continue;
-                }
-                '\n' => {
-                    line += 1;
-                    pos = 0;
-                    idx += 1;
-                    continue;
-                }
-                num if num.is_digit(10) => match lex_number(&code[idx..]) {
-                    Ok((num, idx2)) => {
-                        idx += idx2 - 1;
-                        pos += (idx2 - 1) as i32;
-                        TokenType::Number(num)
-                    }
-                    Err(err) => panic!("{}", err)
-                },
-                ident if ident.is_alphanumeric() => {
-                    let (ident, idx2) = lex_identifier(&code[idx..]);
+        let typ = match chars[idx] {
+            '+' => TokenType::Plus,
+            '-' => TokenType::Minus,
+            '*' => TokenType::Star,
+            '/' => TokenType::Slash,
+            ' ' => {
+                idx += 1;
+                continue;
+            }
+            '\n' => {
+                line += 1;
+                pos = 0;
+                idx += 1;
+                continue;
+            }
+            num if num.is_digit(10) => match lex_number(&code[idx..]) {
+                Ok((num, idx2)) => {
                     idx += idx2 - 1;
                     pos += (idx2 - 1) as i32;
-                    TokenType::Identifier(ident)
+                    TokenType::Number(num)
                 }
-                // +1 to ignore the quote
-                '\"' => match lex_string(&code[idx+1..]) {
-                    Ok((string, idx2)) => {
-                        idx += idx2 - 1;
-                        pos += (idx2 - 1) as i32;
-                        TokenType::String(string)
-                    }
-                    Err(err) => panic!("{}", err)
-                },
-                unknown => panic!(
-                    "[MOTH] Unknown character: \"{}\" at pos {} on line {}",
-                    unknown, pos, line
-                ),
+                Err(err) => panic!("{}", err),
             },
-        });
-        // println!("LAST TOKEN: {:?}", tokens.last().unwrap());
+            ident if ident.is_alphanumeric() => {
+                let (ident, idx2) = lex_identifier(&code[idx..]);
+                idx += idx2 - 1;
+                pos += (idx2 - 1) as i32;
+                TokenType::Identifier(ident)
+            }
+            // +1 to ignore the quote
+            '\"' => match lex_string(&code[idx+1..]) {
+                Ok((string, idx2)) => {
+                    idx += idx2 - 1;
+                    pos += (idx2 - 1) as i32;
+                    TokenType::String(string)
+                }
+                Err(err) => panic!("{}", err),
+            },
+            unknown => panic!(
+                "[MOTH] Unknown character: \"{}\" at pos {} on line {}",
+                unknown, pos, line
+            ),
+        };
+        tokens.push(Token { pos, line, typ });
         idx += 1;
         pos += 1;
     }
@@ -136,4 +132,3 @@ fn lex_string(code: &str) -> Result<(String, usize), String> {
     }
     Err("[MOTH] EOF while parsing string".to_string())
 }
-
