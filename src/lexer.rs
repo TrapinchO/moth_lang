@@ -17,7 +17,6 @@ pub struct Token {
     pub typ: TokenType,
 }
 
-// TODO: Make seom functions return Result to improve error handling
 pub fn lex(code: &str) -> Vec<Token> {
     let mut tokens = vec![];
     let chars: Vec<char> = code.chars().collect();
@@ -45,10 +44,16 @@ pub fn lex(code: &str) -> Vec<Token> {
                     continue;
                 }
                 num if num.is_digit(10) => {
-                    let (num, idx2) = lex_number(&code[idx..]);
-                    idx += idx2 - 1;
-                    pos += (idx2 - 1) as i32;
-                    TokenType::Number(num)
+                    match lex_number(&code[idx..]) {
+                        Ok((num, idx2)) => {
+                            idx += idx2 - 1;
+                            pos += (idx2 - 1) as i32;
+                            TokenType::Number(num)
+                        },
+                        Err(err) => {
+                            panic!("{}", err)
+                        }
+                    }
                 }
                 ident if ident.is_alphanumeric() => {
                     let (ident, idx2) = lex_identifier(&code[idx..]);
@@ -57,17 +62,25 @@ pub fn lex(code: &str) -> Vec<Token> {
                     TokenType::Identifier(ident)
                 }
                 '\"' => {
-                    let (string, idx2) = lex_string(&code[idx+1..]);
-                    idx += idx2 - 1;
-                    pos += (idx2 - 1) as i32;
-                    TokenType::String(string)
+                    // +1 to ignore the quote
+                    match lex_string(&code[idx+1..]) {
+                        Ok((string, idx2)) => {
+                            idx += idx2 - 1;
+                            pos += (idx2 - 1) as i32;
+                            TokenType::String(string)
+                        },
+                        Err(err) => {
+                            panic!("{}", err)
+                        }
+                    }
                 }
                 unknown => panic!(
-                    "Unknown character: {} at pos {} on line {}",
+                    "[MOTH] Unknown character: \"{}\" at pos {} on line {}",
                     unknown, pos, line
                 ),
             },
         });
+//        println!("LAST TOKEN: {:?}", tokens.last().unwrap());
         idx += 1;
         pos += 1;
     }
@@ -80,7 +93,7 @@ pub fn lex(code: &str) -> Vec<Token> {
     tokens
 }
 
-fn lex_number(code: &str) -> (i32, usize) {
+fn lex_number(code: &str) -> Result<(i32, usize), String> {
     let mut num = String::from("");
 
     let chars: Vec<char> = code.chars().collect();
@@ -88,12 +101,14 @@ fn lex_number(code: &str) -> (i32, usize) {
     while idx < code.len() {
         if chars[idx].is_digit(10) {
             num.push(chars[idx]);
+        } else if chars[idx].is_alphabetic() {
+            return Err(format!("[MOTH] Invalid digit: \"{}\"", chars[idx]))
         } else {
             break;
         }
         idx += 1;
     }
-    (num.parse::<i32>().unwrap(), idx)
+    Ok((num.parse::<i32>().unwrap(), idx))
 }
 
 fn lex_identifier(code: &str) -> (String, usize) {
@@ -113,18 +128,21 @@ fn lex_identifier(code: &str) -> (String, usize) {
 }
 
 
-fn lex_string(code: &str) -> (String, usize) {
+fn lex_string(code: &str) -> Result<(String, usize), String> {
     let mut s = String::from("");
 
     let chars: Vec<char> = code.chars().collect();
     let mut idx = 0;
     while idx < code.len() {
-        // TODO: Panic at newline
         if chars[idx] == '\"' {
-            return (s, idx+2)
+            // +2 to move after the closing quote
+            return Ok((s, idx+2))
+        }
+        if chars[idx] == '\n' {
+            return Err("[MOTH] EOL while parsing string".to_string())
         }
         s.push(chars[idx]);
         idx += 1;
     }
-    panic!("Reached EOF while parsing string");
+    Err("[MOTH] EOF while parsing string".to_string())
 }
