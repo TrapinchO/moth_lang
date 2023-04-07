@@ -30,7 +30,7 @@ mod tests {
             assert_eq!(
                 lexed[0],
                 Token {
-                    pos: 1,
+                    pos: 0,
                     line: 1,
                     typ: t
                 }
