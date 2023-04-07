@@ -43,16 +43,14 @@ pub fn lex(code: &str) -> Vec<Token> {
                     idx += 1;
                     continue;
                 }
-                num if num.is_digit(10) => {
-                    match lex_number(&code[idx..]) {
-                        Ok((num, idx2)) => {
-                            idx += idx2 - 1;
-                            pos += (idx2 - 1) as i32;
-                            TokenType::Number(num)
-                        },
-                        Err(err) => {
-                            panic!("{}", err)
-                        }
+                num if num.is_digit(10) => match lex_number(&code[idx..]) {
+                    Ok((num, idx2)) => {
+                        idx += idx2 - 1;
+                        pos += (idx2 - 1) as i32;
+                        TokenType::Number(num)
+                    },
+                    Err(err) => {
+                        panic!("{}", err)
                     }
                 }
                 ident if ident.is_alphanumeric() => {
@@ -61,17 +59,15 @@ pub fn lex(code: &str) -> Vec<Token> {
                     pos += (idx2 - 1) as i32;
                     TokenType::Identifier(ident)
                 }
-                '\"' => {
-                    // +1 to ignore the quote
-                    match lex_string(&code[idx+1..]) {
-                        Ok((string, idx2)) => {
-                            idx += idx2 - 1;
-                            pos += (idx2 - 1) as i32;
-                            TokenType::String(string)
-                        },
-                        Err(err) => {
-                            panic!("{}", err)
-                        }
+                // +1 to ignore the quote
+                '\"' => match lex_string(&code[idx+1..]) {
+                    Ok((string, idx2)) => {
+                        idx += idx2 - 1;
+                        pos += (idx2 - 1) as i32;
+                        TokenType::String(string)
+                    },
+                    Err(err) => {
+                        panic!("{}", err)
                     }
                 }
                 unknown => panic!(
