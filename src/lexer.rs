@@ -6,6 +6,7 @@ pub enum TokenType {
     Slash,
     Number(i32),
     Identifier(String),
+    String(String),
     Eof,
 }
 
@@ -16,6 +17,7 @@ pub struct Token {
     pub typ: TokenType,
 }
 
+// TODO: Make seom functions return Result to improve error handling
 pub fn lex(code: &str) -> Vec<Token> {
     let mut tokens = vec![];
     let chars: Vec<char> = code.chars().collect();
@@ -42,17 +44,23 @@ pub fn lex(code: &str) -> Vec<Token> {
                     idx += 1;
                     continue;
                 }
-                n if n.is_digit(10) => {
+                num if num.is_digit(10) => {
                     let (num, idx2) = lex_number(&code[idx..]);
                     idx += idx2 - 1;
                     pos += (idx2 - 1) as i32;
                     TokenType::Number(num)
                 }
-                s if s.is_alphanumeric() => {
-                    let (string, idx2) = lex_identifier(&code[idx..]);
+                ident if ident.is_alphanumeric() => {
+                    let (ident, idx2) = lex_identifier(&code[idx..]);
                     idx += idx2 - 1;
                     pos += (idx2 - 1) as i32;
-                    TokenType::Identifier(string)
+                    TokenType::Identifier(ident)
+                }
+                '\"' => {
+                    let (string, idx2) = lex_string(&code[idx+1..]);
+                    idx += idx2 - 1;
+                    pos += (idx2 - 1) as i32;
+                    TokenType::String(string)
                 }
                 unknown => panic!(
                     "Unknown character: {} at pos {} on line {}",
@@ -102,4 +110,21 @@ fn lex_identifier(code: &str) -> (String, usize) {
         idx += 1;
     }
     (s, idx)
+}
+
+
+fn lex_string(code: &str) -> (String, usize) {
+    let mut s = String::from("");
+
+    let chars: Vec<char> = code.chars().collect();
+    let mut idx = 0;
+    while idx < code.len() {
+        // TODO: Panic at newline
+        if chars[idx] == '\"' {
+            return (s, idx+2)
+        }
+        s.push(chars[idx]);
+        idx += 1;
+    }
+    panic!("Reached EOF while parsing string");
 }
