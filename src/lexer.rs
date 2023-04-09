@@ -17,7 +17,7 @@ pub struct Token {
     pub typ: TokenType,
 }
 
-pub fn lex(code: &str) -> Vec<Token> {
+pub fn lex(code: &str) -> Result<Vec<Token>, String> {
     let mut tokens = vec![];
     let chars: Vec<char> = code.chars().collect();
 
@@ -41,12 +41,12 @@ pub fn lex(code: &str) -> Vec<Token> {
                 continue;
             }
             num if num.is_digit(10) => match lex_number(&code[idx..]) {
+                Err(err) => Err(err)?,
                 Ok((num, idx2)) => {
                     idx += idx2 - 1;
                     pos += (idx2 - 1) as i32;
                     TokenType::Number(num)
                 }
-                Err(err) => panic!("{}", err),
             },
             ident if ident.is_alphanumeric() => {
                 let (ident, idx2) = lex_identifier(&code[idx..]);
@@ -55,18 +55,18 @@ pub fn lex(code: &str) -> Vec<Token> {
                 TokenType::Identifier(ident)
             }
             // +1 to ignore the quote
-            '\"' => match lex_string(&code[idx+1..]) {
+            '\"' => match lex_string(&code[idx + 1..]) {
+                Err(err) => Err(err)?,
                 Ok((string, idx2)) => {
                     idx += idx2 - 1;
                     pos += (idx2 - 1) as i32;
                     TokenType::String(string)
                 }
-                Err(err) => panic!("{}", err),
             },
-            unknown => panic!(
-                "[MOTH] Unknown character: \"{}\" at pos {} on line {}",
+            unknown => return Err(format!(
+                "Unknown character: \"{}\" at pos {} on line {}",
                 unknown, pos, line
-            ),
+            )),
         };
         tokens.push(Token { pos, line, typ });
         idx += 1;
@@ -78,7 +78,7 @@ pub fn lex(code: &str) -> Vec<Token> {
         line,
         typ: TokenType::Eof,
     });
-    tokens
+    Ok(tokens)
 }
 
 fn lex_number(code: &str) -> Result<(i32, usize), String> {
@@ -90,7 +90,7 @@ fn lex_number(code: &str) -> Result<(i32, usize), String> {
         if chars[idx].is_digit(10) {
             num.push(chars[idx]);
         } else if chars[idx].is_alphabetic() {
-            return Err(format!("[MOTH] Invalid digit: \"{}\"", chars[idx]));
+            return Err(format!("Invalid digit: \"{}\"", chars[idx]));
         } else {
             break;
         }
@@ -122,13 +122,13 @@ fn lex_string(code: &str) -> Result<(String, usize), String> {
     while idx < code.len() {
         if chars[idx] == '\"' {
             // +2 to move after the closing quote
-            return Ok((s, idx+2));
+            return Ok((s, idx + 2));
         }
         if chars[idx] == '\n' {
-            return Err("[MOTH] EOL while parsing string".to_string());
+            return Err("EOL while parsing string".to_string());
         }
         s.push(chars[idx]);
         idx += 1;
     }
-    Err("[MOTH] EOF while parsing string".to_string())
+    Err("EOF while parsing string".to_string())
 }
