@@ -1,13 +1,11 @@
 #[derive(Debug, PartialEq, Eq)]
 pub enum TokenType {
-    Plus,
-    Minus,
-    Star,
-    Slash,
     Number(i32),
     Identifier(String),
     String(String),
     Eof,
+    Symbol(String),
+    Equals,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -16,6 +14,8 @@ pub struct Token {
     pub line: i32,
     pub typ: TokenType,
 }
+
+const SYMBOLS: &str = "+-*/=<>!";
 
 pub fn lex(code: &str) -> Result<Vec<Token>, String> {
     let mut tokens = vec![];
@@ -26,10 +26,10 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
     let mut pos = 0;
     while idx < code.len() {
         let typ = match chars[idx] {
-            '+' => TokenType::Plus,
-            '-' => TokenType::Minus,
-            '*' => TokenType::Star,
-            '/' => TokenType::Slash,
+//            '+' => TokenType::Plus,
+//            '-' => TokenType::Minus,
+//            '*' => TokenType::Star,
+//            '/' => TokenType::Slash,
             ' ' => {
                 idx += 1;
                 continue;
@@ -54,6 +54,16 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 pos += (idx2 - 1) as i32;
                 TokenType::Identifier(ident)
             }
+            sym if SYMBOLS.contains(sym) => {
+                let (sym, idx2) = lex_symbol(&code[idx..]);
+                idx += idx2 - 1;
+                pos += (idx2 - 1) as i32;
+                if sym == "=".to_string() {
+                    TokenType::Equals
+                } else {
+                    TokenType::Symbol(sym)
+                }
+            },
             // +1 to ignore the quote
             '\"' => match lex_string(&code[idx + 1..]) {
                 Err(err) => Err(err)?,
@@ -64,9 +74,9 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 }
             },
             unknown => return Err(format!(
-                "Unknown character: \"{}\" at pos {} on line {}",
-                unknown, pos, line
-            )),
+                    "Unknown character: \"{}\" at pos {} on line {}",
+                    unknown, pos, line
+            ))
         };
         tokens.push(Token { pos, line, typ });
         idx += 1;
@@ -87,6 +97,7 @@ fn lex_number(code: &str) -> Result<(i32, usize), String> {
     let chars: Vec<char> = code.chars().collect();
     let mut idx = 0;
     while idx < code.len() {
+        println!("{}, {}", chars[idx], num);
         if chars[idx].is_digit(10) {
             num.push(chars[idx]);
         } else if chars[idx].is_alphabetic() {
@@ -96,6 +107,7 @@ fn lex_number(code: &str) -> Result<(i32, usize), String> {
         }
         idx += 1;
     }
+    println!("{}", num);
     Ok((num.parse::<i32>().unwrap(), idx))
 }
 
@@ -106,6 +118,21 @@ fn lex_identifier(code: &str) -> (String, usize) {
     let mut idx = 0;
     while idx < code.len() {
         if !chars[idx].is_alphanumeric() {
+            break;
+        }
+        s.push(chars[idx]);
+        idx += 1;
+    }
+    (s, idx)
+}
+
+fn lex_symbol(code: &str) -> (String, usize) {
+    let mut s = String::from("");
+
+    let chars: Vec<char> = code.chars().collect();
+    let mut idx = 0;
+    while idx < code.len() {
+        if !SYMBOLS.contains(chars[idx]) {
             break;
         }
         s.push(chars[idx]);

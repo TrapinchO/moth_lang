@@ -13,6 +13,7 @@ mod tests {
         let t = lex(n).unwrap();
         assert_eq!(t[0].typ, TokenType::Number(10))
     }
+
     #[test]
     fn lex_number_err() {
         let nums = [
@@ -68,16 +69,21 @@ mod tests {
 
     #[test]
     fn lex_symbols() {
-        let symbols = [
-            ("+", TokenType::Plus),
-            ("-", TokenType::Minus),
-            ("*", TokenType::Star),
-            ("/", TokenType::Slash),
-        ];
+        let symbols = ["+", "-", "*", "/", "<", ">", "!"];
 
-        for (s, r) in symbols {
+        for s in symbols {
             let lexed = lex(s).unwrap();
-            assert_eq!(lexed[0].typ, r)
+            assert_eq!(lexed[0].typ, TokenType::Symbol(s.to_string()));
+        }
+    }
+
+    #[test]
+    fn lex_symbols_special() {
+        let symbols = ["="];
+
+        for s in symbols {
+            let lexed = lex(s).unwrap();
+            assert_eq!(lexed[0].typ, TokenType::Equals);
         }
     }
 }
