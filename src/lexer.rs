@@ -26,10 +26,6 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
     let mut pos = 0;
     while idx < code.len() {
         let typ = match chars[idx] {
-//            '+' => TokenType::Plus,
-//            '-' => TokenType::Minus,
-//            '*' => TokenType::Star,
-//            '/' => TokenType::Slash,
             ' ' => {
                 idx += 1;
                 continue;
@@ -58,12 +54,18 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 let (sym, idx2) = lex_symbol(&code[idx..]);
                 idx += idx2 - 1;
                 pos += (idx2 - 1) as i32;
-                if sym == "=".to_string() {
-                    TokenType::Equals
-                } else {
-                    TokenType::Symbol(sym)
+                match sym.as_str() {
+                    "=" => TokenType::Equals,
+                    // ignore comments
+                    "//" => {
+                        while chars[idx] != '\n' || idx >= code.len() {
+                            idx += 1;
+                        }
+                        continue;
+                    }
+                    _ => TokenType::Symbol(sym),
                 }
-            },
+            }
             // +1 to ignore the quote
             '\"' => match lex_string(&code[idx + 1..]) {
                 Err(err) => Err(err)?,
@@ -97,7 +99,6 @@ fn lex_number(code: &str) -> Result<(i32, usize), String> {
     let chars: Vec<char> = code.chars().collect();
     let mut idx = 0;
     while idx < code.len() {
-        println!("{}, {}", chars[idx], num);
         if chars[idx].is_digit(10) {
             num.push(chars[idx]);
         } else if chars[idx].is_alphabetic() {
@@ -107,7 +108,6 @@ fn lex_number(code: &str) -> Result<(i32, usize), String> {
         }
         idx += 1;
     }
-    println!("{}", num);
     Ok((num.parse::<i32>().unwrap(), idx))
 }
 
