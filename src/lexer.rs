@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
     Number(i32),
     Identifier(String),
@@ -8,7 +8,7 @@ pub enum TokenType {
     Equals,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Token {
     pub pos: i32,
     pub line: i32,
@@ -36,20 +36,18 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 idx += 1;
                 continue;
             }
-            num if num.is_digit(10) => match lex_number(&code[idx..]) {
-                Err(err) => Err(err)?,
-                Ok((num, idx2)) => {
-                    idx += idx2 - 1;
-                    pos += (idx2 - 1) as i32;
-                    TokenType::Number(num)
-                }
+            num if num.is_digit(10) => {
+                let (num, idx2) = lex_number(&code[idx..])?;
+                idx += idx2 - 1;
+                pos += (idx2 - 1) as i32;
+                TokenType::Number(num)
             },
             ident if ident.is_alphanumeric() => {
                 let (ident, idx2) = lex_identifier(&code[idx..]);
                 idx += idx2 - 1;
                 pos += (idx2 - 1) as i32;
                 TokenType::Identifier(ident)
-            }
+            },
             sym if SYMBOLS.contains(sym) => {
                 let (sym, idx2) = lex_symbol(&code[idx..]);
                 idx += idx2 - 1;
@@ -57,8 +55,9 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 match sym.as_str() {
                     "=" => TokenType::Equals,
                     // ignore comments
-                    "//" => {
-                        while chars[idx] != '\n' || idx >= code.len() {
+                    // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
+                    _ if sym.chars().all(|s| { s == '/' }) && sym.len() >= 2 => {
+                        while idx < code.len() && chars[idx] != '\n' {
                             idx += 1;
                         }
                         continue;
@@ -67,13 +66,11 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 }
             }
             // +1 to ignore the quote
-            '\"' => match lex_string(&code[idx + 1..]) {
-                Err(err) => Err(err)?,
-                Ok((string, idx2)) => {
-                    idx += idx2 - 1;
-                    pos += (idx2 - 1) as i32;
-                    TokenType::String(string)
-                }
+            '\"' => {
+                let (string, idx2) = lex_string(&code[idx + 1..])?;
+                idx += idx2 - 1;
+                pos += (idx2 - 1) as i32;
+                TokenType::String(string)
             },
             unknown => return Err(format!(
                     "Unknown character: \"{}\" at pos {} on line {}",
