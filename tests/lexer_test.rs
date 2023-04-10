@@ -86,4 +86,29 @@ mod tests {
             assert_eq!(lexed[0].typ, TokenType::Equals);
         }
     }
+
+    #[test]
+    fn lex_comment() {
+        // TODO: DEAL WITH TESTING
+        let coms = [
+            ("//", vec![TokenType::Eof]),
+            ("//test", vec![TokenType::Eof]),
+            ("///test", vec![TokenType::Eof]),
+            ("//-test", vec![TokenType::Symbol("//-".to_string()),
+                             TokenType::Identifier("test".to_string()),
+                             TokenType::Eof]),
+            ("// test", vec![TokenType::Eof]),
+            ("/// test", vec![TokenType::Eof]),
+            ("// -test", vec![TokenType::Eof]),
+            ("// test \ntest", vec![TokenType::Identifier("test".to_string()),
+                                    TokenType::Eof]),
+            ("/// test\ntest", vec![TokenType::Identifier("test".to_string()),
+                                    TokenType::Eof]),
+        ];
+
+        for (c, r) in coms {
+            let lexed = lex(c).unwrap().iter().map(|t| { t.typ.clone() }).collect::<Vec<_>>();
+            assert_eq!(lexed, r);
+        }
+    }
 }
