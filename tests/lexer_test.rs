@@ -43,6 +43,19 @@ mod tests {
     }
 
     #[test]
+    fn lex_keyword() {
+        let kw = [
+            ("let", TokenType::Let),
+            ("fun", TokenType::Fun),
+        ];
+        for (k, r) in kw {
+            let tok = lex(k).unwrap();
+            assert_eq!(tok[0].typ, r);
+        }
+    }
+
+
+    #[test]
     fn lex_string() {
         let strings = [
             ("\"\"", ""),

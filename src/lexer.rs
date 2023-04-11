@@ -1,7 +1,11 @@
+use std::collections::HashMap;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
     Number(i32),
     Identifier(String),
+    Let,
+    Fun,
     String(String),
     Eof,
     Symbol(String),
@@ -15,8 +19,9 @@ pub struct Token {
     pub typ: TokenType,
 }
 
-const SYMBOLS: &str = "+-*/=<>!";
+const SYMBOLS: &str = "+-*/=<>!|.$&@#";
 
+// TODO: eventually change into a struct
 pub fn lex(code: &str) -> Result<Vec<Token>, String> {
     let mut tokens = vec![];
     let chars: Vec<char> = code.chars().collect();
@@ -42,11 +47,22 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 pos += (idx2 - 1) as i32;
                 TokenType::Number(num)
             },
+            // TODO: keywords
             ident if ident.is_alphanumeric() => {
+                let keywords: HashMap<&str, TokenType> = [
+                    ("let", TokenType::Let),
+                    ("fun", TokenType::Fun),
+                ].iter().cloned().collect();
+
                 let (ident, idx2) = lex_identifier(&code[idx..]);
                 idx += idx2 - 1;
                 pos += (idx2 - 1) as i32;
-                TokenType::Identifier(ident)
+                // NOTE: I am absolutely not sure about the map stuff
+                // but it works, so... yeah...
+                match keywords.get(&ident.as_str()) {
+                    Some(kw) => kw.clone(),
+                    None => TokenType::Identifier(ident),
+                }
             },
             sym if SYMBOLS.contains(sym) => {
                 let (sym, idx2) = lex_symbol(&code[idx..]);
