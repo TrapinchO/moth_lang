@@ -47,7 +47,6 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                 pos += (idx2 - 1) as i32;
                 TokenType::Number(num)
             },
-            // TODO: keywords
             ident if ident.is_alphanumeric() => {
                 let keywords: HashMap<&str, TokenType> = [
                     ("let", TokenType::Let),
@@ -72,7 +71,7 @@ pub fn lex(code: &str) -> Result<Vec<Token>, String> {
                     "=" => TokenType::Equals,
                     // ignore comments
                     // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
-                    _ if sym.chars().all(|s| { s == '/' }) && sym.len() >= 2 => {
+                    _ if sym.chars().all(|s| s == '/') && sym.len() >= 2 => {
                         while idx < code.len() && chars[idx] != '\n' {
                             idx += 1;
                         }

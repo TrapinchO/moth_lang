@@ -120,7 +120,10 @@ mod tests {
         ];
 
         for (c, r) in coms {
-            let lexed = lex(c).unwrap().iter().map(|t| { t.typ.clone() }).collect::<Vec<_>>();
+            let lexed = lex(c).unwrap()
+                .iter()
+                .map(|t| t.typ.clone())
+                .collect::<Vec<_>>();
             assert_eq!(lexed, r);
         }
     }
