@@ -37,9 +37,10 @@ mod tests {
             let tok = lex(s).unwrap();
             assert_eq!(tok[0].typ, TokenType::Identifier(r.to_string()));
         }
-        let n = "hello";
+        let n = "hello++";
         let t = lex(n).unwrap();
-        assert_eq!(t[0].typ, TokenType::Identifier("hello".to_string()))
+        assert_eq!(t[0].typ, TokenType::Identifier("hello".to_string()));
+        assert_eq!(t[1].typ, TokenType::Symbol("++".to_string()));
     }
 
     #[test]

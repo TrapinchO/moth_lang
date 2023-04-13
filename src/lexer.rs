@@ -63,8 +63,7 @@ impl Lexer {
                     continue;
                 }
                 num if num.is_digit(10) => {
-                    let (num, idx2) = self.lex_number()?;
-                    self.pos += idx2 - 1;
+                    let num = self.lex_number()?;
                     TokenType::Number(num)
                 }
                 ident if ident.is_alphanumeric() => {
@@ -73,8 +72,7 @@ impl Lexer {
                         ("fun", TokenType::Fun)
                     ].iter().cloned().collect();
 
-                    let (ident, idx2) = self.lex_identifier();
-                    self.pos += idx2 - 1;
+                    let ident = self.lex_identifier();
                     // NOTE: I am absolutely not sure about the map stuff
                     // but it works, so... yeah...
                     match keywords.get(&ident.as_str()) {
@@ -83,8 +81,8 @@ impl Lexer {
                     }
                 }
                 sym if SYMBOLS.contains(sym) => {
-                    let (sym, idx2) = self.lex_symbol();
-                    self.pos += idx2 - 1;
+                    // TODO: fix
+                    let sym = self.lex_symbol();
                     match sym.as_str() {
                         "=" => TokenType::Equals,
                         // ignore comments
@@ -94,7 +92,6 @@ impl Lexer {
                             {
                                 self.idx += 1;
                             }
-                            self.idx -= 1;
                             continue;
                         }
                         _ => TokenType::Symbol(sym),
@@ -102,8 +99,7 @@ impl Lexer {
                 }
                 // +1 to ignore the quote
                 '\"' => {
-                    let (string, idx2) = self.lex_string()?;
-                    self.pos += idx2 - 1;
+                    let string = self.lex_string()?;
                     TokenType::String(string)
                 }
                 unknown => {
@@ -130,7 +126,7 @@ impl Lexer {
         Ok(tokens)
     }
 
-    fn lex_number(&mut self) -> Result<(i32, usize), String> {
+    fn lex_number(&mut self) -> Result<i32, String> {
         let mut num = String::from("");
 
         while self.idx < self.code.len() {
@@ -146,10 +142,10 @@ impl Lexer {
             }
             self.idx += 1;
         }
-        Ok((num.parse::<i32>().unwrap(), self.idx))
+        Ok(num.parse::<i32>().unwrap())
     }
 
-    fn lex_identifier(&mut self) -> (String, usize) {
+    fn lex_identifier(&mut self) -> String {
         let mut s = String::from("");
 
         while self.idx < self.code.len() {
@@ -159,10 +155,11 @@ impl Lexer {
             s.push(self.get_current().unwrap());
             self.idx += 1;
         }
-        (s, self.idx)
+        self.idx -= 1;
+        s
     }
 
-    fn lex_symbol(&mut self) -> (String, usize) {
+    fn lex_symbol(&mut self) -> String {
         let mut s = String::from("");
 
         while self.idx < self.code.len() {
@@ -172,10 +169,12 @@ impl Lexer {
             s.push(self.get_current().unwrap());
             self.idx += 1;
         }
-        (s, self.idx)
+        println!("{}", self.idx);
+        self.idx -= 1;
+        s
     }
 
-    fn lex_string(&mut self) -> Result<(String, usize), String> {
+    fn lex_string(&mut self) -> Result<String, String> {
         let mut s = String::from("");
 
         // move behind the opening quote
@@ -184,7 +183,7 @@ impl Lexer {
             if self.get_current()? == '\"' {
                 // +2 to move after the closing quote
                 self.idx += 2;
-                return Ok((s, self.idx + 2));
+                return Ok(s);
             }
             if self.get_current()? == '\n' {
                 return Err("EOL while parsing string".to_string());
