@@ -27,7 +27,6 @@ struct Lexer {
     pos: usize,
 }
 
-// TODO: fix tests
 // TODO: add helper methods
 // TODO: decide on "get_current"
 impl Lexer {
@@ -46,14 +45,21 @@ impl Lexer {
         Ok(self.code[self.idx])
     }
 
+    fn advance(&mut self) {
+        self.idx += 1;
+        self.pos += 1;
+    }
+
     pub fn lex(&mut self) -> Result<Vec<Token>, String> {
         let mut tokens = vec![];
 
         let mut line = 1;
         while self.idx < self.code.len() {
+            let pos = self.pos;
+
             let typ = match self.get_current()? {
                 ' ' => {
-                    self.idx += 1;
+                    self.advance();
                     continue;
                 }
                 '\n' => {
@@ -88,9 +94,8 @@ impl Lexer {
                         // ignore comments
                         // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
                         _ if sym.chars().all(|s| s == '/') && sym.len() >= 2 => {
-                            while self.idx < self.code.len() && self.get_current().unwrap() != '\n'
-                            {
-                                self.idx += 1;
+                            while self.idx < self.code.len() && self.get_current().unwrap() != '\n' {
+                                self.advance();
                             }
                             continue;
                         }
@@ -110,12 +115,10 @@ impl Lexer {
                 }
             };
             tokens.push(Token {
-                pos: self.pos,
+                pos,
                 line,
                 typ,
             });
-            self.idx += 1;
-            self.pos += 1;
         }
 
         tokens.push(Token {
@@ -130,17 +133,17 @@ impl Lexer {
         let mut num = String::from("");
 
         while self.idx < self.code.len() {
-            if self.get_current().unwrap().is_digit(10) {
+            if self.get_current()?.is_digit(10) {
                 num.push(self.get_current().unwrap());
-            } else if self.get_current().unwrap().is_alphabetic() {
+            } else if self.get_current()?.is_alphabetic() {
                 return Err(format!(
                     "Invalid digit: \"{}\"",
-                    self.get_current().unwrap()
+                    self.get_current()?
                 ));
             } else {
                 break;
             }
-            self.idx += 1;
+            self.advance();
         }
         Ok(num.parse::<i32>().unwrap())
     }
@@ -153,9 +156,8 @@ impl Lexer {
                 break;
             }
             s.push(self.get_current().unwrap());
-            self.idx += 1;
+            self.advance();
         }
-        self.idx -= 1;
         s
     }
 
@@ -167,10 +169,8 @@ impl Lexer {
                 break;
             }
             s.push(self.get_current().unwrap());
-            self.idx += 1;
+            self.advance();
         }
-        println!("{}", self.idx);
-        self.idx -= 1;
         s
     }
 
@@ -178,18 +178,19 @@ impl Lexer {
         let mut s = String::from("");
 
         // move behind the opening quote
-        self.idx += 1;
+        self.advance();
         while self.idx < self.code.len() {
+            println!("{}, {}", self.idx, self.get_current().unwrap());
             if self.get_current()? == '\"' {
-                // +2 to move after the closing quote
-                self.idx += 2;
+                // move behind the quote
+                self.advance();
                 return Ok(s);
             }
             if self.get_current()? == '\n' {
                 return Err("EOL while parsing string".to_string());
             }
             s.push(self.get_current()?);
-            self.idx += 1;
+            self.advance();
         }
         Err("EOF while parsing string".to_string())
     }
