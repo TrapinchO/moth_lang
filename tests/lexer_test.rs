@@ -55,20 +55,24 @@ mod tests {
         }
     }
 
-
     #[test]
     fn lex_string() {
         let strings = [
             ("\"\"", ""),
             ("\"test\"", "test"),
             ("\"hello world\"", "hello world"),
+            ("\"test\" test", "test"),
         ];
 
         for (s, r) in strings {
             let tok = lex(s).unwrap();
             assert_eq!(tok[0].typ, TokenType::String(r.to_string()));
         }
+
+        let tok2 = lex("\"test\"++++").unwrap();
+        assert_eq!(tok2[1].typ, TokenType::Symbol("++++".to_string()));
     }
+
     #[test]
     fn lex_string_err() {
         let strings = [
@@ -127,5 +131,18 @@ mod tests {
                 .collect::<Vec<_>>();
             assert_eq!(lexed, r);
         }
+    }
+
+    #[test]
+    fn lex_example() {
+        let tokens = vec![
+            Token { pos: 0, line: 1, typ: TokenType::Number(1) },
+            Token { pos: 2, line: 1, typ: TokenType::Symbol("+".to_string()) },
+            Token { pos: 4, line: 1, typ: TokenType::Number(12) },
+            Token { pos: 6, line: 1, typ: TokenType::Eof }
+        ];
+        let lexed = lex("1 + 12").unwrap();
+
+        assert_eq!(tokens, lexed);
     }
 }
