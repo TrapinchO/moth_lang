@@ -6,11 +6,11 @@ fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
     let input = String::from("1 + 1 // - 2 *3 =\n \"Hello World!\" 123");
-    let y = lexer::lex(&x);
+    let y = lexer::lex(&input);
     match y {
         Err(err) => {
-            println!("[MOTH] {}", err)
-            let lines = input.split('\n');
+            println!("[MOTH] {}", err);
+            let lines = input.split('\n').collect::<Vec<_>>();
             if lines.len() < err.line {
                 panic!("Error line ({}) is greater than the number of lines in the code ({})", err.line, lines.len());
             }
