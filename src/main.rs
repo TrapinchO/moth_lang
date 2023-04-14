@@ -1,4 +1,5 @@
 use moth_lang::lexer;
+use moth_lang::parser::Expr;
 use std::env;
 
 fn main() {
@@ -25,4 +26,11 @@ fn main() {
             }
         }
     }
+
+    let ast = Expr::BinaryOperation(
+        "+".to_string(),
+        Box::new(Expr::Number(1)),
+        Box::new(Expr::Number(1))
+    );
+    println!("{:?}", ast);
 }
