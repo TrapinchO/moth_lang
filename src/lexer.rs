@@ -204,11 +204,11 @@ impl Lexer {
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
     match Lexer::new(code).lex() {
-        Ok(tokens) => tokens,
-        Err(msg) => Error {
+        Ok(tokens) => Ok(tokens),
+        Err(msg) => Err(Error {
             msg,
             pos: 0,
             line: 0
-        }
+        })
     }
 }
