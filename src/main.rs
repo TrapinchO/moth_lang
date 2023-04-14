@@ -9,13 +9,12 @@ fn main() {
     let y = lexer::lex(&input);
     match y {
         Err(err) => {
-            println!("[MOTH] {:?}", err);
             let lines = input.split('\n').map(str::to_string).collect::<Vec<_>>();
             if lines.len() < err.line as usize {
                 panic!("Error line ({}) is greater than the number of lines in the code ({})", err.line, lines.len());
             }
-            let line = &lines[err.line as usize];
-            println!("Error on line {}:\n{}\n{}{}", err.line, line, " ".repeat(err.pos), "^");
+            let line = &lines[(err.line-1) as usize];
+            println!("Error on line {}:\n{}\n{}^ {}", err.line, line, " ".repeat(err.pos), err.msg);
         },
         Ok(tokens) => {
             println!("===== source =====");

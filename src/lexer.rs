@@ -57,14 +57,14 @@ impl Lexer {
         self.pos += 1;
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, String> {
+    pub fn lex(&mut self) -> Result<Vec<Token>, Error> {
         let mut tokens = vec![];
 
         let mut line = 1;
         while self.idx < self.code.len() {
             let pos = self.pos;
 
-            let typ = match self.get_current()? {
+            let typ = match self.get_current().unwrap() {
                 ' ' => {
                     self.advance();
                     continue;
@@ -76,8 +76,10 @@ impl Lexer {
                     continue;
                 }
                 num if num.is_digit(10) => {
-                    let num = self.lex_number()?;
-                    TokenType::Number(num)
+                    match self.lex_number() {
+                        Err(msg) => return Err(Error { msg, line, pos: self.pos }),
+                        Ok(num) => TokenType::Number(num)
+                    }
                 }
                 ident if ident.is_alphanumeric() => {
                     let keywords: HashMap<&str, TokenType> = [
@@ -111,14 +113,17 @@ impl Lexer {
                 }
                 // +1 to ignore the quote
                 '\"' => {
-                    let string = self.lex_string()?;
-                    TokenType::String(string)
+                    match self.lex_string() {
+                        Err(msg) => return Err(Error { msg, line, pos: self.pos }),
+                        Ok(string) => TokenType::String(string)
+                    }
                 }
                 unknown => {
-                    return Err(format!(
-                        "Unknown character: \"{}\" at pos {} on line {}",
-                        unknown, self.pos, line
-                    ))
+                    return Err(Error {
+                        msg: format!("Unknown character: \"{}\" at pos {} on line {}", unknown, self.pos, line),
+                        line,
+                        pos: self.pos
+                    })
                 }
             };
             tokens.push(Token {
@@ -204,12 +209,5 @@ impl Lexer {
 }
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
-    match Lexer::new(code).lex() {
-        Ok(tokens) => Ok(tokens),
-        Err(msg) => Err(Error {
-            msg,
-            pos: 0,
-            line: 0
-        })
-    }
+    Lexer::new(code).lex()
 }
