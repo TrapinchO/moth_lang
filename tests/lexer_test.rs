@@ -135,6 +135,7 @@ mod tests {
 
     #[test]
     fn lex_example() {
+        // tests positions and whether lexer advances properly
         let exprs = [
             ("1 + 12", vec![
                 Token { pos: 0, line: 1, typ: TokenType::Number(1) },
@@ -147,6 +148,18 @@ mod tests {
                 Token { pos: 1, line: 1, typ: TokenType::Symbol("+".to_string()) },
                 Token { pos: 2, line: 1, typ: TokenType::Number(12) },
                 Token { pos: 4, line: 1, typ: TokenType::Eof }]),
+            
+            ("test2+test", vec![
+                Token { pos: 0, line: 1, typ: TokenType::Identifier("test2".to_string()) },
+                Token { pos: 5, line: 1, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 6, line: 1, typ: TokenType::Identifier("test2".to_string()) },
+                Token { pos: 10, line: 1, typ: TokenType::Eof }]),
+            
+            ("\"test\"+\"hello\"", vec![
+                Token { pos: 0, line: 1, typ: TokenType::String("test".to_string()) },
+                Token { pos: 6, line: 1, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 7, line: 1, typ: TokenType::String("test".to_string()) },
+                Token { pos: 14, line: 1, typ: TokenType::Eof }]),
         ];
 
         for (ex, tok) in exprs {
