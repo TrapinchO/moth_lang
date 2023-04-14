@@ -160,6 +160,12 @@ mod tests {
                 Token { pos: 6, line: 1, typ: TokenType::Symbol("+".to_string()) },
                 Token { pos: 7, line: 1, typ: TokenType::String("test".to_string()) },
                 Token { pos: 13, line: 1, typ: TokenType::Eof }]),
+            
+            ("\"test\"\n+\"test\"", vec![
+                Token { pos: 0, line: 1, typ: TokenType::String("test".to_string()) },
+                Token { pos: 0, line: 2, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 1, line: 2, typ: TokenType::String("test".to_string()) },
+                Token { pos: 7, line: 2, typ: TokenType::Eof }]),
         ];
 
         for (ex, tok) in exprs {
