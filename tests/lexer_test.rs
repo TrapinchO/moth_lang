@@ -17,11 +17,11 @@ mod tests {
     #[test]
     fn lex_number_err() {
         let nums = [
-            ("1a", "Invalid digit: \"a\""),
+            ("1a", Error { msg: "Invalid digit: \"a\"".to_string(), line: 1, start: 0, pos: 1})
         ];
         for (n, r) in nums {
             let tok = lex(n);
-            assert_eq!(Err(r.to_string()), tok);
+            assert_eq!(Err(r), tok);
         }
     }
 
@@ -76,12 +76,12 @@ mod tests {
     #[test]
     fn lex_string_err() {
         let strings = [
-            ("\"", "EOF while parsing string"),
-            ("\"test\n\"", "EOL while parsing string"),
+            ("\"", Error { msg: "EOF while parsing string".to_string(), line: 1, start: 0, pos: 1}),
+            ("\"test\n\"", Error { msg: "EOL while parsing string".to_string(), line: 1, start: 0, pos: 5}),
         ];
         for (s, e) in strings {
             let tok = lex(s);
-            assert_eq!(Err(e.to_string()), tok);
+            assert_eq!(Err(e), tok);
         }
     }
 
