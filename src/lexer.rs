@@ -24,7 +24,7 @@ const SYMBOLS: &str = "+-*/=<>!|.$&@#";
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {
     pub msg: String,
-    pub line: i32,
+    pub line: usize,
     pub start: usize,
     pub pos: usize,
 }
@@ -33,6 +33,7 @@ struct Lexer {
     code: Vec<char>,
     idx: usize,
     pos: usize,
+    line: usize,
 }
 
 // TODO: add helper methods
@@ -43,6 +44,7 @@ impl Lexer {
             code: code.chars().collect(),
             idx: 0,
             pos: 0,
+            line: 1,  // TODO: make 0
         }
     }
 
@@ -57,11 +59,19 @@ impl Lexer {
         self.idx += 1;
         self.pos += 1;
     }
+    
+    fn error(&self, msg: String, start: usize) -> Error {
+        Error {
+            msg,
+            line: self.line,
+            start,
+            pos: self.pos
+        }
+    }
 
     pub fn lex(&mut self) -> Result<Vec<Token>, Error> {
         let mut tokens = vec![];
 
-        let mut line = 1;
         while self.idx < self.code.len() {
             let pos = self.pos;
 
@@ -71,14 +81,14 @@ impl Lexer {
                     continue;
                 }
                 '\n' => {
-                    line += 1;
+                    self.line += 1;
                     self.pos = 0;
                     self.idx += 1;
                     continue;
                 }
                 num if num.is_digit(10) => {
                     match self.lex_number() {
-                        Err(msg) => return Err(Error { msg, line, start: pos, pos: self.pos }),
+                        Err(msg) => return Err(self.error(msg, pos)),
                         Ok(num) => TokenType::Number(num)
                     }
                 }
@@ -115,29 +125,24 @@ impl Lexer {
                 // +1 to ignore the quote
                 '\"' => {
                     match self.lex_string() {
-                        Err(msg) => return Err(Error { msg, line, start: pos, pos: self.pos }),
+                        Err(msg) => return Err(self.error(msg, pos)),
                         Ok(string) => TokenType::String(string)
                     }
                 }
                 unknown => {
-                    return Err(Error {
-                        msg: format!("Unknown character: \"{}\" at pos {} on line {}", unknown, self.pos, line),
-                        line,
-                        start: pos,
-                        pos: self.pos
-                    })
+                    return Err(self.error(format!("Unknown character: \"{}\"", unknown), pos))
                 }
             };
             tokens.push(Token {
                 pos,
-                line,
+                line: self.line as i32,  // TODO: finish usize x i32
                 typ,
             });
         }
 
         tokens.push(Token {
             pos: self.pos,
-            line,
+            line: self.line as i32,
             typ: TokenType::Eof,
         });
         Ok(tokens)
