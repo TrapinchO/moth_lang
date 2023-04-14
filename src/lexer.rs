@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::error::Error;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
@@ -21,17 +22,15 @@ pub struct Token {
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#";
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Error {
-    pub msg: String,
-    pub line: usize,
-    pub start: usize,
-    pub pos: usize,
+
+pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
+    Lexer::new(code).lex()
 }
 
 struct Lexer {
     code: Vec<char>,
     idx: usize,
+    start_pos: usize,
     pos: usize,
     line: usize,
 }
@@ -43,6 +42,7 @@ impl Lexer {
         Self {
             code: code.chars().collect(),
             idx: 0,
+            start_pos: 0,
             pos: 0,
             line: 1,  // TODO: make 0
         }
@@ -60,11 +60,11 @@ impl Lexer {
         self.pos += 1;
     }
     
-    fn error(&self, msg: String, start: usize) -> Error {
+    fn error(&self, msg: String) -> Error {
         Error {
             msg,
             line: self.line,
-            start,
+            start: self.start_pos,
             pos: self.pos
         }
     }
@@ -73,8 +73,7 @@ impl Lexer {
         let mut tokens = vec![];
 
         while self.idx < self.code.len() {
-            let pos = self.pos;
-
+            self.start_pos = self.pos;
             let typ = match self.get_current().unwrap() {
                 ' ' => {
                     self.advance();
@@ -86,9 +85,10 @@ impl Lexer {
                     self.idx += 1;
                     continue;
                 }
+                // TODO: floats, different bases
                 num if num.is_digit(10) => {
                     match self.lex_number() {
-                        Err(msg) => return Err(self.error(msg, pos)),
+                        Err(msg) => return Err(self.error(msg)),
                         Ok(num) => TokenType::Number(num)
                     }
                 }
@@ -107,7 +107,6 @@ impl Lexer {
                     }
                 }
                 sym if SYMBOLS.contains(sym) => {
-                    // TODO: fix
                     let sym = self.lex_symbol();
                     match sym.as_str() {
                         "=" => TokenType::Equals,
@@ -125,16 +124,16 @@ impl Lexer {
                 // +1 to ignore the quote
                 '\"' => {
                     match self.lex_string() {
-                        Err(msg) => return Err(self.error(msg, pos)),
+                        Err(msg) => return Err(self.error(msg)),
                         Ok(string) => TokenType::String(string)
                     }
                 }
                 unknown => {
-                    return Err(self.error(format!("Unknown character: \"{}\"", unknown), pos))
+                    return Err(self.error(format!("Unknown character: \"{}\"", unknown)))
                 }
             };
             tokens.push(Token {
-                pos,
+                pos: self.start_pos,
                 line: self.line as i32,  // TODO: finish usize x i32
                 typ,
             });
@@ -212,8 +211,4 @@ impl Lexer {
         }
         Err("EOF while parsing string".to_string())
     }
-}
-
-pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
-    Lexer::new(code).lex()
 }

@@ -5,7 +5,7 @@ fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     env::set_var("RUST_BACKTRACE", "1");
 
-    let input = String::from("1 + 1 // - 2 *3 =\n \"Hello World!\" 123");
+    let input = String::from("1 + 1 // - 2 *3a =\n \"Hello World!\" 123");
     let y = lexer::lex(&input);
     match y {
         Err(err) => {
@@ -14,10 +14,7 @@ fn main() {
                 panic!("Error line ({}) is greater than the number of lines in the code ({})", err.line, lines.len());
             }
             let line = &lines[(err.line-1) as usize];
-            println!("Error on line {}:\n{}\n{}{}^ {}", err.line, line,
-                     " ".repeat(err.start), "-".repeat(err.pos-err.start),
-                     err.msg
-            );
+            println!("{}", err.format_message(line));
         },
         Ok(tokens) => {
             println!("===== source =====");
