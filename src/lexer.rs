@@ -25,6 +25,7 @@ const SYMBOLS: &str = "+-*/=<>!|.$&@#";
 pub struct Error {
     pub msg: String,
     pub line: i32,
+    pub start: usize,
     pub pos: usize,
 }
 
@@ -77,7 +78,7 @@ impl Lexer {
                 }
                 num if num.is_digit(10) => {
                     match self.lex_number() {
-                        Err(msg) => return Err(Error { msg, line, pos: self.pos }),
+                        Err(msg) => return Err(Error { msg, line, start: pos, pos: self.pos }),
                         Ok(num) => TokenType::Number(num)
                     }
                 }
@@ -114,7 +115,7 @@ impl Lexer {
                 // +1 to ignore the quote
                 '\"' => {
                     match self.lex_string() {
-                        Err(msg) => return Err(Error { msg, line, pos: self.pos }),
+                        Err(msg) => return Err(Error { msg, line, start: pos, pos: self.pos }),
                         Ok(string) => TokenType::String(string)
                     }
                 }
@@ -122,6 +123,7 @@ impl Lexer {
                     return Err(Error {
                         msg: format!("Unknown character: \"{}\" at pos {} on line {}", unknown, self.pos, line),
                         line,
+                        start: pos,
                         pos: self.pos
                     })
                 }
@@ -192,7 +194,6 @@ impl Lexer {
         // move behind the opening quote
         self.advance();
         while self.idx < self.code.len() {
-            println!("{}, {}", self.idx, self.get_current().unwrap());
             if self.get_current()? == '\"' {
                 // move behind the quote
                 self.advance();
