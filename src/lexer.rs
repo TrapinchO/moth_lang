@@ -21,6 +21,12 @@ pub struct Token {
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#";
 
+struct Error {
+    pub msg: String,
+    pub line: i32,
+    pub pos: usize,
+}
+
 struct Lexer {
     code: Vec<char>,
     idx: usize,
@@ -196,6 +202,13 @@ impl Lexer {
     }
 }
 
-pub fn lex(code: &str) -> Result<Vec<Token>, String> {
-    Lexer::new(code).lex()
+pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
+    match Lexer::new(code).lex() {
+        Ok(tokens) => tokens,
+        Err(msg) => Error {
+            msg,
+            pos: 0,
+            line: 0
+        }
+    }
 }
