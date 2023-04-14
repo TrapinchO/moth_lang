@@ -21,7 +21,7 @@ pub struct Token {
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#";
 
-struct Error {
+pub struct Error {
     pub msg: String,
     pub line: i32,
     pub pos: usize,
