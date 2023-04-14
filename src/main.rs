@@ -15,7 +15,7 @@ fn main() {
                 panic!("Error line ({}) is greater than the number of lines in the code ({})", err.line, lines.len());
             }
             let line = lines[err.line];
-            println!("Error on line: {}", line);
+            println!("Error on line: {}\nPos: {}", line, err.pos);
         },
         Ok(tokens) => {
             println!("===== source =====");
