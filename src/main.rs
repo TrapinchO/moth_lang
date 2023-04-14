@@ -9,9 +9,9 @@ fn main() {
     let y = lexer::lex(&input);
     match y {
         Err(err) => {
-            println!("[MOTH] {}", err);
-            let lines = input.split('\n').collect::<Vec<_>>();
-            if lines.len() < err.line {
+            println!("[MOTH] {:?}", err);
+            let lines = input.split('\n').map(str::to_string).collect::<Vec<_>>();
+            if lines.len() < err.line as usize {
                 panic!("Error line ({}) is greater than the number of lines in the code ({})", err.line, lines.len());
             }
             let line = lines[err.line];
