@@ -152,7 +152,7 @@ mod tests {
             ("test2+test", vec![
                 Token { pos: 0, line: 1, typ: TokenType::Identifier("test2".to_string()) },
                 Token { pos: 5, line: 1, typ: TokenType::Symbol("+".to_string()) },
-                Token { pos: 6, line: 1, typ: TokenType::Identifier("test2".to_string()) },
+                Token { pos: 6, line: 1, typ: TokenType::Identifier("test".to_string()) },
                 Token { pos: 10, line: 1, typ: TokenType::Eof }]),
             
             ("\"test\"+\"hello\"", vec![
