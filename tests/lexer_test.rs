@@ -142,7 +142,15 @@ mod tests {
             Token { pos: 6, line: 1, typ: TokenType::Eof }
         ];
         let lexed = lex("1 + 12").unwrap();
-
         assert_eq!(tokens, lexed);
+        
+        let tokens2 = vec![
+            Token { pos: 0, line: 1, typ: TokenType::Number(1) },
+            Token { pos: 1, line: 1, typ: TokenType::Symbol("+".to_string()) },
+            Token { pos: 2, line: 1, typ: TokenType::Number(12) },
+            Token { pos: 4, line: 1, typ: TokenType::Eof }
+        ];
+        let lexed2 = lex("1+12").unwrap();
+        assert_eq!(tokens2, lexed2);
     }
 }
