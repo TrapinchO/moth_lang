@@ -112,6 +112,8 @@ impl Lexer {
                         "=" => TokenType::Equals,
                         // ignore comments
                         // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
+                        // TODO: move to its own function?
+                        // TODO: multiline comments
                         _ if sym.chars().all(|s| s == '/') && sym.len() >= 2 => {
                             while self.idx < self.code.len() && self.get_current().unwrap() != '\n' {
                                 self.advance();
