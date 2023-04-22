@@ -48,6 +48,10 @@ impl Lexer {
         }
     }
 
+    fn is_at_end(&self) -> bool {
+        self.idx >= self.code.len()
+    }
+
     fn get_current(&self) -> Result<char, String> {
         if self.idx >= self.code.len() {
             return Err("Attempted to index character out of bounds".to_string());
@@ -72,7 +76,7 @@ impl Lexer {
     pub fn lex(&mut self) -> Result<Vec<Token>, Error> {
         let mut tokens = vec![];
 
-        while self.idx < self.code.len() {
+        while !self.is_at_end() {
             self.start_pos = self.pos;
             let typ = match self.get_current().unwrap() {
                 ' ' => {
@@ -115,7 +119,6 @@ impl Lexer {
                             // might come useful one day for documentation
                             match self.lex_block_comment() {
                                 Err(msg) => return Err(self.error(msg)),
-                                Ok(comment) => continue,
                                 Ok(_comment) => continue,
                             }
                         }
@@ -157,7 +160,7 @@ impl Lexer {
     fn lex_number(&mut self) -> Result<i32, String> {
         let mut num = String::from("");
 
-        while self.idx < self.code.len() {
+        while !self.is_at_end() {
             if self.get_current()?.is_digit(10) {
                 num.push(self.get_current().unwrap());
             } else if self.get_current()?.is_alphabetic() {
@@ -176,7 +179,7 @@ impl Lexer {
     fn lex_identifier(&mut self) -> String {
         let mut s = String::from("");
 
-        while self.idx < self.code.len() {
+        while !self.is_at_end() {
             if !self.get_current().unwrap().is_alphanumeric() {
                 break;
             }
@@ -189,7 +192,7 @@ impl Lexer {
     fn lex_symbol(&mut self) -> String {
         let mut s = String::from("");
 
-        while self.idx < self.code.len() {
+        while !self.is_at_end() {
             if !SYMBOLS.contains(self.get_current().unwrap()) {
                 break;
             }
@@ -204,7 +207,7 @@ impl Lexer {
 
         // move behind the opening quote
         self.advance();
-        while self.idx < self.code.len() {
+        while !self.is_at_end() {
             if self.get_current()? == '\"' {
                 // move behind the quote
                 self.advance();
@@ -220,8 +223,7 @@ impl Lexer {
     }
 
     fn lex_line_comment(&mut self) {
-        while self.idx < self.code.len() && self.get_current() != Ok('\n') {
-            println!("{:?}", self.get_current());
+        while !self.is_at_end() && self.get_current().unwrap() != '\n' {
             self.advance();
         }
     }
