@@ -44,7 +44,7 @@ impl Lexer {
             idx: 0,
             start_pos: 0,
             pos: 0,
-            line: 1,  // TODO: make 0
+            line: 0,
         }
     }
 
@@ -144,7 +144,7 @@ impl Lexer {
             };
             tokens.push(Token {
                 pos: self.start_pos,
-                line: self.line,  // TODO: finish usize x i32
+                line: self.line,
                 typ,
             });
         }

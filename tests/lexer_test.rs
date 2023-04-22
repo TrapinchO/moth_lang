@@ -5,7 +5,7 @@ mod tests {
 
     #[test]
     fn empty() {
-        assert_eq!(vec![Token{pos:0, line:1, typ:TokenType::Eof}], lex("").unwrap());
+        assert_eq!(vec![Token{pos:0, line:0, typ:TokenType::Eof}], lex("").unwrap());
     }
 
     #[test]
@@ -18,7 +18,7 @@ mod tests {
     #[test]
     fn lex_number_err() {
         let nums = [
-            ("1a", Error { msg: "Invalid digit: \"a\"".to_string(), line: 1, start: 0, pos: 1})
+            ("1a", Error { msg: "Invalid digit: \"a\"".to_string(), line: 0, start: 0, pos: 1})
         ];
         for (n, r) in nums {
             let tok = lex(n);
@@ -77,8 +77,8 @@ mod tests {
     #[test]
     fn lex_string_err() {
         let strings = [
-            ("\"", Error { msg: "EOF while parsing string".to_string(), line: 1, start: 0, pos: 1}),
-            ("\"test\n\"", Error { msg: "EOL while parsing string".to_string(), line: 1, start: 0, pos: 5}),
+            ("\"", Error { msg: "EOF while parsing string".to_string(), line: 0, start: 0, pos: 1}),
+            ("\"test\n\"", Error { msg: "EOL while parsing string".to_string(), line: 0, start: 0, pos: 5}),
         ];
         for (s, e) in strings {
             let tok = lex(s);
@@ -164,44 +164,44 @@ mod tests {
         // tests positions and whether lexer advances properly
         let exprs = [
             ("1 + 12", vec![
-                Token { pos: 0, line: 1, typ: TokenType::Number(1) },
-                Token { pos: 2, line: 1, typ: TokenType::Symbol("+".to_string()) },
-                Token { pos: 4, line: 1, typ: TokenType::Number(12) },
-                Token { pos: 6, line: 1, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::Number(1) },
+                Token { pos: 2, line: 0, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 4, line: 0, typ: TokenType::Number(12) },
+                Token { pos: 6, line: 0, typ: TokenType::Eof }]),
 
             ("1+12", vec![
-                Token { pos: 0, line: 1, typ: TokenType::Number(1) },
-                Token { pos: 1, line: 1, typ: TokenType::Symbol("+".to_string()) },
-                Token { pos: 2, line: 1, typ: TokenType::Number(12) },
-                Token { pos: 4, line: 1, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::Number(1) },
+                Token { pos: 1, line: 0, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 2, line: 0, typ: TokenType::Number(12) },
+                Token { pos: 4, line: 0, typ: TokenType::Eof }]),
             
             ("test2+test", vec![
-                Token { pos: 0, line: 1, typ: TokenType::Identifier("test2".to_string()) },
-                Token { pos: 5, line: 1, typ: TokenType::Symbol("+".to_string()) },
-                Token { pos: 6, line: 1, typ: TokenType::Identifier("test".to_string()) },
-                Token { pos: 10, line: 1, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::Identifier("test2".to_string()) },
+                Token { pos: 5, line: 0, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 6, line: 0, typ: TokenType::Identifier("test".to_string()) },
+                Token { pos: 10, line: 0, typ: TokenType::Eof }]),
             
             ("\"test\"+\"test\"", vec![
-                Token { pos: 0, line: 1, typ: TokenType::String("test".to_string()) },
-                Token { pos: 6, line: 1, typ: TokenType::Symbol("+".to_string()) },
-                Token { pos: 7, line: 1, typ: TokenType::String("test".to_string()) },
-                Token { pos: 13, line: 1, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::String("test".to_string()) },
+                Token { pos: 6, line: 0, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 7, line: 0, typ: TokenType::String("test".to_string()) },
+                Token { pos: 13, line: 0, typ: TokenType::Eof }]),
             
             ("\"test\"\n+\"test\"", vec![
-                Token { pos: 0, line: 1, typ: TokenType::String("test".to_string()) },
-                Token { pos: 0, line: 2, typ: TokenType::Symbol("+".to_string()) },
-                Token { pos: 1, line: 2, typ: TokenType::String("test".to_string()) },
-                Token { pos: 7, line: 2, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::String("test".to_string()) },
+                Token { pos: 0, line: 1, typ: TokenType::Symbol("+".to_string()) },
+                Token { pos: 1, line: 1, typ: TokenType::String("test".to_string()) },
+                Token { pos: 7, line: 1, typ: TokenType::Eof }]),
 
             ("\"test\" /* test */ \"test\"", vec![
-                Token { pos: 0, line: 1, typ: TokenType::String("test".to_string()) },
-                Token { pos: 18, line: 1, typ: TokenType::String("test".to_string()) },
-                Token { pos: 24, line: 1, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::String("test".to_string()) },
+                Token { pos: 18, line: 0, typ: TokenType::String("test".to_string()) },
+                Token { pos: 24, line: 0, typ: TokenType::Eof }]),
 
             ("\"test\" /* test \ntest */ \"test\"", vec![
-                Token { pos: 0, line: 1, typ: TokenType::String("test".to_string()) },
-                Token { pos: 8, line: 2, typ: TokenType::String("test".to_string()) },
-                Token { pos: 14, line: 2, typ: TokenType::Eof }]),
+                Token { pos: 0, line: 0, typ: TokenType::String("test".to_string()) },
+                Token { pos: 8, line: 1, typ: TokenType::String("test".to_string()) },
+                Token { pos: 14, line: 1, typ: TokenType::Eof }]),
         ];
 
         for (ex, tok) in exprs {
