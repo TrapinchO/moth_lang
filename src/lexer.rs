@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use crate::error::Error;
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
@@ -21,7 +21,6 @@ pub struct Token {
 }
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#";
-
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
     Lexer::new(code).lex()
@@ -70,13 +69,13 @@ impl Lexer {
             self.get_current().unwrap() == character
         }
     }
-    
+
     fn error(&self, msg: String) -> Error {
         Error {
             msg,
             line: self.line,
             start: self.start_pos,
-            pos: self.pos
+            pos: self.pos,
         }
     }
 
@@ -97,12 +96,10 @@ impl Lexer {
                     continue;
                 }
                 // TODO: floats, different bases
-                num if num.is_digit(10) => {
-                    match self.lex_number() {
-                        Err(msg) => return Err(self.error(msg)),
-                        Ok(num) => TokenType::Number(num)
-                    }
-                }
+                num if num.is_digit(10) => match self.lex_number() {
+                    Err(msg) => return Err(self.error(msg)),
+                    Ok(num) => TokenType::Number(num),
+                },
                 ident if ident.is_alphanumeric() => {
                     let keywords: HashMap<&str, TokenType> = [
                         ("let", TokenType::Let),
@@ -139,15 +136,11 @@ impl Lexer {
                     }
                 }
                 // +1 to ignore the quote
-                '\"' => {
-                    match self.lex_string() {
-                        Err(msg) => return Err(self.error(msg)),
-                        Ok(string) => TokenType::String(string)
-                    }
-                }
-                unknown => {
-                    return Err(self.error(format!("Unknown character: \"{}\"", unknown)))
-                }
+                '\"' => match self.lex_string() {
+                    Err(msg) => return Err(self.error(msg)),
+                    Ok(string) => TokenType::String(string),
+                },
+                unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
             tokens.push(Token {
                 pos: self.start_pos,
@@ -171,10 +164,7 @@ impl Lexer {
             if self.get_current()?.is_digit(10) {
                 num.push(self.get_current().unwrap());
             } else if self.get_current()?.is_alphabetic() {
-                return Err(format!(
-                    "Invalid digit: \"{}\"",
-                    self.get_current()?
-                ));
+                return Err(format!("Invalid digit: \"{}\"", self.get_current()?));
             } else {
                 break;
             }
@@ -248,7 +238,7 @@ impl Lexer {
             }
 
             if self.is_char('*') {
-                if self.idx < self.code.len()-1 && self.code[self.idx+1] == '/' {
+                if self.idx < self.code.len() - 1 && self.code[self.idx + 1] == '/' {
                     self.advance();
                     self.advance();
                     return Ok(comment);

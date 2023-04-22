@@ -13,11 +13,15 @@ fn main() {
         Err(err) => {
             let lines = input.split('\n').map(str::to_string).collect::<Vec<_>>();
             if lines.len() < err.line {
-                panic!("Error line ({}) is greater than the number of lines in the code ({})", err.line, lines.len());
+                panic!(
+                    "Error line ({}) is greater than the number of lines in the code ({})",
+                    err.line,
+                    lines.len()
+                );
             }
             let line = &lines[err.line];
             println!("{}", err.format_message(line));
-        },
+        }
         Ok(tokens) => {
             println!("===== source =====");
             println!("{:?}", input);
@@ -31,7 +35,7 @@ fn main() {
     let ast = Expr::BinaryOperation(
         "+".to_string(),
         Box::new(Expr::Number(1)),
-        Box::new(Expr::Number(1))
+        Box::new(Expr::Number(1)),
     );
     println!("{:?}", ast);
 }
