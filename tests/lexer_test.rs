@@ -107,7 +107,7 @@ mod tests {
     }
 
     #[test]
-    fn lex_comment() {
+    fn lex_line_comment() {
         // TODO: DEAL WITH TESTING
         let coms = [
             ("//", vec![TokenType::Eof]),
@@ -126,6 +126,29 @@ mod tests {
         ];
 
         for (c, r) in coms {
+            let lexed = lex(c).unwrap()
+                .iter()
+                .map(|t| t.typ.clone())
+                .collect::<Vec<_>>();
+            assert_eq!(lexed, r);
+        }
+    }
+
+    #[test]
+    fn lex_block_comment() {
+        let comms = [
+            ("/* */", vec![TokenType::Eof]),
+            ("/* test */", vec![TokenType::Eof]),
+            ("test /* test */", vec![TokenType::Identifier("test".to_string()),
+                                     TokenType::Eof]),
+            ("/* test */ test", vec![TokenType::Identifier("test".to_string()),
+                                     TokenType::Eof]),
+            ("test /* test */ test", vec![TokenType::Identifier("test".to_string()),
+                                          TokenType::Identifier("test".to_string()),
+                                          TokenType::Eof]),
+        ];
+
+        for (c, r) in comms {
             let lexed = lex(c).unwrap()
                 .iter()
                 .map(|t| t.typ.clone())

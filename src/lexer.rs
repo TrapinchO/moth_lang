@@ -118,7 +118,6 @@ impl Lexer {
                         }
                         // ignore comments
                         // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
-                        // TODO: multiline comments
                         _ if sym.chars().all(|s| s == '/') && sym.len() >= 2 => {
                             self.lex_line_comment();
                             continue;
@@ -224,6 +223,7 @@ impl Lexer {
         }
     }
 
+    // TODO: /**/, /*** ... */ and similar edge cases
     fn lex_block_comment(&mut self) -> Result<String, String> {
         let mut comment = String::new();
         while self.idx < self.code.len() {
