@@ -110,10 +110,13 @@ impl Lexer {
                     let sym = self.lex_symbol();
                     match sym.as_str() {
                         "=" => TokenType::Equals,
+                        "/**/" => continue,
                         "/*" => {
+                            // might come useful one day for documentation
                             match self.lex_block_comment() {
                                 Err(msg) => return Err(self.error(msg)),
                                 Ok(comment) => continue,
+                                Ok(_comment) => continue,
                             }
                         }
                         // ignore comments
@@ -226,7 +229,15 @@ impl Lexer {
     // TODO: /**/, /*** ... */ and similar edge cases
     fn lex_block_comment(&mut self) -> Result<String, String> {
         let mut comment = String::new();
-        while self.idx < self.code.len() {
+        while !self.is_at_end() {
+            // necessary to get correct line and pos positions
+            if self.get_current().unwrap() == '\n' {
+                self.advance();
+                self.line += 1;
+                self.pos = 0;
+                continue;
+            }
+
             if self.get_current().unwrap() == '*' {
                 if self.idx < self.code.len()-1 && self.code[self.idx+1] == '/' {
                     self.advance();
