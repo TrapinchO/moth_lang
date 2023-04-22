@@ -16,7 +16,7 @@ pub enum TokenType {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Token {
     pub pos: usize,
-    pub line: i32,
+    pub line: usize,
     pub typ: TokenType,
 }
 
@@ -144,14 +144,14 @@ impl Lexer {
             };
             tokens.push(Token {
                 pos: self.start_pos,
-                line: self.line as i32,  // TODO: finish usize x i32
+                line: self.line,  // TODO: finish usize x i32
                 typ,
             });
         }
 
         tokens.push(Token {
             pos: self.pos,
-            line: self.line as i32,
+            line: self.line,
             typ: TokenType::Eof,
         });
         Ok(tokens)
