@@ -35,7 +35,6 @@ struct Lexer {
     line: usize,
 }
 
-// TODO: add helper methods
 // TODO: decide on "get_current"
 impl Lexer {
     pub fn new(code: &str) -> Self {
@@ -62,6 +61,14 @@ impl Lexer {
     fn advance(&mut self) {
         self.idx += 1;
         self.pos += 1;
+    }
+
+    fn is_char(&self, character: char) -> bool {
+        if self.is_at_end() {
+            false
+        } else {
+            self.get_current().unwrap() == character
+        }
     }
     
     fn error(&self, msg: String) -> Error {
@@ -208,12 +215,12 @@ impl Lexer {
         // move behind the opening quote
         self.advance();
         while !self.is_at_end() {
-            if self.get_current()? == '\"' {
+            if self.is_char('\"') {
                 // move behind the quote
                 self.advance();
                 return Ok(s);
             }
-            if self.get_current()? == '\n' {
+            if self.is_char('\n') {
                 return Err("EOL while parsing string".to_string());
             }
             s.push(self.get_current()?);
@@ -223,24 +230,24 @@ impl Lexer {
     }
 
     fn lex_line_comment(&mut self) {
-        while !self.is_at_end() && self.get_current().unwrap() != '\n' {
+        while !self.is_at_end() && !self.is_char('\n') {
             self.advance();
         }
     }
 
-    // TODO: /**/, /*** ... */ and similar edge cases
+    // TODO: /*** ... */ and similar edge cases
     fn lex_block_comment(&mut self) -> Result<String, String> {
         let mut comment = String::new();
         while !self.is_at_end() {
             // necessary to get correct line and pos positions
-            if self.get_current().unwrap() == '\n' {
+            if self.is_char('\n') {
                 self.advance();
                 self.line += 1;
                 self.pos = 0;
                 continue;
             }
 
-            if self.get_current().unwrap() == '*' {
+            if self.is_char('*') {
                 if self.idx < self.code.len()-1 && self.code[self.idx+1] == '/' {
                     self.advance();
                     self.advance();
