@@ -110,14 +110,17 @@ impl Lexer {
                     let sym = self.lex_symbol();
                     match sym.as_str() {
                         "=" => TokenType::Equals,
+                        "/*" => {
+                            match self.lex_block_comment() {
+                                Err(msg) => return Err(self.error(msg)),
+                                Ok(comment) => continue,
+                            }
+                        }
                         // ignore comments
                         // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
-                        // TODO: move to its own function?
                         // TODO: multiline comments
                         _ if sym.chars().all(|s| s == '/') && sym.len() >= 2 => {
-                            while self.idx < self.code.len() && self.get_current().unwrap() != '\n' {
-                                self.advance();
-                            }
+                            self.lex_line_comment();
                             continue;
                         }
                         _ => TokenType::Symbol(sym),
@@ -212,5 +215,28 @@ impl Lexer {
             self.advance();
         }
         Err("EOF while parsing string".to_string())
+    }
+
+    fn lex_line_comment(&mut self) {
+        while self.idx < self.code.len() && self.get_current() != Ok('\n') {
+            println!("{:?}", self.get_current());
+            self.advance();
+        }
+    }
+
+    fn lex_block_comment(&mut self) -> Result<String, String> {
+        let mut comment = String::new();
+        while self.idx < self.code.len() {
+            if self.get_current().unwrap() == '*' {
+                if self.idx < self.code.len()-1 && self.code[self.idx+1] == '/' {
+                    self.advance();
+                    self.advance();
+                    return Ok(comment);
+                }
+            }
+            comment.push(self.get_current().unwrap());
+            self.advance();
+        }
+        Err("EOF while lexing block comment".to_string())
     }
 }
