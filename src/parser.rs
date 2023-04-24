@@ -4,6 +4,7 @@ use crate::lexer::{Token, TokenType};
 pub enum Expr {
     Number(i32),
     String(String),
+    ParensExpr(Box<Expr>),
     UnaryOperation(String, Box<Expr>),
     BinaryOperation(Box<Expr>, String, Box<Expr>),
 }
@@ -33,21 +34,22 @@ impl Parser {
     fn parse_expr(&mut self) -> Result<Expr, String> {
         println!("{:?}", self.tokens);
         let mut left = self.parse_primary()?;
-        self.idx += 1;
-        while let Some(Token {typ: TokenType::Symbol(sym), .. }) = self.tokens.get(self.idx) {
+        //self.idx += 1;
+        while let Some(Token {typ: TokenType::Symbol(sym), .. }) = &self.tokens.get(self.idx) {
+            let sym = sym.clone();
             self.idx += 1;
             let right = self.parse_primary()?;
-            self.idx += 1;
+            //self.idx += 1;
             left = Expr::BinaryOperation(
                 Box::new(left),
-                sym.clone(),
+                sym,
                 Box::new(right)
             )
         }
         Ok(left)
     }
 
-    fn parse_primary(&self) -> Result<Expr, String> {
+    fn parse_primary(&mut self) -> Result<Expr, String> {
         let expr = match self.tokens.get(self.idx) {
             None => Err("Expected an element".to_string()),
             Some(tok) => Ok(match &tok.typ {
@@ -56,7 +58,7 @@ impl Parser {
                 _ => return Err(format!("Unknown element: {:?}", tok)),
             })
         };
-        //self.idx += 1;
+        self.idx += 1;
         expr
     }
 }
