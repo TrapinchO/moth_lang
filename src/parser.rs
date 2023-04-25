@@ -50,9 +50,17 @@ impl Parser {
     }
     
     pub fn parse(&mut self) -> Result<Expr, String> {
-        self.parse_expr()
+        self.parse_binary()
     }
 
+    fn parse_binary(&mut self) -> Result<Expr, String> {
+        let left = self.parse_primary()?;
+        if let Some(Token {typ: TokenType::Symbol(sym), .. }) = &self.tokens.get(self.idx) {
+            self.idx += 1;
+            return Ok(Expr::BinaryOperation(left.into(), sym.clone(), self.parse_binary()?.into()))
+        }
+        Ok(left)
+    }
     fn parse_expr(&mut self) -> Result<Expr, String> {
         println!("{:?}", self.tokens);
         let mut left = self.parse_primary()?;
@@ -85,6 +93,7 @@ impl Parser {
     }
 }
 
+
 pub fn reassoc(expr: &Expr) -> Expr {
     println!("rrr {:?}", expr);
     match expr {
@@ -99,9 +108,10 @@ fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Expr {
     //println!("__ {:?} {:?} {:?}", &left, &op, &right);
     // left = false, right = true
     let prec_table: HashMap<&str, (usize, bool)> = [
-        ("+", (1, true)),
+        ("+", (1, false)),
         ("-", (1, false)),
         ("*", (2, false)),
+        ("/", (2, false)),
     ].iter().cloned().collect();
 
     match right {
