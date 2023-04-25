@@ -61,23 +61,6 @@ impl Parser {
         }
         Ok(left)
     }
-    fn parse_expr(&mut self) -> Result<Expr, String> {
-        println!("{:?}", self.tokens);
-        let mut left = self.parse_primary()?;
-        //self.idx += 1;
-        while let Some(Token {typ: TokenType::Symbol(sym), .. }) = &self.tokens.get(self.idx) {
-            let sym = sym.clone();
-            self.idx += 1;
-            let right = self.parse_primary()?;
-            //self.idx += 1;
-            left = Expr::BinaryOperation(
-                Rc::new(left),
-                sym,
-                Rc::new(right)
-            );
-        }
-        Ok(left)
-    }
 
     fn parse_primary(&mut self) -> Result<Expr, String> {
         let expr = match self.tokens.get(self.idx) {
@@ -85,6 +68,14 @@ impl Parser {
             Some(tok) => Ok(match &tok.typ {
                 TokenType::String(s) => Expr::String(s.to_string()),
                 TokenType::Number(n) => Expr::Number(*n),
+                TokenType::LParen => {
+                    self.idx += 1;
+                    let expr = self.parse()?;
+                    match self.tokens.get(self.idx) {
+                        Some(&Token { typ: TokenType::RParen, .. }) => Expr::ParensExpr(expr.into()),
+                        _ => return Err("Missing closing parenthesis".to_string()),
+                    }
+                }
                 _ => return Err(format!("Unknown element: {:?}", tok)),
             })
         };
@@ -95,7 +86,7 @@ impl Parser {
 
 
 pub fn reassoc(expr: &Expr) -> Expr {
-    println!("rrr {:?}", expr);
+    //println!("rrr {:?}", expr);
     match expr {
         Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone()), &op, &reassoc(&right.clone())),
         Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(&expr).into()),
@@ -118,7 +109,7 @@ fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Expr {
         Expr::BinaryOperation(left2, op2, right2) => {
             let (prec, assoc) = prec_table.get(op.as_str()).unwrap();
             let (prec2, assoc2) = prec_table.get(op2.as_str()).unwrap();
-            println!(" {} {} {} | {} {} {}", op, prec, assoc, op2, prec2, assoc2);
+            //println!(" {} {} {} | {} {} {}", op, prec, assoc, op2, prec2, assoc2);
             match prec.cmp(prec2) {
                 std::cmp::Ordering::Greater => {
                     Expr::BinaryOperation(

@@ -9,7 +9,7 @@ fn main() {
 
     //let input = String::from("1 + 1 // - 2 *3a =\n+ \"Hello World!\" 123");
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
-    let input = String::from("1 / 1 - 1 * 1");
+    let input = String::from("(1 / 1 - 1) * 1");
     let y = lexer::lex(&input);
     match y {
         Err(err) => {
@@ -37,6 +37,7 @@ fn main() {
             match ast {
                 Err(err) => println!("[MOTH] Error: {}", err),
                 Ok(expr) => {
+                    println!("===== parsing =====");
                     println!("{}", expr);
                     let ast = parser::Expr::BinaryOperation(
                             parser::Expr::Number(1).into(),
@@ -48,6 +49,7 @@ fn main() {
                             ).into()
                     );
                     //println!("### {:?}", ast);
+                    println!("===== reassociating =====", );
                     println!("{}", reassoc(&expr));
                 }
             }
