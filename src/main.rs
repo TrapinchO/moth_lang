@@ -2,7 +2,6 @@ use moth_lang::lexer;
 use moth_lang::parser;
 use moth_lang::parser::reassoc;
 use std::env;
-use std::rc::Rc;
 
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
@@ -40,13 +39,13 @@ fn main() {
                 Ok(expr) => {
                     println!("{}", expr);
                     let ast = parser::Expr::BinaryOperation(
-                            Rc::new(parser::Expr::Number(1)),
+                            parser::Expr::Number(1).into(),
                             "*".to_string(),
-                            Rc::new(parser::Expr::BinaryOperation(
-                                    Rc::new(parser::Expr::Number(2)),
+                            parser::Expr::BinaryOperation(
+                                    parser::Expr::Number(2).into(),
                                     "+".to_string(),
-                                    Rc::new(parser::Expr::Number(3)))
-                            )
+                                    parser::Expr::Number(3).into()
+                            ).into()
                     );
                     //println!("### {:?}", ast);
                     println!("{}", reassoc(&ast));

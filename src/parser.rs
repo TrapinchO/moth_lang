@@ -89,14 +89,14 @@ pub fn reassoc(expr: &Expr) -> Expr {
     println!("rrr {:?}", expr);
     match expr {
         Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone()), &op, &reassoc(&right.clone())),
-        Expr::ParensExpr(expr) => Expr::ParensExpr(Rc::new(reassoc(&expr))),
+        Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(&expr).into()),
         expr => expr.clone(),
     }
 }
 
 // https://stackoverflow.com/a/67992584
 fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Expr {
-    println!("__ {:?} {:?} {:?}", &left, &op, &right);
+    //println!("__ {:?} {:?} {:?}", &left, &op, &right);
     // left = false, right = true
     let prec_table: HashMap<&str, (usize, bool)> = [
         ("+", (1, true)),
@@ -117,21 +117,24 @@ fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Expr {
                         right2.clone())
                 }
                 std::cmp::Ordering::Less => {
-                    Expr::BinaryOperation(Rc::new(left.clone()), op.clone(), Rc::new(right.clone()))
+                    Expr::BinaryOperation(left.clone().into(), op.clone(), right.clone().into())
                 }
                 std::cmp::Ordering::Equal => {
                     match (assoc, assoc2) {
                         (true, true) => Expr::BinaryOperation(
                             reassoc_(left, &op2, &left2).into(),
-                            //Rc::new(reassoc_(left, &op2, &left2)),
                             op.clone(),
                             right2.clone()),
-                        (false, false) => Expr::BinaryOperation(Rc::new(left.clone()), op.clone(), Rc::new(right.clone())),
+                        (false, false) => Expr::BinaryOperation(
+                            left.clone().into(),
+                            op.clone(),
+                            right.clone().into()
+                        ),
                         _ => panic!("wrong associativity"),
                     }
                 }
             }
         }
-        _ => Expr::BinaryOperation(Rc::new(left.clone()), op.clone(), Rc::new(right.clone())),
+        _ => Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into()),
     }
 }
