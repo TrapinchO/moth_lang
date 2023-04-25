@@ -1,5 +1,6 @@
 use moth_lang::lexer;
 use moth_lang::parser;
+use moth_lang::parser::reassoc;
 use std::env;
 
 fn main() {
@@ -37,6 +38,17 @@ fn main() {
                 Err(err) => println!("[MOTH] Error: {}", err),
                 Ok(expr) => {
                     println!("{:?}", expr);
+                    let ast = parser::Expr::BinaryOperation(
+                            Box::new(parser::Expr::Number(1)),
+                            "*".to_string(),
+                            Box::new(parser::Expr::BinaryOperation(
+                                    Box::new(parser::Expr::Number(2)),
+                                    "+".to_string(),
+                                    Box::new(parser::Expr::Number(3)))
+                            )
+                    );
+                    println!("### {:?}", ast);
+                    println!("{:?}", reassoc(ast));
                 }
             }
         }

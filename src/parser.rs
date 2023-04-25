@@ -1,4 +1,5 @@
 use crate::lexer::{Token, TokenType};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Expr {
@@ -44,7 +45,7 @@ impl Parser {
                 Box::new(left),
                 sym,
                 Box::new(right)
-            )
+            );
         }
         Ok(left)
     }
@@ -60,5 +61,54 @@ impl Parser {
         };
         self.idx += 1;
         expr
+    }
+}
+
+pub fn reassoc(expr: Expr) -> Expr {
+    println!("rrr {:?}", expr);
+    match expr {
+        Expr::BinaryOperation(left, op, right) => reassoc_(reassoc(*left), op, reassoc(*right)),
+        Expr::ParensExpr(expr) => Expr::ParensExpr(Box::new(reassoc(*expr))),
+        expr => expr,
+    }
+}
+
+fn reassoc_(left: Expr, op: String, right: Expr) -> Expr {
+    println!("__ {:?} {:?} {:?}", &left, &op, &right);
+    // left = false, right = true
+    let prec_table: HashMap<&str, (usize, bool)> = [
+        ("+", (1, true)),
+        ("-", (1, false)),
+        ("*", (2, false)),
+    ].iter().cloned().collect();
+
+    match &right {
+        Expr::BinaryOperation(left2, op2, right2) => {
+            let (prec, assoc) = prec_table.get(op.as_str()).unwrap();
+            let (prec2, assoc2) = prec_table.get(op2.as_str()).unwrap();
+            println!("{} {} | {} {}", prec, assoc, prec2, assoc2);
+            match prec.cmp(prec2) {
+                std::cmp::Ordering::Greater => {
+                    Expr::BinaryOperation(
+                        Box::new(reassoc_(left, op2.clone(), *left2.clone())),
+                        op.clone(),
+                        right2.clone())
+                }
+                std::cmp::Ordering::Less => {
+                    Expr::BinaryOperation(Box::new(left), op, Box::new(right))
+                }
+                std::cmp::Ordering::Equal => {
+                    match (assoc, assoc2) {
+                        (true, true) => Expr::BinaryOperation(
+                            Box::new(reassoc_(left, op2.clone(), *left2.clone())),
+                            op.clone(),
+                            right2.clone()),
+                        (false, false) => Expr::BinaryOperation(Box::new(left), op, Box::new(right)),
+                        _ => panic!("wrong associativity"),
+                    }
+                }
+            }
+        }
+        _ => Expr::BinaryOperation(Box::new(left), op, Box::new(right)),
     }
 }
