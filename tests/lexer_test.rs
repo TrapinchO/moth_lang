@@ -98,11 +98,19 @@ mod tests {
 
     #[test]
     fn lex_symbols_special() {
-        let symbols = ["="];
+        let symbols = [
+            ("=", TokenType::Equals),
+            ("(", TokenType::LParen),
+            (")", TokenType::RParen),
+            ("[", TokenType::LBracket),
+            ("]", TokenType::RBracket),
+            ("{", TokenType::LBrace),
+            ("}", TokenType::RBrace),
+        ];
 
-        for s in symbols {
+        for (s, r) in symbols {
             let lexed = lex(s).unwrap();
-            assert_eq!(lexed[0].typ, TokenType::Equals);
+            assert_eq!(lexed[0].typ, r);
         }
     }
 

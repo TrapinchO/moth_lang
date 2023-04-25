@@ -10,6 +10,12 @@ pub enum TokenType {
     String(String),
     Eof,
     Symbol(String),
+    LParen,
+    RParen,
+    LBracket,
+    RBracket,
+    LBrace,
+    RBrace,
     Equals,
 }
 
@@ -114,6 +120,13 @@ impl Lexer {
                         None => TokenType::Identifier(ident),
                     }
                 }
+                // TODO: tests:
+                '(' => {self.advance(); TokenType::LParen},
+                ')' => {self.advance(); TokenType::RParen},
+                '[' => {self.advance(); TokenType::LBracket},
+                ']' => {self.advance(); TokenType::RBracket},
+                '{' => {self.advance(); TokenType::LBrace},
+                '}' => {self.advance(); TokenType::RBrace},
                 sym if SYMBOLS.contains(sym) => {
                     let sym = self.lex_symbol();
                     match sym.as_str() {
