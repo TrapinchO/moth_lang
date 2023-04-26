@@ -1,18 +1,25 @@
+use moth_lang::error::Error;
 use moth_lang::lexer;
 use moth_lang::parser;
-use moth_lang::parser::reassoc;
 use std::env;
 
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     env::set_var("RUST_BACKTRACE", "1");
-
+    match run() {
+        Ok(_) => {}
+        //Err(err) => println!("{:?}", err)
+        Err(err) => println!("{}", err.format_message("aaaaaaaaaaaaaaaaaaaaaaaaaaaa"))
+    }
+}
+fn run() -> Result<(), Error> {
     //let input = String::from("1 + 1 // - 2 *3a =\n+ \"Hello World!\" 123");
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
-    let input = String::from("(1 / 1 - 1) * 1");
-    let y = lexer::lex(&input);
-    match y {
-        Err(err) => {
+    let input = String::from("1 / 1 - 1 * (1 + 1)");
+    println!("===== source =====\n{}", input);
+    match lexer::lex(&input) {
+        Err(err) => Err(err)?,
+            /*{
             let lines = input.split('\n').map(str::to_string).collect::<Vec<_>>();
             if lines.len() < err.line {
                 panic!(
@@ -22,38 +29,24 @@ fn main() {
                 );
             }
             let line = &lines[err.line];
-            println!("{}", err.format_message(line));
-            return;
+            Err(err.format_message(line))
         }
+            */
         Ok(tokens) => {
-            println!("===== source =====");
-            println!("{:?}", input);
             println!("===== lexing =====");
-            for tok in &tokens {
-                println!("{:?}", tok);
+            for t in &tokens {
+                println!("{:?}", t);
             }
-
-            let ast = parser::parse(tokens);
-            match ast {
-                Err(err) => println!("[MOTH] Error: {}", err),
-                Ok(expr) => {
-                    println!("===== parsing =====");
-                    println!("{}", expr);
-                    let ast = parser::Expr::BinaryOperation(
-                            parser::Expr::Number(1).into(),
-                            "*".to_string(),
-                            parser::Expr::BinaryOperation(
-                                    parser::Expr::Number(2).into(),
-                                    "+".to_string(),
-                                    parser::Expr::Number(3).into()
-                            ).into()
-                    );
-                    //println!("### {:?}", ast);
-                    println!("===== reassociating =====", );
-                    println!("{}", reassoc(&expr));
-                }
-            }
+            let ast = parser::parse(tokens)?;
+            println!("===== parsing =====\n{}", ast);
+            let resassoc = parser::reassoc(&ast).map_err(|msg| Error {
+                msg: msg,
+                line: 0,
+                start: 0,
+                end: 0
+            })?;
+            println!("===== reassociating =====\n{}", resassoc);
+            Ok(())
         }
     }
-
 }

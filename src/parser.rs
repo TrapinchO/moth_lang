@@ -1,4 +1,5 @@
 use crate::lexer::{Token, TokenType};
+use crate::error::Error;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
@@ -31,7 +32,7 @@ impl Display for Expr {
 }
 
 
-pub fn parse(tokens: Vec<Token>) -> Result<Expr, String> {
+pub fn parse(tokens: Vec<Token>) -> Result<Expr, Error> {
     Parser::new(tokens).parse()
 }
 
@@ -49,11 +50,11 @@ impl Parser {
         }
     }
     
-    pub fn parse(&mut self) -> Result<Expr, String> {
+    pub fn parse(&mut self) -> Result<Expr, Error> {
         self.parse_binary()
     }
 
-    fn parse_binary(&mut self) -> Result<Expr, String> {
+    fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_primary()?;
         if let Some(Token {typ: TokenType::Symbol(sym), .. }) = &self.tokens.get(self.idx) {
             self.idx += 1;
@@ -62,80 +63,99 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_primary(&mut self) -> Result<Expr, String> {
-        let expr = match self.tokens.get(self.idx) {
-            None => Err("Expected an element".to_string()),
-            Some(tok) => Ok(match &tok.typ {
-                TokenType::String(s) => Expr::String(s.to_string()),
-                TokenType::Number(n) => Expr::Number(*n),
-                TokenType::LParen => {
-                    self.idx += 1;
-                    let expr = self.parse()?;
-                    match self.tokens.get(self.idx) {
-                        Some(&Token { typ: TokenType::RParen, .. }) => Expr::ParensExpr(expr.into()),
-                        _ => return Err("Missing closing parenthesis".to_string()),
-                    }
+    fn parse_primary(&mut self) -> Result<Expr, Error> {
+        let tok = self.tokens.get(self.idx).ok_or(Error {
+            msg: "Expected an element".to_string(),
+            line: 0,
+            end: 0,
+            start: 0,
+        })?;
+        let expr = match &tok.typ {
+            TokenType::String(s) => Expr::String(s.to_string()),
+            TokenType::Number(n) => Expr::Number(*n),
+            TokenType::LParen => {
+                self.idx += 1;
+                let expr = self.parse()?;
+                let tok = self.tokens.get(self.idx)
+                    .expect(&format!("Parser accessed an element beyond the token vector at index {}", self.idx));
+                match tok {
+                    &Token { typ: TokenType::RParen, .. } => Expr::ParensExpr(expr.into()),
+                    tok => return Err(Error {
+                        msg: "Expected closing parenthesis".to_string(),
+                        line: tok.line,
+                        start: tok.start,
+                        end: tok.end,
+                    }),
                 }
-                _ => return Err(format!("Unknown element: {:?}", tok)),
-            })
+            }
+            _ => return Err(Error {
+                msg: format!("Unknown element: {:?}", tok),
+                line: tok.line,
+                start: tok.start,
+                end: tok.end
+            }),
         };
         self.idx += 1;
-        expr
+        Ok(expr)
     }
 }
 
-
-pub fn reassoc(expr: &Expr) -> Expr {
-    //println!("rrr {:?}", expr);
-    match expr {
-        Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone()), &op, &reassoc(&right.clone())),
-        Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(&expr).into()),
-        expr => expr.clone(),
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Associativity {
+    Left,
+    Right
 }
 
 // https://stackoverflow.com/a/67992584
-fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Expr {
-    //println!("__ {:?} {:?} {:?}", &left, &op, &right);
-    // left = false, right = true
-    let prec_table: HashMap<&str, (usize, bool)> = [
-        ("+", (1, false)),
-        ("-", (1, false)),
-        ("*", (2, false)),
-        ("/", (2, false)),
+pub fn reassoc(expr: &Expr) -> Result<Expr, String> {
+    Ok(match expr {
+        Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, &op, &reassoc(&right.clone())?)?,
+        Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(&expr)?.into()),
+        expr => expr.clone(),
+    })
+}
+
+fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Result<Expr, String> {
+    let prec_table: HashMap<&str, (usize, Associativity)> = [
+        ("+", (1, Associativity::Left)),
+        ("-", (1, Associativity::Right)),
+        ("*", (2, Associativity::Right)),
+        ("/", (2, Associativity::Right)),
     ].iter().cloned().collect();
 
     match right {
         Expr::BinaryOperation(left2, op2, right2) => {
-            let (prec, assoc) = prec_table.get(op.as_str()).unwrap();
-            let (prec2, assoc2) = prec_table.get(op2.as_str()).unwrap();
-            //println!(" {} {} {} | {} {} {}", op, prec, assoc, op2, prec2, assoc2);
+            let (prec, assoc) = prec_table.get(op.as_str())
+                .ok_or(format!("Operator not found: {}", op))?;
+            let (prec2, assoc2) = prec_table.get(op2.as_str())
+                .ok_or(format!("Operator not found: {}", op2))?;
+
             match prec.cmp(prec2) {
-                std::cmp::Ordering::Greater => {
-                    Expr::BinaryOperation(
-                        Rc::new(reassoc_(&left, &op, &left2)),
-                        op2.clone(),
-                        right2.clone())
-                }
-                std::cmp::Ordering::Less => {
-                    Expr::BinaryOperation(left.clone().into(), op.clone(), right.clone().into())
-                }
-                std::cmp::Ordering::Equal => {
-                    match (assoc, assoc2) {
-                        (true, true) => Expr::BinaryOperation(
-                            reassoc_(left, &op2, &left2).into(),
-                            op.clone(),
-                            right2.clone()),
-                        (false, false) => Expr::BinaryOperation(
-                            left.clone().into(),
-                            op.clone(),
-                            right.clone().into()
-                        ),
-                        _ => panic!("wrong associativity"),
-                    }
+                std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
+                    Rc::new(reassoc_(&left, &op, &left2)?),
+                    op2.clone(),
+                    right2.clone())),
+
+                std::cmp::Ordering::Less => Ok(Expr::BinaryOperation(
+                        left.clone().into(),
+                        op.clone(),
+                        right.clone().into())),
+
+                std::cmp::Ordering::Equal => match (assoc, assoc2) {
+                    (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
+                        reassoc_(left, &op2, &left2)?.into(),
+                        op.clone(),
+                        right2.clone())),
+                    (Associativity::Left, Associativity::Left) => Ok(Expr::BinaryOperation(
+                        left.clone().into(),
+                        op.clone(),
+                        right.clone().into()
+                    )),
+                    _ => Err(format!("Wrong associativity: {}: {} ({:?}); {}: {} ({:?})",
+                                     op, prec, assoc, op2, prec2, assoc2)),
                 }
             }
         }
-        _ => Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into()),
+        _ => Ok(Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into())),
     }
 }
