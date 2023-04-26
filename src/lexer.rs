@@ -41,7 +41,6 @@ struct Lexer {
     line: usize,
 }
 
-// TODO: decide on "get_current"
 impl Lexer {
     pub fn new(code: &str) -> Self {
         Self {
@@ -91,7 +90,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             self.start_pos = self.pos;
-            let typ = match self.get_current().unwrap() {
+            let typ = match self.get_current()? {
                 ' ' => {
                     self.advance();
                     continue;
@@ -137,7 +136,7 @@ impl Lexer {
                             // might come useful one day for documentation
                             match self.lex_block_comment() {
                                 Err(msg) => return Err(self.error(msg)),
-                                Ok(_comment) => continue,
+                                Ok(_) => continue,
                             }
                         }
                         // ignore comments
@@ -158,7 +157,7 @@ impl Lexer {
             };
             tokens.push(Token {
                 start: self.start_pos,
-                end: self.pos-1,
+                end: self.pos-1,  // the lexer is already moved
                 line: self.line,
                 typ,
             });
@@ -227,7 +226,7 @@ impl Lexer {
         self.advance();
         while !self.is_at_end() {
             if self.is_char('\"') {
-                // move behind the quote
+                // move behind the closing quote
                 self.advance();
                 return Ok(s);
             }
