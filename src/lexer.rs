@@ -58,7 +58,7 @@ impl Lexer {
     }
 
     fn get_current(&self) -> Result<char, String> {
-        if self.idx >= self.code.len() {
+        if self.is_at_end() {
             return Err("Attempted to index character out of bounds".to_string());
         }
         Ok(self.code[self.idx])
@@ -177,10 +177,11 @@ impl Lexer {
         let mut num = String::from("");
 
         while !self.is_at_end() {
-            if self.get_current()?.is_digit(10) {
-                num.push(self.get_current().unwrap());
-            } else if self.get_current()?.is_alphabetic() {
-                return Err(format!("Invalid digit: \"{}\"", self.get_current()?));
+            let cur_char = self.get_current()?;
+            if cur_char.is_digit(10) {
+                num.push(cur_char);
+            } else if cur_char.is_alphabetic() {
+                return Err(format!("Invalid digit: \"{}\"", cur_char));
             } else {
                 break;
             }
@@ -193,10 +194,12 @@ impl Lexer {
         let mut s = String::from("");
 
         while !self.is_at_end() {
-            if !self.get_current().unwrap().is_alphanumeric() {
+            let cur_char = self.get_current()
+                .expect(&format!("Lexer accessed an element beyond the character vector at index {}", self.pos));
+            if !cur_char.is_alphanumeric() {
                 break;
             }
-            s.push(self.get_current().unwrap());
+            s.push(cur_char);
             self.advance();
         }
         s
@@ -206,10 +209,12 @@ impl Lexer {
         let mut s = String::from("");
 
         while !self.is_at_end() {
-            if !SYMBOLS.contains(self.get_current().unwrap()) {
+            let cur_char = self.get_current()
+                .expect(&format!("Lexer accessed an element beyond the character vector at index {}", self.pos));
+            if !SYMBOLS.contains(cur_char) {
                 break;
             }
-            s.push(self.get_current().unwrap());
+            s.push(cur_char);
             self.advance();
         }
         s
@@ -260,7 +265,7 @@ impl Lexer {
                     return Ok(comment);
                 }
             }
-            comment.push(self.get_current().unwrap());
+            comment.push(self.get_current()?);
             self.advance();
         }
         Err("EOF while lexing block comment".to_string())
