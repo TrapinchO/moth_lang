@@ -82,7 +82,7 @@ impl Lexer {
             msg,
             line: self.line,
             start: self.start_pos,
-            pos: self.pos,
+            end: self.pos,
         }
     }
 

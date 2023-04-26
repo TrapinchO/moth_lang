@@ -3,7 +3,7 @@ pub struct Error {
     pub msg: String,
     pub line: usize,
     pub start: usize,
-    pub pos: usize,
+    pub end: usize,
 }
 
 impl Error {
@@ -13,7 +13,7 @@ impl Error {
             self.line,
             line,
             " ".repeat(self.start),
-            "-".repeat(self.pos - self.start),
+            "-".repeat(self.end - self.start),
             self.msg
         );
     }
