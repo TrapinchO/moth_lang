@@ -21,12 +21,13 @@ pub enum TokenType {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Token {
-    pub pos: usize,
+    pub start: usize,
+    pub end: usize,
     pub line: usize,
     pub typ: TokenType,
 }
 
-const SYMBOLS: &str = "+-*/=<>!|.$&@#";
+const SYMBOLS: &str = "+-*/=<>!|.$&@#?~";
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
     Lexer::new(code).lex()
@@ -156,14 +157,16 @@ impl Lexer {
                 unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
             tokens.push(Token {
-                pos: self.start_pos,
+                start: self.start_pos,
+                end: self.pos-1,
                 line: self.line,
                 typ,
             });
         }
 
         tokens.push(Token {
-            pos: self.pos,
+            start: self.pos,
+            end: self.pos,
             line: self.line,
             typ: TokenType::Eof,
         });
