@@ -118,44 +118,47 @@ pub fn reassoc(expr: &Expr) -> Result<Expr, String> {
 fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Result<Expr, String> {
     let prec_table: HashMap<&str, (usize, Associativity)> = [
         ("+", (1, Associativity::Left)),
-        ("-", (1, Associativity::Right)),
-        ("*", (2, Associativity::Right)),
-        ("/", (2, Associativity::Right)),
+        ("-", (1, Associativity::Left)),
+        ("*", (2, Associativity::Left)),
+        ("/", (2, Associativity::Left)),
     ].iter().cloned().collect();
 
-    match right {
-        Expr::BinaryOperation(left2, op2, right2) => {
-            let (prec, assoc) = prec_table.get(op.as_str())
-                .ok_or(format!("Operator not found: {}", op))?;
-            let (prec2, assoc2) = prec_table.get(op2.as_str())
-                .ok_or(format!("Operator not found: {}", op2))?;
+    // not a binary operation, no need to reassociate it
+    let Expr::BinaryOperation(left2, op2, right2) = right else {
+       return Ok(Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into()))
+    };
 
-            match prec.cmp(prec2) {
-                std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
-                    Rc::new(reassoc_(&left, &op, &left2)?),
-                    op2.clone(),
-                    right2.clone())),
+    let (prec, assoc) = prec_table.get(op.as_str())
+        .ok_or(format!("Operator not found: {}", op))?;
+    let (prec2, assoc2) = prec_table.get(op2.as_str())
+        .ok_or(format!("Operator not found: {}", op2))?;
 
-                std::cmp::Ordering::Less => Ok(Expr::BinaryOperation(
-                        left.clone().into(),
-                        op.clone(),
-                        right.clone().into())),
+    match prec.cmp(prec2) {
+        std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
+            reassoc_(&left, &op, &left2)?.into(),
+            op2.clone(),
+            right2.clone()
+        )),
 
-                std::cmp::Ordering::Equal => match (assoc, assoc2) {
-                    (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
-                        reassoc_(left, &op2, &left2)?.into(),
-                        op.clone(),
-                        right2.clone())),
-                    (Associativity::Left, Associativity::Left) => Ok(Expr::BinaryOperation(
-                        left.clone().into(),
-                        op.clone(),
-                        right.clone().into()
-                    )),
-                    _ => Err(format!("Wrong associativity: {}: {} ({:?}); {}: {} ({:?})",
-                                     op, prec, assoc, op2, prec2, assoc2)),
-                }
-            }
+        std::cmp::Ordering::Less => Ok(Expr::BinaryOperation(
+            left.clone().into(),
+            op.clone(),
+            right.clone().into()
+        )),
+
+        std::cmp::Ordering::Equal => match (assoc, assoc2) {
+            (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
+                reassoc_(left, &op2, &left2)?.into(),
+                op.clone(),
+                right2.clone()
+                )),
+            (Associativity::Left, Associativity::Left) => Ok(Expr::BinaryOperation(
+                left.clone().into(),
+                op.clone(),
+                right.clone().into()
+            )),
+            _ => Err(format!("Wrong associativity: {}: {} ({:?}); {}: {} ({:?})",
+                             op, prec, assoc, op2, prec2, assoc2)),
         }
-        _ => Ok(Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into())),
     }
 }

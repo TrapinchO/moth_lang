@@ -15,7 +15,7 @@ fn main() {
 fn run() -> Result<(), Error> {
     //let input = String::from("1 + 1 // - 2 *3a =\n+ \"Hello World!\" 123");
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
-    let input = String::from("1 / 1 - 1 * (1 + 1)");
+    let input = String::from("1 - 1 * 1 + 1");
     println!("===== source =====\n{}", input);
     match lexer::lex(&input) {
         Err(err) => Err(err)?,
