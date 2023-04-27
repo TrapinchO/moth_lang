@@ -90,7 +90,8 @@ impl Lexer {
 
         while !self.is_at_end() {
             self.start_pos = self.pos;
-            let typ = match self.get_current()? {
+            let typ = match self.get_current()
+                .expect(&format!("Lexer accessed an element beyond the character vector at index {}", self.pos)) {
                 ' ' => {
                     self.advance();
                     continue;
