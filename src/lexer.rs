@@ -1,5 +1,5 @@
 use crate::error::Error;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum TokenType {
@@ -17,6 +17,23 @@ pub enum TokenType {
     LBrace,
     RBrace,
     Equals,
+}
+
+impl TokenType {
+    fn format(&self) -> String {
+        match self {
+            Self::Number(n) => n.to_string(),
+            Self::String(s) => format!("\"{}\"", s),
+            Self::Symbol(s) => s.to_string(),
+            Self::Identifier(i) => i.to_string(),
+            typ => typ.to_string()
+        }
+    }
+}
+impl Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.format())
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]

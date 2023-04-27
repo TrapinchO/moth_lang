@@ -18,11 +18,11 @@ impl Expr {
         let s = match self {
             Self::Number(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::ParensExpr(expr) => expr.format(),
-            Self::UnaryOperation(op, expr) => format!("{:?} {}", op.typ, expr),
-            Self::BinaryOperation(left, op, right) => format!("{} {:?} {}", left, op.typ, right)
+            Self::ParensExpr(expr) => format!("({})", expr.format()),
+            Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
+            Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right)
         };
-        format!("({})", s)
+        format!("{}", s)
     }
 }
 impl Display for Expr {
