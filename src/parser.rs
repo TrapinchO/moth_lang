@@ -9,8 +9,8 @@ pub enum Expr {
     Number(i32),
     String(String),
     ParensExpr(Rc<Expr>),
-    UnaryOperation(String, Rc<Expr>),
-    BinaryOperation(Rc<Expr>, String, Rc<Expr>),
+    UnaryOperation(Token, Rc<Expr>),
+    BinaryOperation(Rc<Expr>, Token, Rc<Expr>),
 }
 
 impl Expr {
@@ -19,8 +19,8 @@ impl Expr {
             Self::Number(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::ParensExpr(expr) => expr.format(),
-            Self::UnaryOperation(op, expr) => format!("{} {}", op, expr),
-            Self::BinaryOperation(left, op, right) => format!("{} {} {}", left, op, right)
+            Self::UnaryOperation(op, expr) => format!("{:?} {}", op.typ, expr),
+            Self::BinaryOperation(left, op, right) => format!("{} {:?} {}", left, op.typ, right)
         };
         format!("({})", s)
     }
@@ -56,9 +56,9 @@ impl Parser {
 
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_primary()?;
-        if let Some(Token {typ: TokenType::Symbol(sym), .. }) = &self.tokens.get(self.idx) {
+        if let Some(tok @ Token {typ: TokenType::Symbol(_), .. }) = &self.tokens.get(self.idx) {
             self.idx += 1;
-            return Ok(Expr::BinaryOperation(left.into(), sym.clone(), self.parse_binary()?.into()))
+            return Ok(Expr::BinaryOperation(left.into(), tok.clone().to_owned(), self.parse_binary()?.into()))
         }
         Ok(left)
     }
@@ -107,15 +107,16 @@ enum Associativity {
 }
 
 // https://stackoverflow.com/a/67992584
-pub fn reassoc(expr: &Expr) -> Result<Expr, String> {
+pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
     Ok(match expr {
         Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, &op, &reassoc(&right.clone())?)?,
         Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(&expr)?.into()),
+        Expr::UnaryOperation(op, expr) => Expr::UnaryOperation(op.clone().to_owned(), reassoc(expr)?.into()),
         expr => expr.clone(),
     })
 }
 
-fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Result<Expr, String> {
+fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
     let prec_table: HashMap<&str, (usize, Associativity)> = [
         ("+", (1, Associativity::Left)),
         ("-", (1, Associativity::Left)),
@@ -128,10 +129,27 @@ fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Result<Expr, String> {
        return Ok(Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into()))
     };
 
-    let (prec, assoc) = prec_table.get(op.as_str())
-        .ok_or(format!("Operator not found: {}", op))?;
-    let (prec2, assoc2) = prec_table.get(op2.as_str())
-        .ok_or(format!("Operator not found: {}", op2))?;
+    let Token {typ: TokenType::Symbol(op1_sym), ..} = op.clone() else {
+        panic!("Operator token 1 is not a symbol");
+    };
+    let (prec, assoc) = prec_table.get(op1_sym.as_str())
+        .ok_or(Error {
+            msg: format!("Operator not found: {}", op1_sym),
+            line: op.line,
+            start: op.start,
+            end: op.end,
+        })?;
+
+    let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
+        panic!("Operator token 2 is not a symbol");
+    };
+    let (prec2, assoc2) = prec_table.get(op2_sym.as_str())
+        .ok_or(Error {
+            msg: format!("Operator not found: {}", op2_sym),
+            line: op2.line,
+            start: op2.start,
+            end: op2.end,
+        })?;
 
     match prec.cmp(prec2) {
         std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
@@ -157,8 +175,12 @@ fn reassoc_(left: &Expr, op: &String, right: &Expr) -> Result<Expr, String> {
                 op.clone(),
                 right.clone().into()
             )),
-            _ => Err(format!("Wrong associativity: {}: {} ({:?}); {}: {} ({:?})",
-                             op, prec, assoc, op2, prec2, assoc2)),
+            _ => Err(Error {
+                msg: format!("Wrong associativity: {:?}: {:?} ({:?}); {:?}: {:?} ({:?})", op, prec, assoc, op2, prec2, assoc2),
+                line: op.line,
+                start: op.start,
+                end: op2.end,
+            }),
         }
     }
 }
