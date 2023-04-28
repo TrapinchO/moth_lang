@@ -49,7 +49,7 @@ impl Parser {
             idx: 0,
         }
     }
-    
+
     pub fn parse(&mut self) -> Result<Expr, Error> {
         self.parse_binary()
     }
@@ -106,7 +106,7 @@ enum Associativity {
     Right
 }
 
-struct OperatorPrecedence {
+struct Precedence {
     precedence: usize,
     associativity: Associativity,
 }
@@ -189,7 +189,7 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
                 right.clone().into()
             )),
             _ => Err(Error {
-                msg: format!("Wrong associativity: {:?}: {:?}; {:?}: {:?}", op, prec1, op2, prec2),
+                msg: format!("Incompatible associativity: {} ({:?}) and {} ({:?})", op.typ, prec1, op2.typ, prec2),
                 line: op.line,
                 start: op.start,
                 end: op2.end,
