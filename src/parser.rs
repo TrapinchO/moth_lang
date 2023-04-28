@@ -127,7 +127,6 @@ impl Parser {
     }
 }
 
-/*
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Associativity {
     Left,
@@ -150,16 +149,16 @@ impl Precedence {
 }
 
 // https://stackoverflow.com/a/67992584
-pub fn reassoc(expr: &ExprType) -> Result<ExprType, Error> {
-    Ok(match expr {
-        ExprType::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, op, &reassoc(&right.clone())?)?,
-        ExprType::Parens(expr) => ExprType::Parens(reassoc(expr)?.into()),
-        ExprType::UnaryOperation(op, expr) => ExprType::UnaryOperation(op.clone(), reassoc(expr)?.into()),
-        expr => expr.clone(),
+pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
+    Ok(match &expr.typ {
+        ExprType::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, &op, &reassoc(&right.clone())?)?,
+        ExprType::Parens(expr) => Expr {typ: ExprType::Parens(reassoc(expr.as_ref())?.into()), ..expr.as_ref().clone() },
+        ExprType::UnaryOperation(op, expr) => Expr {typ: ExprType::UnaryOperation(op.clone(), reassoc(expr.as_ref())?.into()), ..expr.as_ref().clone() },
+        _ => expr.clone(),
     })
 }
 
-fn reassoc_(left: &ExprType, op1: &Token, right: &ExprType) -> Result<ExprType, Error> {
+fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     let prec_table: HashMap<&str, Precedence> = [
         ("+", Precedence::new(1, Associativity::Left)),
         ("-", Precedence::new(1, Associativity::Left)),
@@ -168,12 +167,16 @@ fn reassoc_(left: &ExprType, op1: &Token, right: &ExprType) -> Result<ExprType, 
     ].iter().cloned().collect();
 
     // not a binary operation, no need to reassociate it
-    let ExprType::BinaryOperation(left2, op2, right2) = right else {
-        return Ok(ExprType::BinaryOperation(
-            left.clone().into(),
-            op1.clone(),
-            right.clone().into()
-        ))
+    let ExprType::BinaryOperation(left2, op2, right2) = &right.typ else {
+        return Ok(Expr {
+            typ: ExprType::BinaryOperation(
+                left.clone().into(),
+                op1.clone(),
+                right.clone().into()),
+            line: op1.line,
+            start: left.start,
+            end: right.end,
+        })
     };
 
     let Token {typ: TokenType::Symbol(op1_sym), ..} = op1.clone() else {
@@ -199,29 +202,51 @@ fn reassoc_(left: &ExprType, op1: &Token, right: &ExprType) -> Result<ExprType, 
         })?;
 
     match prec1.precedence.cmp(&prec2.precedence) {
-        std::cmp::Ordering::Greater => Ok(ExprType::BinaryOperation(
-            reassoc_(left, op1, left2)?.into(),
-            op2.clone(),
-            right2.clone()
-        )),
+        std::cmp::Ordering::Greater => {
+            let left = reassoc_(left, op1, &left2)?.into();
+            Ok(Expr {
+                typ: ExprType::BinaryOperation(
+                    left,
+                    op2.clone(),
+                    right2.clone()),
+                line: op2.line,
+                start: right2.start,
+                end: right2.end
+            })
+        }
 
-        std::cmp::Ordering::Less => Ok(ExprType::BinaryOperation(
-            left.clone().into(),
-            op1.clone(),
-            right.clone().into()
-        )),
-
-        std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
-            (Associativity::Right, Associativity::Right) => Ok(ExprType::BinaryOperation(
-                reassoc_(left, op2, left2)?.into(),
-                op1.clone(),
-                right2.clone()
-                )),
-            (Associativity::Left, Associativity::Left) => Ok(ExprType::BinaryOperation(
+        std::cmp::Ordering::Less => Ok(Expr {
+            typ: ExprType::BinaryOperation(
                 left.clone().into(),
                 op1.clone(),
-                right.clone().into()
-            )),
+                right.clone().into()),
+            line: op1.line,
+            start: left.start,
+            end: right.end
+        }),
+
+        std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
+            (Associativity::Right, Associativity::Right) => {
+                let left = reassoc_(left, op1, &left2)?.into();
+                Ok(Expr {
+                    typ: ExprType::BinaryOperation(
+                        left,
+                        op2.clone(),
+                        right2.clone()),
+                    line: op2.line,
+                    start: right2.start,
+                    end: right2.end
+                })
+            }
+            (Associativity::Left, Associativity::Left) => Ok(Expr {
+                typ: ExprType::BinaryOperation(
+                    left.clone().into(),
+                    op1.clone(),
+                    right.clone().into()),
+                line: op1.line,
+                start: left.start,
+                end: right.end
+            }),
             _ => Err(Error {
                 msg: format!("Incompatible operator precedence: {} ({:?}) and {} ({:?})", op1.typ, prec1, op2.typ, prec2),
                 line: op1.line,
@@ -231,4 +256,3 @@ fn reassoc_(left: &ExprType, op1: &Token, right: &ExprType) -> Result<ExprType, 
         }
     }
 }
-*/
