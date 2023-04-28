@@ -8,13 +8,13 @@ pub struct Error {
 
 impl Error {
     pub fn format_message(&self, line: &str) -> String {
-        return format!(
+        format!(
             "Error on line {}:\n{}\n{}{}^ {}",
             self.line,
             line,
             " ".repeat(self.start),
             "-".repeat(self.end - self.start),
             self.msg
-        );
+        )
     }
 }

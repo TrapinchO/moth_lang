@@ -15,14 +15,13 @@ pub enum Expr {
 
 impl Expr {
     fn format(&self) -> String {
-        let s = match self {
+        match self {
             Self::Number(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::ParensExpr(expr) => format!("({})", expr.format()),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
             Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right)
-        };
-        format!("{}", s)
+        }
     }
 }
 impl Display for Expr {
@@ -77,7 +76,7 @@ impl Parser {
                 self.idx += 1;
                 let expr = self.parse()?;
                 let tok = self.tokens.get(self.idx)
-                    .expect(&format!("Parser accessed an element beyond the token vector at index {}", self.idx));
+                    .unwrap_or_else(|| panic!("Parser accessed an element beyond the token vector at index {}", self.idx));
                 match tok {
                     &Token { typ: TokenType::RParen, .. } => Expr::ParensExpr(expr.into()),
                     tok => return Err(Error {
@@ -124,9 +123,9 @@ impl Precedence {
 // https://stackoverflow.com/a/67992584
 pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
     Ok(match expr {
-        Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, &op, &reassoc(&right.clone())?)?,
-        Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(&expr)?.into()),
-        Expr::UnaryOperation(op, expr) => Expr::UnaryOperation(op.clone().to_owned(), reassoc(expr)?.into()),
+        Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, op, &reassoc(&right.clone())?)?,
+        Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(expr)?.into()),
+        Expr::UnaryOperation(op, expr) => Expr::UnaryOperation(op.clone(), reassoc(expr)?.into()),
         expr => expr.clone(),
     })
 }
@@ -172,7 +171,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
 
     match prec1.precedence.cmp(&prec2.precedence) {
         std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
-            reassoc_(&left, &op1, &left2)?.into(),
+            reassoc_(left, op1, left2)?.into(),
             op2.clone(),
             right2.clone()
         )),
@@ -185,7 +184,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
 
         std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
             (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
-                reassoc_(left, &op2, &left2)?.into(),
+                reassoc_(left, op2, left2)?.into(),
                 op1.clone(),
                 right2.clone()
                 )),

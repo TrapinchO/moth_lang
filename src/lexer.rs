@@ -108,7 +108,7 @@ impl Lexer {
         while !self.is_at_end() {
             self.start_pos = self.pos;
             let typ = match self.get_current()
-                .expect(&format!("Lexer accessed an element beyond the character vector at index {}", self.pos)) {
+                .unwrap_or_else(|_| panic!("Lexer accessed an element beyond the character vector at index {}", self.pos)) {
                 ' ' => {
                     self.advance();
                     continue;
@@ -120,7 +120,7 @@ impl Lexer {
                     continue;
                 }
                 // TODO: floats, different bases
-                num if num.is_digit(10) => match self.lex_number() {
+                num if num.is_ascii_digit() => match self.lex_number() {
                     Err(msg) => return Err(self.error(msg)),
                     Ok(num) => TokenType::Number(num),
                 },
@@ -195,7 +195,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             let cur_char = self.get_current()?;
-            if cur_char.is_digit(10) {
+            if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
                 return Err(format!("Invalid digit: \"{}\"", cur_char));
@@ -212,7 +212,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             let cur_char = self.get_current()
-                .expect(&format!("Lexer accessed an element beyond the character vector at index {}", self.pos));
+                .unwrap_or_else(|_| panic!("Lexer accessed an element beyond the character vector at index {}", self.pos));
             if !cur_char.is_alphanumeric() {
                 break;
             }
@@ -227,7 +227,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             let cur_char = self.get_current()
-                .expect(&format!("Lexer accessed an element beyond the character vector at index {}", self.pos));
+                .unwrap_or_else(|_| panic!("Lexer accessed an element beyond the character vector at index {}", self.pos));
             if !SYMBOLS.contains(cur_char) {
                 break;
             }
