@@ -106,6 +106,19 @@ enum Associativity {
     Right
 }
 
+struct OperatorPrecedence {
+    precedence: usize,
+    associativity: Associativity,
+}
+impl Precedence {
+    pub fn new(&self, prec: usize, assoc: Associativity) {
+        Precedence {
+            precedence: prec,
+            associativity: assoc,
+        }
+    }
+}
+
 // https://stackoverflow.com/a/67992584
 pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
     Ok(match expr {
@@ -117,11 +130,11 @@ pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
 }
 
 fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
-    let prec_table: HashMap<&str, (usize, Associativity)> = [
-        ("+", (1, Associativity::Left)),
-        ("-", (1, Associativity::Left)),
-        ("*", (2, Associativity::Left)),
-        ("/", (2, Associativity::Left)),
+    let prec_table: HashMap<&str, (usize, Precedence)> = [
+        ("+", Precedence::new(1, Associativity::Left)),
+        ("-", Precedence::new(1, Associativity::Left)),
+        ("*", Precedence::new(2, Associativity::Left)),
+        ("/", Precedence::new(2, Associativity::Left)),
     ].iter().cloned().collect();
 
     // not a binary operation, no need to reassociate it
@@ -132,7 +145,7 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
     let Token {typ: TokenType::Symbol(op1_sym), ..} = op.clone() else {
         panic!("Operator token 1 is not a symbol");
     };
-    let (prec, assoc) = prec_table.get(op1_sym.as_str())
+    let prec1 = prec_table.get(op1_sym.as_str())
         .ok_or(Error {
             msg: format!("Operator not found: {}", op1_sym),
             line: op.line,
@@ -143,7 +156,7 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
     let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
         panic!("Operator token 2 is not a symbol");
     };
-    let (prec2, assoc2) = prec_table.get(op2_sym.as_str())
+    let prec2 = prec_table.get(op2_sym.as_str())
         .ok_or(Error {
             msg: format!("Operator not found: {}", op2_sym),
             line: op2.line,
@@ -151,7 +164,7 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
             end: op2.end,
         })?;
 
-    match prec.cmp(prec2) {
+    match prec1.precedence.cmp(prec2.precedence) {
         std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
             reassoc_(&left, &op, &left2)?.into(),
             op2.clone(),
@@ -164,7 +177,7 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
             right.clone().into()
         )),
 
-        std::cmp::Ordering::Equal => match (assoc, assoc2) {
+        std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
             (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
                 reassoc_(left, &op2, &left2)?.into(),
                 op.clone(),
@@ -176,7 +189,7 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
                 right.clone().into()
             )),
             _ => Err(Error {
-                msg: format!("Wrong associativity: {:?}: {:?} ({:?}); {:?}: {:?} ({:?})", op, prec, assoc, op2, prec2, assoc2),
+                msg: format!("Wrong associativity: {:?}: {:?}; {:?}: {:?}", op, prec1, op2, prec2),
                 line: op.line,
                 start: op.start,
                 end: op2.end,
