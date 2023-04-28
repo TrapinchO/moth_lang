@@ -132,7 +132,7 @@ pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
 }
 
 fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
-    let prec_table: HashMap<&str, (usize, Precedence)> = [
+    let prec_table: HashMap<&str, Precedence> = [
         ("+", Precedence::new(1, Associativity::Left)),
         ("-", Precedence::new(1, Associativity::Left)),
         ("*", Precedence::new(2, Associativity::Left)),
