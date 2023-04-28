@@ -5,33 +5,33 @@ use std::fmt::Display;
 use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Expr {
+pub enum ExprType {
     Number(i32),
     String(String),
-    ParensExpr(Rc<Expr>),
-    UnaryOperation(Token, Rc<Expr>),
-    BinaryOperation(Rc<Expr>, Token, Rc<Expr>),
+    Parens(Rc<ExprType>),
+    UnaryOperation(Token, Rc<ExprType>),
+    BinaryOperation(Rc<ExprType>, Token, Rc<ExprType>),
 }
 
-impl Expr {
+impl ExprType {
     fn format(&self) -> String {
         match self {
             Self::Number(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::ParensExpr(expr) => format!("({})", expr.format()),
+            Self::Parens(expr) => format!("({})", expr.format()),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
             Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right)
         }
     }
 }
-impl Display for Expr {
+impl Display for ExprType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.format())
     }
 }
 
 
-pub fn parse(tokens: Vec<Token>) -> Result<Expr, Error> {
+pub fn parse(tokens: Vec<Token>) -> Result<ExprType, Error> {
     Parser::new(tokens).parse()
 }
 
@@ -49,20 +49,22 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, Error> {
+    pub fn parse(&mut self) -> Result<ExprType, Error> {
         self.parse_binary()
     }
 
-    fn parse_binary(&mut self) -> Result<Expr, Error> {
+    fn parse_binary(&mut self) -> Result<ExprType, Error> {
         let left = self.parse_primary()?;
         if let Some(tok @ Token {typ: TokenType::Symbol(_), .. }) = &self.tokens.get(self.idx) {
             self.idx += 1;
-            return Ok(Expr::BinaryOperation(left.into(), tok.clone().to_owned(), self.parse_binary()?.into()))
+            let tok = tok.clone().to_owned();
+            let right = self.parse_binary()?;
+            return Ok(ExprType::BinaryOperation(left.into(), tok, right.into()))
         }
         Ok(left)
     }
 
-    fn parse_primary(&mut self) -> Result<Expr, Error> {
+    fn parse_primary(&mut self) -> Result<ExprType, Error> {
         let tok = self.tokens.get(self.idx).ok_or(Error {
             msg: "Expected an element".to_string(),
             line: 0,
@@ -70,15 +72,15 @@ impl Parser {
             start: 0,
         })?;
         let expr = match &tok.typ {
-            TokenType::String(s) => Expr::String(s.to_string()),
-            TokenType::Number(n) => Expr::Number(*n),
+            TokenType::String(s) => ExprType::String(s.to_string()),
+            TokenType::Number(n) => ExprType::Number(*n),
             TokenType::LParen => {
                 self.idx += 1;
                 let expr = self.parse()?;
                 let tok = self.tokens.get(self.idx)
                     .unwrap_or_else(|| panic!("Parser accessed an element beyond the token vector at index {}", self.idx));
                 match tok {
-                    &Token { typ: TokenType::RParen, .. } => Expr::ParensExpr(expr.into()),
+                    &Token { typ: TokenType::RParen, .. } => ExprType::Parens(expr.into()),
                     tok => return Err(Error {
                         msg: "Expected closing parenthesis".to_string(),
                         line: tok.line,
@@ -121,16 +123,16 @@ impl Precedence {
 }
 
 // https://stackoverflow.com/a/67992584
-pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
+pub fn reassoc(expr: &ExprType) -> Result<ExprType, Error> {
     Ok(match expr {
-        Expr::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, op, &reassoc(&right.clone())?)?,
-        Expr::ParensExpr(expr) => Expr::ParensExpr(reassoc(expr)?.into()),
-        Expr::UnaryOperation(op, expr) => Expr::UnaryOperation(op.clone(), reassoc(expr)?.into()),
+        ExprType::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, op, &reassoc(&right.clone())?)?,
+        ExprType::Parens(expr) => ExprType::Parens(reassoc(expr)?.into()),
+        ExprType::UnaryOperation(op, expr) => ExprType::UnaryOperation(op.clone(), reassoc(expr)?.into()),
         expr => expr.clone(),
     })
 }
 
-fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
+fn reassoc_(left: &ExprType, op1: &Token, right: &ExprType) -> Result<ExprType, Error> {
     let prec_table: HashMap<&str, Precedence> = [
         ("+", Precedence::new(1, Associativity::Left)),
         ("-", Precedence::new(1, Associativity::Left)),
@@ -139,8 +141,8 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     ].iter().cloned().collect();
 
     // not a binary operation, no need to reassociate it
-    let Expr::BinaryOperation(left2, op2, right2) = right else {
-        return Ok(Expr::BinaryOperation(
+    let ExprType::BinaryOperation(left2, op2, right2) = right else {
+        return Ok(ExprType::BinaryOperation(
             left.clone().into(),
             op1.clone(),
             right.clone().into()
@@ -170,25 +172,25 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         })?;
 
     match prec1.precedence.cmp(&prec2.precedence) {
-        std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
+        std::cmp::Ordering::Greater => Ok(ExprType::BinaryOperation(
             reassoc_(left, op1, left2)?.into(),
             op2.clone(),
             right2.clone()
         )),
 
-        std::cmp::Ordering::Less => Ok(Expr::BinaryOperation(
+        std::cmp::Ordering::Less => Ok(ExprType::BinaryOperation(
             left.clone().into(),
             op1.clone(),
             right.clone().into()
         )),
 
         std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
-            (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
+            (Associativity::Right, Associativity::Right) => Ok(ExprType::BinaryOperation(
                 reassoc_(left, op2, left2)?.into(),
                 op1.clone(),
                 right2.clone()
                 )),
-            (Associativity::Left, Associativity::Left) => Ok(Expr::BinaryOperation(
+            (Associativity::Left, Associativity::Left) => Ok(ExprType::BinaryOperation(
                 left.clone().into(),
                 op1.clone(),
                 right.clone().into()

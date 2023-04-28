@@ -138,7 +138,6 @@ impl Lexer {
                         None => TokenType::Identifier(ident),
                     }
                 }
-                // TODO: tests:
                 '(' => {self.advance(); TokenType::LParen},
                 ')' => {self.advance(); TokenType::RParen},
                 '[' => {self.advance(); TokenType::LBracket},
