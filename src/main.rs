@@ -36,7 +36,7 @@ fn run(input: String) -> Result<(), Error> {
     }
     let ast = parser::parse(tokens)?;
     println!("===== parsing =====\n{}", ast);
-    let resassoc = parser::reassoc(&ast)?;
-    println!("===== reassociating =====\n{}", resassoc);
+    //let resassoc = parser::reassoc(&ast)?;
+    //println!("===== reassociating =====\n{}", resassoc);
     Ok(())
 }

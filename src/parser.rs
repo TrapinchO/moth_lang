@@ -8,9 +8,9 @@ use std::rc::Rc;
 pub enum ExprType {
     Number(i32),
     String(String),
-    Parens(Rc<ExprType>),
-    UnaryOperation(Token, Rc<ExprType>),
-    BinaryOperation(Rc<ExprType>, Token, Rc<ExprType>),
+    Parens(Rc<Expr>),
+    UnaryOperation(Token, Rc<Expr>),
+    BinaryOperation(Rc<Expr>, Token, Rc<Expr>),
 }
 
 impl ExprType {
@@ -18,20 +18,35 @@ impl ExprType {
         match self {
             Self::Number(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::Parens(expr) => format!("({})", expr.format()),
+            Self::Parens(expr) => format!("({})", expr.typ.format()),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
             Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right)
         }
     }
 }
+
 impl Display for ExprType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.format())
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct Expr {
+    pub start: usize,
+    pub end: usize,
+    pub line: usize,
+    pub typ: ExprType,
+}
 
-pub fn parse(tokens: Vec<Token>) -> Result<ExprType, Error> {
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.typ.format())
+    }
+}
+
+
+pub fn parse(tokens: Vec<Token>) -> Result<Expr, Error> {
     Parser::new(tokens).parse()
 }
 
@@ -49,28 +64,34 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<ExprType, Error> {
+    pub fn parse(&mut self) -> Result<Expr, Error> {
         self.parse_binary()
     }
 
-    fn parse_binary(&mut self) -> Result<ExprType, Error> {
+    fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_primary()?;
         if let Some(tok @ Token {typ: TokenType::Symbol(_), .. }) = &self.tokens.get(self.idx) {
             self.idx += 1;
             let tok = tok.clone().to_owned();
             let right = self.parse_binary()?;
-            return Ok(ExprType::BinaryOperation(left.into(), tok, right.into()))
+            return Ok(Expr {
+                start: left.start,
+                end: right.end,
+                line: tok.line,
+                typ: ExprType::BinaryOperation(left.into(), tok, right.into())
+            })
         }
         Ok(left)
     }
 
-    fn parse_primary(&mut self) -> Result<ExprType, Error> {
+    fn parse_primary(&mut self) -> Result<Expr, Error> {
         let tok = self.tokens.get(self.idx).ok_or(Error {
             msg: "Expected an element".to_string(),
             line: 0,
             end: 0,
             start: 0,
         })?;
+        let tok = tok.clone();  // some borrowing stuff I guess
         let expr = match &tok.typ {
             TokenType::String(s) => ExprType::String(s.to_string()),
             TokenType::Number(n) => ExprType::Number(*n),
@@ -97,10 +118,16 @@ impl Parser {
             }),
         };
         self.idx += 1;
-        Ok(expr)
+        Ok(Expr {
+            start: tok.start,
+            end: tok.end,
+            line: tok.line,
+            typ: expr
+        })
     }
 }
 
+/*
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Associativity {
     Left,
@@ -204,3 +231,4 @@ fn reassoc_(left: &ExprType, op1: &Token, right: &ExprType) -> Result<ExprType, 
         }
     }
 }
+*/
