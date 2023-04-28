@@ -115,6 +115,35 @@ mod tests {
     }
 
     #[test]
+    fn lex_symbols_special2() {
+        let symbols = [
+            ("=1", vec![TokenType::Equals, TokenType::Number(1), TokenType::Eof]),
+            ("(1", vec![TokenType::LParen, TokenType::Number(1), TokenType::Eof]),
+            (")1", vec![TokenType::RParen, TokenType::Number(1), TokenType::Eof]),
+            ("[1", vec![TokenType::LBracket, TokenType::Number(1), TokenType::Eof]),
+            ("]1", vec![TokenType::RBracket, TokenType::Number(1), TokenType::Eof]),
+            ("{1", vec![TokenType::LBrace, TokenType::Number(1), TokenType::Eof]),
+            ("}1", vec![TokenType::RBrace, TokenType::Number(1), TokenType::Eof]),
+
+            ("= 1", vec![TokenType::Equals, TokenType::Number(1), TokenType::Eof]),
+            ("( 1", vec![TokenType::LParen, TokenType::Number(1), TokenType::Eof]),
+            (") 1", vec![TokenType::RParen, TokenType::Number(1), TokenType::Eof]),
+            ("[ 1", vec![TokenType::LBracket, TokenType::Number(1), TokenType::Eof]),
+            ("] 1", vec![TokenType::RBracket, TokenType::Number(1), TokenType::Eof]),
+            ("{ 1", vec![TokenType::LBrace, TokenType::Number(1), TokenType::Eof]),
+            ("} 1", vec![TokenType::RBrace, TokenType::Number(1), TokenType::Eof]),
+        ];
+
+        for (s, r) in symbols {
+            let lexed = lex(s).unwrap()
+                .iter()
+                .map(|t| t.typ.clone())
+                .collect::<Vec<_>>();
+            assert_eq!(lexed, r);
+        }
+    }
+
+    #[test]
     fn lex_line_comment() {
         // TODO: DEAL WITH TESTING
         let coms = [
