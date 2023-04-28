@@ -113,7 +113,7 @@ struct Precedence {
 }
 
 impl Precedence {
-    pub fn new(&self, prec: usize, assoc: Associativity) -> Self {
+    pub fn new(prec: usize, assoc: Associativity) -> Self {
         Precedence {
             precedence: prec,
             associativity: assoc,
