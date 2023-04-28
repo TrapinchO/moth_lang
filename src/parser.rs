@@ -170,7 +170,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
             end: op2.end,
         })?;
 
-    match prec1.precedence.cmp(prec2.precedence) {
+    match prec1.precedence.cmp(&prec2.precedence) {
         std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
             reassoc_(&left, &op1, &left2)?.into(),
             op2.clone(),
