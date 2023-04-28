@@ -106,6 +106,7 @@ enum Associativity {
     Right
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Precedence {
     precedence: usize,
     associativity: Associativity,
