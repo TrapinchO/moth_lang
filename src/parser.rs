@@ -110,8 +110,9 @@ struct Precedence {
     precedence: usize,
     associativity: Associativity,
 }
+
 impl Precedence {
-    pub fn new(&self, prec: usize, assoc: Associativity) {
+    pub fn new(&self, prec: usize, assoc: Associativity) -> Self {
         Precedence {
             precedence: prec,
             associativity: assoc,
@@ -129,7 +130,7 @@ pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
     })
 }
 
-fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
+fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     let prec_table: HashMap<&str, (usize, Precedence)> = [
         ("+", Precedence::new(1, Associativity::Left)),
         ("-", Precedence::new(1, Associativity::Left)),
@@ -139,18 +140,22 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
 
     // not a binary operation, no need to reassociate it
     let Expr::BinaryOperation(left2, op2, right2) = right else {
-       return Ok(Expr::BinaryOperation(left.clone().into(), op.clone(),right.clone().into()))
+        return Ok(Expr::BinaryOperation(
+            left.clone().into(),
+            op1.clone(),
+            right.clone().into()
+        ))
     };
 
-    let Token {typ: TokenType::Symbol(op1_sym), ..} = op.clone() else {
+    let Token {typ: TokenType::Symbol(op1_sym), ..} = op1.clone() else {
         panic!("Operator token 1 is not a symbol");
     };
     let prec1 = prec_table.get(op1_sym.as_str())
         .ok_or(Error {
             msg: format!("Operator not found: {}", op1_sym),
-            line: op.line,
-            start: op.start,
-            end: op.end,
+            line: op1.line,
+            start: op1.start,
+            end: op1.end,
         })?;
 
     let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
@@ -166,32 +171,32 @@ fn reassoc_(left: &Expr, op: &Token, right: &Expr) -> Result<Expr, Error> {
 
     match prec1.precedence.cmp(prec2.precedence) {
         std::cmp::Ordering::Greater => Ok(Expr::BinaryOperation(
-            reassoc_(&left, &op, &left2)?.into(),
+            reassoc_(&left, &op1, &left2)?.into(),
             op2.clone(),
             right2.clone()
         )),
 
         std::cmp::Ordering::Less => Ok(Expr::BinaryOperation(
             left.clone().into(),
-            op.clone(),
+            op1.clone(),
             right.clone().into()
         )),
 
         std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
             (Associativity::Right, Associativity::Right) => Ok(Expr::BinaryOperation(
                 reassoc_(left, &op2, &left2)?.into(),
-                op.clone(),
+                op1.clone(),
                 right2.clone()
                 )),
             (Associativity::Left, Associativity::Left) => Ok(Expr::BinaryOperation(
                 left.clone().into(),
-                op.clone(),
+                op1.clone(),
                 right.clone().into()
             )),
             _ => Err(Error {
-                msg: format!("Incompatible associativity: {} ({:?}) and {} ({:?})", op.typ, prec1, op2.typ, prec2),
-                line: op.line,
-                start: op.start,
+                msg: format!("Incompatible operator precedence: {} ({:?}) and {} ({:?})", op1.typ, prec1, op2.typ, prec2),
+                line: op1.line,
+                start: op1.start,
                 end: op2.end,
             }),
         }
