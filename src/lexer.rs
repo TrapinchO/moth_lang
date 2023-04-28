@@ -274,12 +274,10 @@ impl Lexer {
                 continue;
             }
 
-            if self.is_char('*') {
-                if self.idx < self.code.len() - 1 && self.code[self.idx + 1] == '/' {
-                    self.advance();
-                    self.advance();
-                    return Ok(comment);
-                }
+            if self.is_char('*') && self.idx < self.code.len() - 1 && self.code[self.idx + 1] == '/' {
+                self.advance();
+                self.advance();
+                return Ok(comment);
             }
             comment.push(self.get_current()?);
             self.advance();

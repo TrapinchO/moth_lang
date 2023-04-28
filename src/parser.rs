@@ -31,6 +31,7 @@ impl Display for ExprType {
     }
 }
 
+// TODO: Stuff will probably break when multiline expressions because of the indexes
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Expr {
     pub start: usize,
@@ -151,7 +152,7 @@ impl Precedence {
 // https://stackoverflow.com/a/67992584
 pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
     Ok(match &expr.typ {
-        ExprType::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, &op, &reassoc(&right.clone())?)?,
+        ExprType::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, op, &reassoc(&right.clone())?)?,
         ExprType::Parens(expr) => Expr {typ: ExprType::Parens(reassoc(expr.as_ref())?.into()), ..expr.as_ref().clone() },
         ExprType::UnaryOperation(op, expr) => Expr {typ: ExprType::UnaryOperation(op.clone(), reassoc(expr.as_ref())?.into()), ..expr.as_ref().clone() },
         _ => expr.clone(),
@@ -203,7 +204,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
 
     match prec1.precedence.cmp(&prec2.precedence) {
         std::cmp::Ordering::Greater => {
-            let left = reassoc_(left, op1, &left2)?.into();
+            let left = reassoc_(left, op1, left2)?.into();
             Ok(Expr {
                 typ: ExprType::BinaryOperation(
                     left,
@@ -227,7 +228,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
 
         std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
             (Associativity::Right, Associativity::Right) => {
-                let left = reassoc_(left, op1, &left2)?.into();
+                let left = reassoc_(left, op1, left2)?.into();
                 Ok(Expr {
                     typ: ExprType::BinaryOperation(
                         left,
