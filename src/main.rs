@@ -9,8 +9,7 @@ fn main() {
 
     //let input = String::from("1 + 1 // - 2 *3a =\n+ \"Hello World!\" 123");
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
-    //let input = String::from("(1 * 1 + 1) * 1 + 1");
-    let input = String::from("()");
+    let input = String::from("(1 * 1 + 1) * 1 + 1");
     match run(input.clone()) {
         Ok(_) => {}
         Err(err) => {
