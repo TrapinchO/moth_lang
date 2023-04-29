@@ -1,5 +1,54 @@
 use moth_lang::parser::{Expr, ExprType};
 
+macro_rules! binop {
+    ($left:expr, $op:tt, $right:expr) => {
+        ExprType::BinaryOperation(
+            Expr {
+                typ: $left.into(),
+                start: 0,
+                end: 0,
+                line: 0
+            }.into(),
+            Token {
+                typ: TokenType::Symbol($op.to_string()),
+                start: 0,
+                end: 0,
+                line: 0
+            },
+            Expr {
+                typ: $right.into(),
+                start: 0,
+                end: 0,
+                line: 0
+            }.into(),
+        )
+    };
+}
+
+macro_rules! expr {
+    ($e:expr) => {
+        Expr {
+            typ: $e,
+            start: 0,
+            end: 0,
+            line: 0
+        }
+    };
+}
+
+fn compare_elements(left: &Expr, right: &Expr) -> bool {
+    match (&left.typ, &right.typ) {
+        (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => {
+            compare_elements(&l1, &l2) && o1.typ == o2.typ && compare_elements(&r1, &r2)
+        },
+        (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => {
+            o1.typ == o2.typ && compare_elements(&e1, &e2)
+        },
+        (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements(&e1, &e2),
+        (e1, e2) => e1 == e2,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use moth_lang::lexer::{Token, TokenType, lex};
@@ -16,21 +65,8 @@ mod tests {
     #[test]
     fn test() {
         assert!(compare_elements(
-            &parse(lex("1+1").unwrap()).unwrap(),
-            &Expr { start: 1, end: 1, line: 1, typ: ExprType::BinaryOperation(Expr {start:1, end:1, line: 1, typ: ExprType::Number(1)}.into(), Token { start: 1, end: 1, line: 1, typ: TokenType::Symbol("+".to_string()) }, Expr {start:1, end:1, line: 1, typ: ExprType::Number(1)}.into()) }
+            &parse(lex("1+1+1").unwrap()).unwrap(),
+            &expr!(binop!(ExprType::Number(1), "+", binop!(ExprType::Number(1), "+", ExprType::Number(1))))
         ))
-    }
-}
-
-fn compare_elements(left: &Expr, right: &Expr) -> bool {
-    match (&left.typ, &right.typ) {
-        (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => {
-            compare_elements(&l1, &l2) && o1.typ == o2.typ && compare_elements(&r1, &r2)
-        },
-        (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => {
-            o1.typ == o2.typ && compare_elements(&e1, &e2)
-        },
-        (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements(&e1, &e2),
-        (e1, e2) => e1 == e2,
     }
 }
