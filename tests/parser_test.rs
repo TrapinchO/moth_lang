@@ -25,6 +25,38 @@ macro_rules! binop {
     };
 }
 
+macro_rules! unop {
+    ($op:tt, $right:expr) => {
+        ExprType::UnaryOperation(
+            Token {
+                typ: TokenType::Symbol($op.to_string()),
+                start: 0,
+                end: 0,
+                line: 0
+            },
+            Expr {
+                typ: $left.into(),
+                start: 0,
+                end: 0,
+                line: 0
+            }.into()
+        )
+    };
+}
+
+macro_rules! parenop {
+    ($e:expr) => {
+        ExprType::Parens(
+            Expr {
+                typ: $e.into(),
+                start: 0,
+                end: 0,
+                line: 0
+            }.into()
+        )
+    };
+}
+
 macro_rules! expr {
     ($e:expr) => {
         Expr {
@@ -51,6 +83,7 @@ fn compare_elements(left: &Expr, right: &Expr) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use moth_lang::error::Error;
     use moth_lang::lexer::{Token, TokenType, lex};
     use moth_lang::parser::*;
 
@@ -63,10 +96,74 @@ mod tests {
     }
 
     #[test]
-    fn test() {
-        assert!(compare_elements(
-            &parse(lex("1+1+1").unwrap()).unwrap(),
-            &expr!(binop!(ExprType::Number(1), "+", binop!(ExprType::Number(1), "+", ExprType::Number(1))))
-        ))
+    fn parse_primary() {
+        let ops = [
+            ("1", expr!(ExprType::Number(1))),
+            ("1234", expr!(ExprType::Number(1234))),
+            ("\"\"", expr!(ExprType::String("".to_string()))),
+            ("\"test\"", expr!(ExprType::String("test".to_string()))),
+            ("(1)", expr!(ExprType::Parens(expr!(ExprType::Number(1)).into()))),
+            ("(1 + 1)", expr!(parenop!(binop!(ExprType::Number(1), "+", ExprType::Number(1))))),
+        ];
+        for (s, op) in ops {
+            assert!(compare_elements(
+                    &parse(lex(s).unwrap()).unwrap(),
+                    &op
+            ));
+        }
+    }
+
+    #[test]
+    fn expr_error() {
+        let err = Error {
+            msg: "Expected an element".to_string(),
+            line: 0,
+            start: 2,
+            end: 2,
+        };
+        let op = parse(lex("1+").unwrap()).unwrap_err();
+        assert_eq!(err, op);
+    }
+
+    #[test]
+    fn parens_missing() {
+        let err = Error {
+            msg: "Expected closing parenthesis".to_string(),
+            line: 0,
+            start: 2,
+            end: 2,
+        };
+        let op = parse(lex("(1").unwrap()).unwrap_err();
+        assert_eq!(err, op);
+    }
+
+    #[test]
+    fn parens_empty() {
+        let err = Error {
+            msg: "Expected an expression".to_string(),
+            line: 0,
+            start: 1,
+            end: 1,
+        };
+        let op = parse(lex("()").unwrap()).unwrap_err();
+        assert_eq!(err, op);
+    }
+
+    #[test]
+    fn parse_binary() {
+        let ops = [
+            ("1+1", binop!(ExprType::Number(1), "+", ExprType::Number(1))),
+            ("1 + 1", binop!(ExprType::Number(1), "+", ExprType::Number(1))),
+            ("1-1", binop!(ExprType::Number(1), "-", ExprType::Number(1))),
+            ("1**1", binop!(ExprType::Number(1), "**", ExprType::Number(1))),
+
+            ("1+1+1", binop!(ExprType::Number(1), "+", binop!(ExprType::Number(1), "+", ExprType::Number(1)))),
+        ];
+        for (s, op) in ops {
+            assert!(compare_elements(
+                &parse(lex(s).unwrap()).unwrap(),
+                &expr!(op)
+            ));
+        }
     }
 }
