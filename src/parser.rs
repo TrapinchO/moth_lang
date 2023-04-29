@@ -103,7 +103,7 @@ impl Parser {
                 self.advance();
                 let expr = self.parse()?;
                 let tok = self.get_current();
-                if matches!(tok, &Token { typ: TokenType::RParen, .. }) {
+                if tok.typ != TokenType::RParen {
                     return Err(Error {
                         msg: "Expected closing parenthesis".to_string(),
                         line: tok.line,
