@@ -7,7 +7,6 @@ fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     env::set_var("RUST_BACKTRACE", "1");
 
-
     //let input = String::from("1 + 1 // - 2 *3a =\n+ \"Hello World!\" 123");
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
     let input = String::from("(1 * 1 + 1) * 1 + 1");

@@ -1,5 +1,5 @@
-use crate::lexer::{Token, TokenType};
 use crate::error::Error;
+use crate::lexer::{Token, TokenType};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
@@ -20,7 +20,7 @@ impl ExprType {
             Self::String(s) => format!("\"{}\"", s),
             Self::Parens(expr) => format!("({})", expr.typ.format()),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
-            Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right)
+            Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right),
         }
     }
 }
@@ -46,11 +46,9 @@ impl Display for Expr {
     }
 }
 
-
 pub fn parse(tokens: Vec<Token>) -> Result<Expr, Error> {
     Parser::new(tokens).parse()
 }
-
 
 struct Parser {
     tokens: Vec<Token>,
@@ -59,14 +57,11 @@ struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Parser {
-            tokens,
-            idx: 0,
-        }
+        Parser { tokens, idx: 0 }
     }
 
     fn is_at_end(&self) -> bool {
-        self.idx >= self.tokens.len()  // last token should be EOF
+        self.idx >= self.tokens.len() // last token should be EOF
     }
 
     fn get_current(&self) -> &Token {
@@ -93,8 +88,8 @@ impl Parser {
                 start: left.start,
                 end: right.end,
                 line: tok.line,
-                typ: ExprType::BinaryOperation(left.into(), tok, right.into())
-            })
+                typ: ExprType::BinaryOperation(left.into(), tok, right.into()),
+            });
         }
         Ok(left)
     }
@@ -136,7 +131,7 @@ impl Parser {
             start: tok.start,
             end: tok.end,
             line: tok.line,
-            typ: expr
+            typ: expr,
         })
     }
 }
@@ -144,7 +139,7 @@ impl Parser {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Associativity {
     Left,
-    Right
+    Right,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -206,36 +201,31 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     let Token {typ: TokenType::Symbol(op1_sym), ..} = op1.clone() else {
         panic!("Operator token 1 is not a symbol");
     };
-    let prec1 = prec_table.get(op1_sym.as_str())
-        .ok_or(Error {
-            msg: format!("Operator not found: {}", op1_sym),
-            line: op1.line,
-            start: op1.start,
-            end: op1.end,
-        })?;
+    let prec1 = prec_table.get(op1_sym.as_str()).ok_or(Error {
+        msg: format!("Operator not found: {}", op1_sym),
+        line: op1.line,
+        start: op1.start,
+        end: op1.end,
+    })?;
 
     let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
         panic!("Operator token 2 is not a symbol");
     };
-    let prec2 = prec_table.get(op2_sym.as_str())
-        .ok_or(Error {
-            msg: format!("Operator not found: {}", op2_sym),
-            line: op2.line,
-            start: op2.start,
-            end: op2.end,
-        })?;
+    let prec2 = prec_table.get(op2_sym.as_str()).ok_or(Error {
+        msg: format!("Operator not found: {}", op2_sym),
+        line: op2.line,
+        start: op2.start,
+        end: op2.end,
+    })?;
 
     match prec1.precedence.cmp(&prec2.precedence) {
         std::cmp::Ordering::Greater => {
             let left = reassoc_(left, op1, left2)?.into();
             Ok(Expr {
-                typ: ExprType::BinaryOperation(
-                    left,
-                    op2.clone(),
-                    right2.clone()),
+                typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                 line: op2.line,
                 start: right2.start,
-                end: right2.end
+                end: right2.end,
             })
         }
 
@@ -246,37 +236,38 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                 right.clone().into()),
             line: op1.line,
             start: left.start,
-            end: right.end
+            end: right.end,
         }),
 
         std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
             (Associativity::Right, Associativity::Right) => {
                 let left = reassoc_(left, op1, left2)?.into();
                 Ok(Expr {
-                    typ: ExprType::BinaryOperation(
-                        left,
-                        op2.clone(),
-                        right2.clone()),
+                    typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                     line: op2.line,
                     start: right2.start,
-                    end: right2.end
+                    end: right2.end,
                 })
             }
             (Associativity::Left, Associativity::Left) => Ok(Expr {
                 typ: ExprType::BinaryOperation(
                     left.clone().into(),
                     op1.clone(),
-                    right.clone().into()),
+                    right.clone().into(),
+                ),
                 line: op1.line,
                 start: left.start,
-                end: right.end
+                end: right.end,
             }),
             _ => Err(Error {
-                msg: format!("Incompatible operator precedence: {} ({:?}) and {} ({:?})", op1.typ, prec1, op2.typ, prec2),
+                msg: format!(
+                    "Incompatible operator precedence: {} ({:?}) and {} ({:?})",
+                    op1.typ, prec1, op2.typ, prec2
+                ),
                 line: op1.line,
                 start: op1.start,
                 end: op2.end,
             }),
-        }
+        },
     }
 }
