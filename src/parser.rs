@@ -78,6 +78,10 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Expr, Error> {
+        self.parse_expression()
+    }
+
+    fn parse_expression(&mut self) -> Result<Expr, Error> {
         self.parse_binary()
     }
 
@@ -104,7 +108,7 @@ impl Parser {
             TokenType::Number(n) => ExprType::Number(*n),
             TokenType::LParen => {
                 self.advance();
-                let expr = self.parse()?;
+                let expr = self.parse_expression()?;
                 let tok = self.get_current();
                 if tok.typ != TokenType::RParen {
                     return Err(Error {
@@ -116,6 +120,13 @@ impl Parser {
                 }
                 ExprType::Parens(expr.into())
             }
+            TokenType::RParen => return Err(Error {
+                msg: "Expected an expression".to_string(),
+                line: tok.line,
+                start: tok.start,
+                end: tok.end
+            }),
+
             TokenType::Eof => return Err(Error {
                 msg: "Expected an element".to_string(),
                 line: tok.line,
