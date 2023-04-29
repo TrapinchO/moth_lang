@@ -57,6 +57,9 @@ struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
+        if tokens.is_empty() || tokens.len() == 1 && tokens[0].typ == TokenType::Eof {
+            panic!("Expected code to parse");
+        }
         Parser { tokens, idx: 0 }
     }
 
