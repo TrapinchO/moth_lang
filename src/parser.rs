@@ -65,15 +65,29 @@ impl Parser {
         }
     }
 
+    fn is_at_end(&self) -> bool {
+        self.idx >= self.tokens.len()  // last token should be EOF
+    }
+
+    fn get_current(&self) -> &Token {
+        if self.is_at_end() {
+            panic!("Attempted to index token out ouf bounds: {} (length {})", self.idx, self.tokens.len());
+        }
+        &self.tokens[self.idx]
+    }
+    fn advance(&mut self) {
+        self.idx += 1;
+    }
+
     pub fn parse(&mut self) -> Result<Expr, Error> {
         self.parse_binary()
     }
 
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_primary()?;
-        if let Some(tok @ Token {typ: TokenType::Symbol(_), .. }) = &self.tokens.get(self.idx) {
-            self.idx += 1;
-            let tok = tok.clone().to_owned();
+        if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
+            self.advance();
+
             let right = self.parse_binary()?;
             return Ok(Expr {
                 start: left.start,
@@ -86,31 +100,30 @@ impl Parser {
     }
 
     fn parse_primary(&mut self) -> Result<Expr, Error> {
-        let tok = self.tokens.get(self.idx).ok_or(Error {
-            msg: "Expected an element".to_string(),
-            line: 0,
-            end: 0,
-            start: 0,
-        })?;
-        let tok = tok.clone();  // some borrowing stuff I guess
+        let tok = self.get_current().clone();
         let expr = match &tok.typ {
             TokenType::String(s) => ExprType::String(s.to_string()),
             TokenType::Number(n) => ExprType::Number(*n),
             TokenType::LParen => {
-                self.idx += 1;
+                self.advance();
                 let expr = self.parse()?;
-                let tok = self.tokens.get(self.idx)
-                    .unwrap_or_else(|| panic!("Parser accessed an element beyond the token vector at index {}", self.idx));
-                match tok {
-                    &Token { typ: TokenType::RParen, .. } => ExprType::Parens(expr.into()),
-                    tok => return Err(Error {
+                let tok = self.get_current();
+                if matches!(tok, &Token { typ: TokenType::RParen, .. }) {
+                    return Err(Error {
                         msg: "Expected closing parenthesis".to_string(),
                         line: tok.line,
                         start: tok.start,
                         end: tok.end,
-                    }),
+                    });
                 }
+                ExprType::Parens(expr.into())
             }
+            TokenType::Eof => return Err(Error {
+                msg: "Expected an element".to_string(),
+                line: tok.line,
+                start: tok.start,
+                end: tok.end
+            }),
             _ => return Err(Error {
                 msg: format!("Unknown element: {:?}", tok),
                 line: tok.line,
@@ -118,7 +131,7 @@ impl Parser {
                 end: tok.end
             }),
         };
-        self.idx += 1;
+        self.advance();
         Ok(Expr {
             start: tok.start,
             end: tok.end,
