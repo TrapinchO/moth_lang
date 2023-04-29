@@ -165,9 +165,19 @@ impl Precedence {
 // https://stackoverflow.com/a/67992584
 pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
     Ok(match &expr.typ {
-        ExprType::BinaryOperation(left, op, right) => reassoc_(&reassoc(&left.clone())?, op, &reassoc(&right.clone())?)?,
-        ExprType::Parens(expr) => Expr {typ: ExprType::Parens(reassoc(expr.as_ref())?.into()), ..expr.as_ref().clone() },
-        ExprType::UnaryOperation(op, expr) => Expr {typ: ExprType::UnaryOperation(op.clone(), reassoc(expr.as_ref())?.into()), ..expr.as_ref().clone() },
+        ExprType::BinaryOperation(left, op, right) => reassoc_(
+            &reassoc(&left.clone())?,
+            op,
+            &reassoc(&right.clone())?
+        )?,
+        ExprType::Parens(expr) => Expr {
+            typ: ExprType::Parens(reassoc(expr.as_ref())?.into()),
+            ..expr.as_ref().clone()
+        },
+        ExprType::UnaryOperation(op, expr) => Expr {
+            typ: ExprType::UnaryOperation(op.clone(), reassoc(expr.as_ref())?.into()),
+            ..expr.as_ref().clone()
+        },
         _ => expr.clone(),
     })
 }
