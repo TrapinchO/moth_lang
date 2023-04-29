@@ -73,11 +73,11 @@ impl Lexer {
         self.idx >= self.code.len()
     }
 
-    fn get_current(&self) -> Result<char, String> {
+    fn get_current(&self) -> char {
         if self.is_at_end() {
-            return Err("Attempted to index character out of bounds".to_string());
+            panic!("Attempted to index character out of bounds: {}", self.idx);
         }
-        Ok(self.code[self.idx])
+        self.code[self.idx]
     }
 
     fn advance(&mut self) {
@@ -89,7 +89,7 @@ impl Lexer {
         if self.is_at_end() {
             false
         } else {
-            self.get_current().unwrap() == character
+            self.get_current() == character
         }
     }
 
@@ -107,8 +107,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             self.start_pos = self.pos;
-            let typ = match self.get_current()
-                .unwrap_or_else(|_| panic!("Lexer accessed an element beyond the character vector at index {}", self.pos)) {
+            let typ = match self.get_current() {
                 ' ' => {
                     self.advance();
                     continue;
@@ -193,7 +192,7 @@ impl Lexer {
         let mut num = String::from("");
 
         while !self.is_at_end() {
-            let cur_char = self.get_current()?;
+            let cur_char = self.get_current();
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
@@ -210,8 +209,7 @@ impl Lexer {
         let mut s = String::from("");
 
         while !self.is_at_end() {
-            let cur_char = self.get_current()
-                .unwrap_or_else(|_| panic!("Lexer accessed an element beyond the character vector at index {}", self.pos));
+            let cur_char = self.get_current();
             if !cur_char.is_alphanumeric() {
                 break;
             }
@@ -225,8 +223,7 @@ impl Lexer {
         let mut s = String::from("");
 
         while !self.is_at_end() {
-            let cur_char = self.get_current()
-                .unwrap_or_else(|_| panic!("Lexer accessed an element beyond the character vector at index {}", self.pos));
+            let cur_char = self.get_current();
             if !SYMBOLS.contains(cur_char) {
                 break;
             }
@@ -250,7 +247,7 @@ impl Lexer {
             if self.is_char('\n') {
                 return Err("EOL while parsing string".to_string());
             }
-            s.push(self.get_current()?);
+            s.push(self.get_current());
             self.advance();
         }
         Err("EOF while parsing string".to_string())
@@ -279,7 +276,7 @@ impl Lexer {
                 self.advance();
                 return Ok(comment);
             }
-            comment.push(self.get_current()?);
+            comment.push(self.get_current());
             self.advance();
         }
         Err("EOF while lexing block comment".to_string())
