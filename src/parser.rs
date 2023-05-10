@@ -187,7 +187,8 @@ pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
             typ: ExprType::UnaryOperation(op.clone(), reassoc(expr.as_ref())?.into()),
             ..expr.as_ref().clone()
         },
-        _ => expr.clone(),
+        ExprType::Number(_) => expr.clone(),
+        ExprType::String(_) => expr.clone(),
     })
 }
 
@@ -197,6 +198,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         ("-", Precedence::new(1, Associativity::Left)),
         ("*", Precedence::new(2, Associativity::Left)),
         ("/", Precedence::new(2, Associativity::Left)),
+        ("^^", Precedence::new(10, Associativity::Right)),  // analyzer shut up now please its used
     ].iter().cloned().collect();
 
     // not a binary operation, no need to reassociate it
@@ -254,7 +256,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         }),
 
         std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
-            (Associativity::Right, Associativity::Right) => {
+            (Associativity::Left, Associativity::Left) => {
                 let left = reassoc_(left, op1, left2)?.into();
                 Ok(Expr {
                     typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
@@ -263,7 +265,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                     end: right2.end,
                 })
             }
-            (Associativity::Left, Associativity::Left) => Ok(Expr {
+            (Associativity::Right, Associativity::Right) => Ok(Expr {
                 typ: ExprType::BinaryOperation(
                     left.clone().into(),
                     op1.clone(),

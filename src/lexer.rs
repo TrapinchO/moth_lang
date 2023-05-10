@@ -44,7 +44,7 @@ pub struct Token {
     pub typ: TokenType,
 }
 
-const SYMBOLS: &str = "+-*/=<>!|.$&@#?~";
+const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^";
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
     Lexer::new(code).lex()

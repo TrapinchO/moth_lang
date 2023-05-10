@@ -166,4 +166,17 @@ mod tests {
             ));
         }
     }
+
+    #[test]
+    fn test_reassoc() {
+        let op = "1 - 1 - 1";
+        assert!(compare_elements(
+            &reassoc(&parse(lex(op).unwrap()).unwrap()).unwrap(),
+            &expr!(binop!(
+                    binop!(ExprType::Number(1), "-", ExprType::Number(1)),
+                    "-",
+                    ExprType::Number(1)
+            ))
+        ))
+    }
 }
