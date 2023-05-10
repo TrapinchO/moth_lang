@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn lex_symbols() {
-        let symbols = ["+", "-", "*", "/", "<", ">", "!"];
+        let symbols =["+", "-", "*", "/", "<", ">", "!", "|", ".", "$", "&", "@", "#", "?", "~", "^"];
 
         for s in symbols {
             let lexed = lex(s).unwrap();

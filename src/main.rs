@@ -1,4 +1,5 @@
 use moth_lang::error::Error;
+use moth_lang::interpreter;
 use moth_lang::lexer;
 use moth_lang::parser;
 use std::env;
@@ -12,7 +13,7 @@ fn main() {
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
     //let input = String::from("(1 * 1 + 1) * 1 + 1");
     loop {
-        println!("===== input =====");
+        println!("=================\n===== input =====");
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
@@ -36,13 +37,20 @@ fn main() {
 fn run(input: String) -> Result<(), Error> {
     println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
+    
     println!("===== lexing =====");
     for t in &tokens {
         println!("{:?}", t);
     }
+    
     let ast = parser::parse(tokens)?;
     println!("===== parsing =====\n{}", ast);
+    
     let resassoc = parser::reassoc(&ast)?;
     println!("===== reassociating =====\n{}", resassoc);
+
+    let val = interpreter::interpret(&resassoc)?;
+    println!("===== evaluating =====\n{}\n", val);
+
     Ok(())
 }
