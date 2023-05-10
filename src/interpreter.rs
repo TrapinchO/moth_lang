@@ -23,15 +23,25 @@ fn unary(op: &Token, val: f64) -> Result<f64, Error> {
     }
 }
 
-fn binary(left: f64, op: &Token, right: f64) -> Result<f64, Error> {
-    let TokenType::Symbol(op) = &op.typ else {
+fn binary(left: f64, _op: &Token, right: f64) -> Result<f64, Error> {
+    let TokenType::Symbol(op) = &_op.typ else {
         panic!("Expected a symbol!")
     };
     Ok(match op.as_str() {
         "+" => left + right,
         "-" => left - right,
         "*" => left * right,
-        "/" => left / right,
+        "/" => {
+            if right.round() == 0.0 {
+                return Err(Error {
+                    start: _op.start,
+                    end: _op.end,
+                    line: _op.line,
+                    msg: "Cannot divide by zero".to_string(),
+                })
+            }
+            left / right
+        },
         _ => todo!("Unary not implemented yet!"),
     })
 }
