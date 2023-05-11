@@ -17,10 +17,17 @@ fn main() {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
+        if input.is_empty() {
+            println!("Empty code, exiting program");
+            return;
+        }
+        let input = "1\n+\n+ 1".to_string();
         match run(input.clone()) {
             Ok(_) => {}
             Err(err) => {
-                let lines = input.split('\n').map(str::to_string).collect::<Vec<_>>();
+                let lines = input.lines().collect::<Vec<_>>();
+                println!("{}", err.format_message(lines));
+                /*
                 if lines.len() < err.line {
                     panic!(
                         "Error line ({}) is greater than the number of lines in the code ({})",
@@ -30,6 +37,7 @@ fn main() {
                 }
                 let line = &lines[err.line];
                 println!("{}", err.format_message(line));
+                */
             }
         }
     }

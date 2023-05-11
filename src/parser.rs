@@ -113,31 +113,23 @@ impl Parser {
                 if tok.typ != TokenType::RParen {
                     return Err(Error {
                         msg: "Expected closing parenthesis".to_string(),
-                        line: tok.line,
-                        start: tok.start,
-                        end: tok.end,
+                        lines: vec![(tok.line, tok.start, tok.end)],
                     });
                 }
                 ExprType::Parens(expr.into())
             }
             TokenType::RParen => return Err(Error {
                 msg: "Expected an expression".to_string(),
-                line: tok.line,
-                start: tok.start,
-                end: tok.end
+                lines: vec![(tok.line, tok.start, tok.end)],
             }),
 
             TokenType::Eof => return Err(Error {
                 msg: "Expected an element".to_string(),
-                line: tok.line,
-                start: tok.start,
-                end: tok.end
+                lines: vec![(tok.line, tok.start, tok.end)],
             }),
             _ => return Err(Error {
                 msg: format!("Unknown element: {:?}", tok),
-                line: tok.line,
-                start: tok.start,
-                end: tok.end
+                lines: vec![(tok.line, tok.start, tok.end)],
             }),
         };
         self.advance();
@@ -219,9 +211,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     };
     let prec1 = prec_table.get(op1_sym.as_str()).ok_or(Error {
         msg: format!("Operator not found: {}", op1_sym),
-        line: op1.line,
-        start: op1.start,
-        end: op1.end,
+        lines: vec![(op1.line, op1.start, op1.end)],
     })?;
 
     let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
@@ -229,9 +219,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     };
     let prec2 = prec_table.get(op2_sym.as_str()).ok_or(Error {
         msg: format!("Operator not found: {}", op2_sym),
-        line: op2.line,
-        start: op2.start,
-        end: op2.end,
+        lines: vec![(op2.line, op2.start, op2.end)],
     })?;
 
     match prec1.precedence.cmp(&prec2.precedence) {
@@ -280,9 +268,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                     "Incompatible operator precedence: {} ({:?}) and {} ({:?})",
                     op1.typ, prec1, op2.typ, prec2
                 ),
-                line: op1.line,
-                start: op1.start,
-                end: op2.end,
+                lines: vec![(op1.line, op1.start, op2.end)],
             }),
         },
     }

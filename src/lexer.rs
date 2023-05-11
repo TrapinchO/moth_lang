@@ -96,9 +96,7 @@ impl Lexer {
     fn error(&self, msg: String) -> Error {
         Error {
             msg,
-            line: self.line,
-            start: self.start_pos,
-            end: self.pos,
+            lines: vec![(self.line, self.start_pos, self.pos)],
         }
     }
 
