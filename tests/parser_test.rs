@@ -117,9 +117,7 @@ mod tests {
     fn expr_error() {
         let err = Error {
             msg: "Expected an element".to_string(),
-            line: 0,
-            start: 2,
-            end: 2,
+            lines: vec![(0, 2, 2)],
         };
         let op = parse(lex("1+").unwrap()).unwrap_err();
         assert_eq!(err, op);
@@ -129,9 +127,7 @@ mod tests {
     fn parens_missing() {
         let err = Error {
             msg: "Expected closing parenthesis".to_string(),
-            line: 0,
-            start: 2,
-            end: 2,
+            lines: vec![(0, 2, 2)],
         };
         let op = parse(lex("(1").unwrap()).unwrap_err();
         assert_eq!(err, op);
@@ -141,9 +137,7 @@ mod tests {
     fn parens_empty() {
         let err = Error {
             msg: "Expected an expression".to_string(),
-            line: 0,
-            start: 1,
-            end: 1,
+            lines: vec![(0, 1, 1)],
         };
         let op = parse(lex("()").unwrap()).unwrap_err();
         assert_eq!(err, op);

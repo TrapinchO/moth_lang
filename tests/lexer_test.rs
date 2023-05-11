@@ -18,7 +18,7 @@ mod tests {
     #[test]
     fn lex_number_err() {
         let nums = [
-            ("1a", Error { msg: "Invalid digit: \"a\"".to_string(), line: 0, start: 0, end: 1})
+            ("1a", Error { msg: "Invalid digit: \"a\"".to_string(), lines: vec![(0, 0, 1)]})
         ];
         for (n, r) in nums {
             let tok = lex(n);
@@ -77,8 +77,8 @@ mod tests {
     #[test]
     fn lex_string_err() {
         let strings = [
-            ("\"", Error { msg: "EOF while parsing string".to_string(), line: 0, start: 0, end: 1}),
-            ("\"test\n\"", Error { msg: "EOL while parsing string".to_string(), line: 0, start: 0, end: 5}),
+            ("\"", Error { msg: "EOF while parsing string".to_string(), lines: vec![(0, 0, 1)]}),
+            ("\"test\n\"", Error { msg: "EOL while parsing string".to_string(), lines: vec![(0, 0, 5)]}),
         ];
         for (s, e) in strings {
             let tok = lex(s);
