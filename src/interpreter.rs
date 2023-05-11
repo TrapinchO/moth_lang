@@ -6,9 +6,9 @@ pub fn interpret(expr: &Expr) -> Result<f64, Error> {
     match &expr.typ {
         ExprType::Number(n) => Ok((*n).into()),
         ExprType::String(_) => todo!("not implemented yet!"),
-        ExprType::Parens(expr) => interpret(&expr),
-        ExprType::UnaryOperation(op, expr) => unary(&op, interpret(&expr)?),
-        ExprType::BinaryOperation(left, op, right) => binary(interpret(&left)?, &op, interpret(&right)?),
+        ExprType::Parens(expr) => interpret(expr),
+        ExprType::UnaryOperation(op, expr) => unary(op, interpret(expr)?),
+        ExprType::BinaryOperation(left, op, right) => binary(interpret(left)?, op, interpret(right)?),
     }
 }
 
