@@ -107,8 +107,8 @@ impl Parser {
 
             let expr = self.parse_unary()?;
             Ok(Expr {
-                start: left.start,
-                end: right.end,
+                start: tok.start,
+                end: expr.end,
                 line: tok.line,
                 typ: ExprType::UnaryOperation(tok, expr.into()),
             })
