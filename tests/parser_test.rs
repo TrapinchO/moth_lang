@@ -26,7 +26,7 @@ macro_rules! binop {
 }
 
 macro_rules! unop {
-    ($op:tt, $right:expr) => {
+    ($op:tt, $expr:expr) => {
         ExprType::UnaryOperation(
             Token {
                 typ: TokenType::Symbol($op.to_string()),
@@ -35,7 +35,7 @@ macro_rules! unop {
                 line: 0
             },
             Expr {
-                typ: $left.into(),
+                typ: $expr.into(),
                 start: 0,
                 end: 0,
                 line: 0
@@ -152,6 +152,19 @@ mod tests {
             ("1**1", binop!(ExprType::Number(1), "**", ExprType::Number(1))),
 
             ("1+1+1", binop!(ExprType::Number(1), "+", binop!(ExprType::Number(1), "+", ExprType::Number(1)))),
+        ];
+        for (s, op) in ops {
+            assert!(compare_elements(
+                &parse(lex(s).unwrap()).unwrap(),
+                &expr!(op)
+            ));
+        }
+    }
+
+    #[test]
+    fn parse_unary() {
+        let ops = [
+            ("+1", unop!("+", ExprType::Number(1)))
         ];
         for (s, op) in ops {
             assert!(compare_elements(
