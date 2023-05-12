@@ -86,7 +86,7 @@ impl Parser {
     }
 
     fn parse_binary(&mut self) -> Result<Expr, Error> {
-        let left = self.parse_primary()?;
+        let left = self.parse_unary()?;
         if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
             self.advance();
 
@@ -99,6 +99,22 @@ impl Parser {
             });
         }
         Ok(left)
+    }
+
+    fn parse_unary(&mut self) -> Result<Expr, Error> {
+        if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
+            self.advance();
+
+            let expr = self.parse_unary()?;
+            Ok(Expr {
+                start: left.start,
+                end: right.end,
+                line: tok.line,
+                typ: ExprType::UnaryOperation(tok, expr.into()),
+            })
+        } else {
+            Ok(self.parse_primary()?)
+        }
     }
 
     fn parse_primary(&mut self) -> Result<Expr, Error> {

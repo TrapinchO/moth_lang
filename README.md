@@ -16,6 +16,7 @@ Mothlang is a project made to understand the inner workings of programming langu
   - [ ] types
   - [ ] other stuff
 - [ ] interpreter (provisional)
+  - [ ] division by 0 (decide, implement; probably throw an exception)
 - [x] errors (framework is in place)
 - [ ] tests
   - [x] lexer
