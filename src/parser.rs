@@ -265,10 +265,17 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
             }),
             _ => Err(Error {
                 msg: format!(
-                    "Incompatible operator precedence: {} ({:?}) and {} ({:?})",
-                    op1.typ, prec1, op2.typ, prec2
+                    "Incompatible operator precedence: {} ({:?}) and {} ({:?}) - both have precedence {}",
+                    op1.typ, prec1.associativity, op2.typ, prec2.associativity, prec1.precedence
                 ),
-                lines: vec![(op1.line, op1.start, op2.end)],
+                lines: if op1.line == op2.line {
+                    vec![(op1.line, op1.start, op2.end)]
+                } else {
+                    vec![
+                        (op1.line, op1.start, op1.end),
+                        (op2.line, op2.start, op2.end)
+                    ]
+                }
             }),
         },
     }

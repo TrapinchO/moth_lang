@@ -14,15 +14,17 @@ impl Error {
         if last_line >= code.len() {
             panic!("Error's line is greater than the code's: {} and {}", last_line, code.len());
         }
+        let line_num_len = last_line.to_string().len();
         let x = self.lines.iter().map(|(line, start, end)| format!(
-            "Error on line {}:\n{}\n{}{}^ {}",
+            "{:line_num_len$} | {}\n   {:line_num_len$}{}{}^",
             line,
             code[*line],  // line of the code
+            "",
             " ".repeat(*start),
             "-".repeat(end - start),
-            self.msg
+            line_num_len = line_num_len,
         )).collect::<Vec<_>>().join("\n");
-        x
+        format!("Error: {}\n{}", self.msg, x)
         //"".to_string()
     }
 }
