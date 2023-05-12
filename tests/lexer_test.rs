@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn lex_symbols() {
-        let symbols =["+", "-", "*", "/", "<", ">", "!", "|", ".", "$", "&", "@", "#", "?", "~", "^"];
+        let symbols =["+", "-", "*", "/", "==", "<", ">", "!", "|", ".", "$", "&", "@", "#", "??", "~", "^"];
 
         for s in symbols {
             let lexed = lex(s).unwrap();
@@ -100,6 +100,8 @@ mod tests {
     fn lex_symbols_special() {
         let symbols = [
             ("=", TokenType::Equals),
+            ("?", TokenType::QuestionMark),
+            (";", TokenType::Semicolon),
             ("(", TokenType::LParen),
             (")", TokenType::RParen),
             ("[", TokenType::LBracket),
@@ -118,6 +120,8 @@ mod tests {
     fn lex_symbols_special2() {
         let symbols = [
             ("=1", vec![TokenType::Equals, TokenType::Number(1), TokenType::Eof]),
+            ("?1", vec![TokenType::QuestionMark, TokenType::Number(1), TokenType::Eof]),
+            (";1", vec![TokenType::Semicolon, TokenType::Number(1), TokenType::Eof]),
             ("(1", vec![TokenType::LParen, TokenType::Number(1), TokenType::Eof]),
             (")1", vec![TokenType::RParen, TokenType::Number(1), TokenType::Eof]),
             ("[1", vec![TokenType::LBracket, TokenType::Number(1), TokenType::Eof]),
@@ -126,6 +130,8 @@ mod tests {
             ("}1", vec![TokenType::RBrace, TokenType::Number(1), TokenType::Eof]),
 
             ("= 1", vec![TokenType::Equals, TokenType::Number(1), TokenType::Eof]),
+            ("? 1", vec![TokenType::QuestionMark, TokenType::Number(1), TokenType::Eof]),
+            ("; 1", vec![TokenType::Semicolon, TokenType::Number(1), TokenType::Eof]),
             ("( 1", vec![TokenType::LParen, TokenType::Number(1), TokenType::Eof]),
             (") 1", vec![TokenType::RParen, TokenType::Number(1), TokenType::Eof]),
             ("[ 1", vec![TokenType::LBracket, TokenType::Number(1), TokenType::Eof]),
