@@ -143,7 +143,7 @@ impl Lexer {
                 ']' => {self.advance(); TokenType::RBracket},
                 '{' => {self.advance(); TokenType::LBrace},
                 '}' => {self.advance(); TokenType::RBrace},
-                ';' => {/*self.advance();*/ TokenType::Semicolon},
+                ';' => {self.advance(); TokenType::Semicolon},
                 sym if SYMBOLS.contains(sym) => {
                     let sym = self.lex_symbol();
                     match sym.as_str() {
