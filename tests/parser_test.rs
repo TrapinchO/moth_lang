@@ -7,8 +7,8 @@ macro_rules! binop {
                 typ: $left.into(),
                 start: 0,
                 end: 0,
-            }.into(),
                 line: 0,
+            }.into(),
             Token {
                 typ: TokenType::Symbol($op.to_string()),
                 start: 0,
@@ -38,8 +38,8 @@ macro_rules! unop {
                 typ: $expr.into(),
                 start: 0,
                 end: 0,
-            }.into()
                 line: 0,
+            }.into()
         )
     };
 }
@@ -51,8 +51,8 @@ macro_rules! parenop {
                 typ: $e.into(),
                 start: 0,
                 end: 0,
-            }.into()
                 line: 0,
+            }.into()
         )
     };
 }
