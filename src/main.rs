@@ -2,6 +2,7 @@ use moth_lang::error::Error;
 use moth_lang::interpreter;
 use moth_lang::lexer;
 use moth_lang::parser;
+use moth_lang::reassoc;
 use std::env;
 use std::io;
 
@@ -54,7 +55,7 @@ fn run(input: String) -> Result<(), Error> {
     let ast = parser::parse(tokens)?;
     println!("===== parsing =====\n{}", ast);
 
-    let resassoc = parser::reassoc(&ast)?;
+    let resassoc = reassoc::reassoc(&ast)?;
     println!("===== reassociating =====\n{}", resassoc);
 
     let val = interpreter::interpret(&resassoc)?;

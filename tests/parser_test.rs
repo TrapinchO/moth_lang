@@ -86,6 +86,7 @@ mod tests {
     use moth_lang::error::Error;
     use moth_lang::lexer::{lex, Token, TokenType};
     use moth_lang::parser::*;
+    use moth_lang::reassoc;
 
     use crate::compare_elements;
 
@@ -196,7 +197,7 @@ mod tests {
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc(&parse(lex(s).unwrap()).unwrap()).unwrap(),
+                &reassoc::reassoc(&parse(lex(s).unwrap()).unwrap()).unwrap(),
                 &expr!(op)
             ))
         }
