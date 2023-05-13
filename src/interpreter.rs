@@ -13,13 +13,16 @@ pub fn interpret(expr: &Expr) -> Result<f64, Error> {
 }
 
 
-fn unary(op: &Token, val: f64) -> Result<f64, Error> {
-    let TokenType::Symbol(op) = &op.typ else {
+fn unary(_op: &Token, val: f64) -> Result<f64, Error> {
+    let TokenType::Symbol(op) = &_op.typ else {
         panic!("Expected a symbol!")
     };
     match op.as_str() {
         "-" => Ok(-val),
-        _ => todo!("Unary not implemented yet!"),
+        _ => Err(Error {
+            msg: format!("Operator \"{}\" does not exist", op.as_str()),
+            lines: vec![(_op.line, _op.start, _op.end)]
+        })
     }
 }
 
