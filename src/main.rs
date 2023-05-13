@@ -21,7 +21,7 @@ fn main() {
             println!("Empty code, exiting program");
             return;
         }
-        let input = "1\n+\n\n\n\n\n\n\n\n\n\n\n1-1 // and this is how ya do it".to_string();
+        //let input = "1\n+\n\n\n\n\n\n\n\n\n\n\n1-1 // and this is how ya do it".to_string();
         match run(input.clone()) {
             Ok(_) => {}
             Err(err) => {

@@ -17,7 +17,7 @@ impl Error {
         let line_num_len = last_line.to_string().len();
         let x = self.lines.iter().map(|(line, start, end)| format!(
             "{:line_num_len$} | {}\n   {:line_num_len$}{}{}^",
-            line,
+            line+1,
             code[*line],  // line of the code
             "",
             " ".repeat(*start),
