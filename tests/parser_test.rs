@@ -164,7 +164,9 @@ mod tests {
     #[test]
     fn parse_unary() {
         let ops = [
-            ("+1", unop!("+", ExprType::Number(1)))
+            ("+1", unop!("+", ExprType::Number(1))),
+            ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Number(1))))),
+            ("*-+1", unop!("*-+", ExprType::Number(1))),
         ];
         for (s, op) in ops {
             assert!(compare_elements(
@@ -176,14 +178,21 @@ mod tests {
 
     #[test]
     fn test_reassoc() {
-        let op = "1 - 1 - 1";
-        assert!(compare_elements(
-            &reassoc(&parse(lex(op).unwrap()).unwrap()).unwrap(),
-            &expr!(binop!(
+        let ops = [
+            ("1 - 1 - 1", binop!(
                     binop!(ExprType::Number(1), "-", ExprType::Number(1)),
                     "-",
-                    ExprType::Number(1)
+                    ExprType::Number(1))),
+            ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
+                    binop!(ExprType::Number(1), "-", ExprType::Number(1)),
+                    "-",
+                    ExprType::Number(1))))),
+        ];
+        for (s, op) in ops {
+            assert!(compare_elements(
+                &reassoc(&parse(lex(s).unwrap()).unwrap()).unwrap(),
+                &expr!(op)
             ))
-        ))
+        }
     }
 }
