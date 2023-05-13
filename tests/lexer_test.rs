@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use moth_lang::lexer::*;
     use moth_lang::error::*;
+    use moth_lang::lexer::*;
 
     #[test]
     fn empty() {
@@ -88,7 +88,9 @@ mod tests {
 
     #[test]
     fn lex_symbols() {
-        let symbols =["+", "-", "*", "/", "==", "<", ">", "!", "|", ".", "$", "&", "@", "#", "??", "~", "^"];
+        let symbols = [
+            "+", "-", "*", "/", "==", "<", ">", "!", "|", ".", "$", "&", "@", "#", "??", "~", "^",
+        ];
 
         for s in symbols {
             let lexed = lex(s).unwrap();
@@ -141,7 +143,8 @@ mod tests {
         ];
 
         for (s, r) in symbols {
-            let lexed = lex(s).unwrap()
+            let lexed = lex(s)
+                .unwrap()
                 .iter()
                 .map(|t| t.typ.clone())
                 .collect::<Vec<_>>();
@@ -169,7 +172,8 @@ mod tests {
         ];
 
         for (c, r) in coms {
-            let lexed = lex(c).unwrap()
+            let lexed = lex(c)
+                .unwrap()
                 .iter()
                 .map(|t| t.typ.clone())
                 .collect::<Vec<_>>();
@@ -194,7 +198,8 @@ mod tests {
         ];
 
         for (c, r) in comms {
-            let lexed = lex(c).unwrap()
+            let lexed = lex(c)
+                .unwrap()
                 .iter()
                 .map(|t| t.typ.clone())
                 .collect::<Vec<_>>();

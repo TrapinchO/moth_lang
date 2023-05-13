@@ -1,6 +1,6 @@
 use crate::lexer::{Token, TokenType};
 use crate::parser::ExprType;
-use crate::{parser::Expr, error::Error};
+use crate::{error::Error, parser::Expr};
 
 pub fn interpret(expr: &Expr) -> Result<f64, Error> {
     match &expr.typ {
@@ -12,7 +12,6 @@ pub fn interpret(expr: &Expr) -> Result<f64, Error> {
     }
 }
 
-
 fn unary(_op: &Token, val: f64) -> Result<f64, Error> {
     let TokenType::Symbol(op) = &_op.typ else {
         panic!("Expected a symbol!")
@@ -21,8 +20,8 @@ fn unary(_op: &Token, val: f64) -> Result<f64, Error> {
         "-" => Ok(-val),
         _ => Err(Error {
             msg: format!("Operator \"{}\" does not exist", op.as_str()),
-            lines: vec![(_op.line, _op.start, _op.end)]
-        })
+            lines: vec![(_op.line, _op.start, _op.end)],
+        }),
     }
 }
 
@@ -35,15 +34,15 @@ fn binary(left: f64, _op: &Token, right: f64) -> Result<f64, Error> {
         "-" => left - right,
         "*" => left * right,
         "/" => {
-            if right == 0.0 {  // rust gives "inf" TODO: make better
+            if right == 0.0 {
+                // rust gives "inf" TODO: make better
                 return Err(Error {
                     msg: "Cannot divide by zero".to_string(),
                     lines: vec![(_op.line, _op.start, _op.end)],
-                    
-                })
+                });
             }
             left / right
-        },
+        }
         _ => todo!("Unary not implemented yet!"),
     })
 }

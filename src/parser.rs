@@ -69,7 +69,11 @@ impl Parser {
 
     fn get_current(&self) -> &Token {
         if self.is_at_end() {
-            panic!("Attempted to index token out ouf bounds: {} (length {})", self.idx, self.tokens.len());
+            panic!(
+                "Attempted to index token out ouf bounds: {} (length {})",
+                self.idx,
+                self.tokens.len()
+            );
         }
         &self.tokens[self.idx]
     }
@@ -139,14 +143,18 @@ impl Parser {
                 lines: vec![(tok.line, tok.start, tok.end)],
             }),
 
-            TokenType::Eof => return Err(Error {
-                msg: "Expected an element".to_string(),
-                lines: vec![(tok.line, tok.start, tok.end)],
-            }),
-            _ => return Err(Error {
-                msg: format!("Unknown element: {:?}", tok),
-                lines: vec![(tok.line, tok.start, tok.end)],
-            }),
+            TokenType::Eof => {
+                return Err(Error {
+                    msg: "Expected an element".to_string(),
+                    lines: vec![(tok.line, tok.start, tok.end)],
+                })
+            }
+            _ => {
+                return Err(Error {
+                    msg: format!("Unknown element: {:?}", tok),
+                    lines: vec![(tok.line, tok.start, tok.end)],
+                })
+            }
         };
         self.advance();
         Ok(Expr {
@@ -281,7 +289,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
             }),
             _ => Err(Error {
                 msg: format!(
-                    "Incompatible operator precedence: {} ({:?}) and {} ({:?}) - both have precedence {}",
+                    "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
                     op1.typ, prec1.associativity, op2.typ, prec2.associativity, prec1.precedence
                 ),
                 lines: if op1.line == op2.line {

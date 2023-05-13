@@ -12,7 +12,11 @@ impl Error {
         let last_line = self.lines.iter().map(|x| x.0).max()
             .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
         if last_line >= code.len() {
-            panic!("Error's line is greater than the code's: {} and {}", last_line, code.len());
+            panic!(
+                "Error's line is greater than the code's: {} and {}",
+                last_line,
+                code.len()
+            );
         }
         let line_num_len = last_line.to_string().len();
         let x = self.lines.iter().map(|(line, start, end)| format!(

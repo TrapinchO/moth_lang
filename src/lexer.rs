@@ -28,7 +28,7 @@ impl TokenType {
             Self::String(s) => format!("\"{}\"", s),
             Self::Symbol(s) => s.to_string(),
             Self::Identifier(i) => i.to_string(),
-            typ => typ.to_string()
+            typ => typ.to_string(),
         }
     }
 }
@@ -175,7 +175,7 @@ impl Lexer {
             };
             tokens.push(Token {
                 start: self.start_pos,
-                end: self.pos-1,  // the lexer is already moved
+                end: self.pos - 1, // the lexer is already moved
                 line: self.line,
                 typ,
             });

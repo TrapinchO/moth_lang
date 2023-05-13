@@ -45,15 +45,15 @@ fn main() {
 fn run(input: String) -> Result<(), Error> {
     println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
-    
+
     println!("===== lexing =====");
     for t in &tokens {
         println!("{:?}", t);
     }
-    
+
     let ast = parser::parse(tokens)?;
     println!("===== parsing =====\n{}", ast);
-    
+
     let resassoc = parser::reassoc(&ast)?;
     println!("===== reassociating =====\n{}", resassoc);
 
