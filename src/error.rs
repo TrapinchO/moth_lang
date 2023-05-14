@@ -15,22 +15,24 @@ impl Error {
         let code_lines = code.lines().collect::<Vec<_>>();
         let last_line = self.lines.iter().map(|x| x.0).max()
             .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
+
         assert!(last_line >= code_lines.len(),
                 "Error's line is greater than the code's: {} and {}",
                 last_line,
                 code.len()
         );
+
         let x = self.lines.iter()
             .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
             .map(|(start, end)| format!(
-            "{:width$} | {}\n   {:width$}{}{}",
-            start.line+1,
-            code_lines[start.line],  // line of the code
-            "",
-            " ".repeat(start.col),
-            "^".repeat(end.col - start.col + 1),
-            width = last_line.to_string().len(),
-        )).collect::<Vec<_>>().join("\n");
+                "{:width$} | {}\n   {:width$}{}{}",
+                start.line+1,
+                code_lines[start.line],  // line of the code
+                "",
+                " ".repeat(start.col),
+                "^".repeat(end.col - start.col + 1),
+                width = last_line.to_string().len())
+            ).collect::<Vec<_>>().join("\n");
         format!("Error: {}\n{}", self.msg, x)
     }
 }
@@ -40,11 +42,9 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let mut col = 0;
     let mut i = 0;
     let code = code.chars().collect::<Vec<_>>();
+    assert!(idx < code.len(), "Index {} is higher than code length {}", idx, code.len());
 
-    while i < code.len() {
-        if i == idx {
-            return Pos { line, col };
-        }
+    while i < idx {
         let chr = code[i];
         if chr == '\n' {
             line += 1;
@@ -54,5 +54,5 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
         }
         i += 1
     }
-    panic!("Index {} is higher than code length {}", idx, code.len());
+    Pos { line, col }
 }
