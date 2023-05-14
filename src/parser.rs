@@ -35,7 +35,6 @@ impl Display for ExprType {
 pub struct Expr {
     pub start: usize,
     pub end: usize,
-    pub line: usize,
     pub typ: ExprType,
 }
 
@@ -102,7 +101,7 @@ impl Parser {
         if !tok.typ.compare_variant(typ) {
             Err(Error {
                 msg: msg.to_string(),
-                lines: vec![(tok.line, tok.start, tok.line, tok.end)]
+                lines: vec![(tok.start, tok.end)]
             })
         } else {
             self.advance();
@@ -151,7 +150,6 @@ impl Parser {
             return Ok(Expr {
                 start: left.start,
                 end: right.end,
-                line: tok.line,
                 typ: ExprType::BinaryOperation(left.into(), tok, right.into()),
             });
         }
@@ -166,7 +164,6 @@ impl Parser {
             Ok(Expr {
                 start: tok.start,
                 end: expr.end,
-                line: tok.line,
                 typ: ExprType::UnaryOperation(tok, expr.into()),
             })
         } else {
@@ -195,26 +192,25 @@ impl Parser {
             }
             TokenType::RParen => return Err(Error {
                 msg: "Expected an expression".to_string(),
-                lines: vec![(tok.line, tok.start, tok.end)],
+                lines: vec![(tok.start, tok.end)],
             }),
 
             TokenType::Eof => {
                 return Err(Error {
                     msg: "Expected an element".to_string(),
-                    lines: vec![(tok.line, tok.start, tok.end)],
+                    lines: vec![(tok.start, tok.end)],
                 })
             }
             _ => {
                 return Err(Error {
                     msg: format!("Unknown element: {:?}", tok),
-                    lines: vec![(tok.line, tok.start, tok.end)],
+                    lines: vec![(tok.start, tok.end)],
                 })
             }
         };
         Ok(Expr {
             start: tok.start,
             end: tok.end,
-            line: tok.line,
             typ: expr,
         })
     }

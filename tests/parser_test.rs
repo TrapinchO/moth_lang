@@ -7,19 +7,16 @@ macro_rules! binop {
                 typ: $left.into(),
                 start: 0,
                 end: 0,
-                line: 0,
             }.into(),
             Token {
                 typ: TokenType::Symbol($op.to_string()),
                 start: 0,
                 end: 0,
-                line: 0,
             },
             Expr {
                 typ: $right.into(),
                 start: 0,
                 end: 0,
-                line: 0
             }.into(),
         )
     };
@@ -32,13 +29,11 @@ macro_rules! unop {
                 typ: TokenType::Symbol($op.to_string()),
                 start: 0,
                 end: 0,
-                line: 0,
             },
             Expr {
                 typ: $expr.into(),
                 start: 0,
                 end: 0,
-                line: 0,
             }.into()
         )
     };
@@ -51,7 +46,6 @@ macro_rules! parenop {
                 typ: $e.into(),
                 start: 0,
                 end: 0,
-                line: 0,
             }.into()
         )
     };
@@ -63,7 +57,6 @@ macro_rules! expr {
             typ: $e,
             start: 0,
             end: 0,
-            line: 0,
         }
     };
 }
@@ -108,7 +101,6 @@ mod tests {
         parse(vec![Token {
             start: 0,
             end: 0,
-            line: 0,
             typ: TokenType::Eof,
         }])
         .unwrap();
@@ -136,7 +128,7 @@ mod tests {
     fn expr_error() {
         let err = Error {
             msg: "Expected an element".to_string(),
-            lines: vec![(0, 2, 2)],
+            lines: vec![(2, 2)],
         };
         let op = parse(lex("1+").unwrap()).unwrap_err();
         assert_eq!(err, op);
@@ -146,7 +138,7 @@ mod tests {
     fn parens_missing() {
         let err = Error {
             msg: "Expected closing parenthesis".to_string(),
-            lines: vec![(0, 2, 2)],
+            lines: vec![(2, 2)],
         };
         let op = parse(lex("(1").unwrap()).unwrap_err();
         assert_eq!(err, op);
@@ -156,7 +148,7 @@ mod tests {
     fn parens_empty() {
         let err = Error {
             msg: "Expected an expression".to_string(),
-            lines: vec![(0, 1, 1)],
+            lines: vec![(1, 1)],
         };
         let op = parse(lex("()").unwrap()).unwrap_err();
         assert_eq!(err, op);

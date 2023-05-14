@@ -1,34 +1,58 @@
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+struct Pos {
+    line: usize,
+    col: usize,
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {
     pub msg: String,
-    pub lines: Vec<(usize, usize, usize)>,
-    //pub line: usize,
-    //pub start: usize,
-    //pub end: usize,
+    pub lines: Vec<(usize, usize)>,  // start, end INDEXES
 }
 
 impl Error {
-    pub fn format_message(&self, code: Vec<&str>) -> String {
+    pub fn format_message(&self, code: &str) -> String {
+        let code_lines = code.lines().collect::<Vec<_>>();
         let last_line = self.lines.iter().map(|x| x.0).max()
             .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
-        if last_line >= code.len() {
-            panic!(
+        assert!(last_line >= code_lines.len(),
                 "Error's line is greater than the code's: {} and {}",
                 last_line,
                 code.len()
-            );
-        }
-        let line_num_len = last_line.to_string().len();
-        let x = self.lines.iter().map(|(line, start, end)| format!(
-            "{:line_num_len$} | {}\n   {:line_num_len$}{}{}^",
-            line+1,
-            code[*line],  // line of the code
+        );
+        let x = self.lines.iter()
+            .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
+            .map(|(start, end)| format!(
+            "{:width$} | {}\n   {:width$}{}{}",
+            start.line+1,
+            code_lines[start.line],  // line of the code
             "",
-            " ".repeat(*start),
-            "-".repeat(end - start),
-            line_num_len = line_num_len,
+            " ".repeat(start.col),
+            "^".repeat(end.col - start.col + 1),
+            width = last_line.to_string().len(),
         )).collect::<Vec<_>>().join("\n");
         format!("Error: {}\n{}", self.msg, x)
-        //"".to_string()
     }
+}
+
+fn pos_from_idx(code: &str, idx: usize) -> Pos {
+    let mut line = 0;
+    let mut col = 0;
+    let mut i = 0;
+    let code = code.chars().collect::<Vec<_>>();
+
+    while i < code.len() {
+        if i == idx {
+            return Pos { line, col };
+        }
+        let chr = code[i];
+        if chr == '\n' {
+            line += 1;
+            col = 0;
+        } else {
+            col += 1;
+        }
+        i += 1
+    }
+    panic!("Index {} is higher than code length {}", idx, code.len());
 }

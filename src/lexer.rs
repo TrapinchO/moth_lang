@@ -46,11 +46,10 @@ impl Display for TokenType {
 pub struct Token {
     pub start: usize,
     pub end: usize,
-    pub line: usize,
     pub typ: TokenType,
 }
 
-const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^";
+const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:";
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
     Lexer::new(code).lex()
@@ -58,20 +57,16 @@ pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
 
 struct Lexer {
     code: Vec<char>,
+    start_idx: usize,
     idx: usize,
-    start_pos: usize,
-    pos: usize,
-    line: usize,
 }
 
 impl Lexer {
     pub fn new(code: &str) -> Self {
         Self {
             code: code.chars().collect(),
+            start_idx: 0,
             idx: 0,
-            start_pos: 0,
-            pos: 0,
-            line: 0,
         }
     }
 
@@ -88,7 +83,6 @@ impl Lexer {
 
     fn advance(&mut self) {
         self.idx += 1;
-        self.pos += 1;
     }
 
     fn is_char(&self, character: char) -> bool {
@@ -102,7 +96,7 @@ impl Lexer {
     fn error(&self, msg: String) -> Error {
         Error {
             msg,
-            lines: vec![(self.line, self.start_pos, self.pos)],
+            lines: vec![(self.start_idx, self.idx)],
         }
     }
 
@@ -110,18 +104,12 @@ impl Lexer {
         let mut tokens = vec![];
 
         while !self.is_at_end() {
-            self.start_pos = self.pos;
+            self.start_idx = self.idx;
             let typ = match self.get_current() {
-                ' ' => {
+                ' ' | '\n' => {
                     self.advance();
                     continue;
-                }
-                '\n' => {
-                    self.line += 1;
-                    self.pos = 0;
-                    self.idx += 1;
-                    continue;
-                }
+                },
                 // TODO: floats, different bases
                 num if num.is_ascii_digit() => match self.lex_number() {
                     Err(msg) => return Err(self.error(msg)),
@@ -178,17 +166,15 @@ impl Lexer {
                 unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
             tokens.push(Token {
-                start: self.start_pos,
-                end: self.pos - 1, // the lexer is already moved
-                line: self.line,
+                start: self.start_idx,
+                end: self.idx - 1, // the lexer is already moved
                 typ,
             });
         }
 
         tokens.push(Token {
-            start: self.pos,
-            end: self.pos,
-            line: self.line,
+            start: self.idx,
+            end: self.idx,
             typ: TokenType::Eof,
         });
         Ok(tokens)
@@ -272,8 +258,6 @@ impl Lexer {
             // necessary to get correct line and pos positions
             if self.is_char('\n') {
                 self.advance();
-                self.line += 1;
-                self.pos = 0;
                 continue;
             }
 

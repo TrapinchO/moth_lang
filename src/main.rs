@@ -25,12 +25,11 @@ fn main() {
         }
         */
         //let input = "1\n+\n\n\n\n\n\n\n\n\n\n\n1-1 // and this is how ya do it".to_string();
-        let input = "let x = 10-1-1".to_string();
+        let input = "let x = 10-1--1".to_string();
         match run(input.clone()) {
             Ok(_) => {}
             Err(err) => {
-                let lines = input.lines().collect::<Vec<_>>();
-                println!("{}", err.format_message(lines));
+                println!("{}", err.format_message(&input.to_string()));
                 /*
                 if lines.len() < err.line {
                     panic!(

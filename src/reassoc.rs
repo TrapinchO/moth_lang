@@ -69,7 +69,6 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                 left.clone().into(),
                 op1.clone(),
                 right.clone().into()),
-            line: op1.line,
             start: left.start,
             end: right.end,
         })
@@ -80,7 +79,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     };
     let prec1 = prec_table.get(op1_sym.as_str()).ok_or(Error {
         msg: format!("Operator not found: {}", op1_sym),
-        lines: vec![(op1.line, op1.start, op1.end)],
+        lines: vec![(op1.start, op1.end)],
     })?;
 
     let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
@@ -88,7 +87,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
     };
     let prec2 = prec_table.get(op2_sym.as_str()).ok_or(Error {
         msg: format!("Operator not found: {}", op2_sym),
-        lines: vec![(op2.line, op2.start, op2.end)],
+        lines: vec![(op2.start, op2.end)],
     })?;
 
     match prec1.precedence.cmp(&prec2.precedence) {
@@ -96,7 +95,6 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
             let left = reassoc_(left, op1, left2)?.into();
             Ok(Expr {
                 typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
-                line: op2.line,
                 start: right2.start,
                 end: right2.end,
             })
@@ -107,7 +105,6 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                 left.clone().into(),
                 op1.clone(),
                 right.clone().into()),
-            line: op1.line,
             start: left.start,
             end: right.end,
         }),
@@ -117,7 +114,6 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                 let left = reassoc_(left, op1, left2)?.into();
                 Ok(Expr {
                     typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
-                    line: op2.line,
                     start: right2.start,
                     end: right2.end,
                 })
@@ -128,7 +124,6 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                     op1.clone(),
                     right.clone().into(),
                 ),
-                line: op1.line,
                 start: left.start,
                 end: right.end,
             }),
@@ -137,6 +132,9 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                     "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
                     op1.typ, prec1.associativity, op2.typ, prec2.associativity, prec1.precedence
                 ),
+                // TODO: change to expr positions later
+                lines: vec![(op1.start, op1.end), (op2.start, op2.end)]
+                /*
                 lines: if op1.line == op2.line {
                     vec![(op1.line, op1.start, op2.end)]
                 } else {
@@ -145,6 +143,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                         (op2.line, op2.start, op2.end)
                     ]
                 }
+                */
             }),
         },
     }

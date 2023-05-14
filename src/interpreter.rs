@@ -20,7 +20,7 @@ fn unary(_op: &Token, val: f64) -> Result<f64, Error> {
         "-" => Ok(-val),
         _ => Err(Error {
             msg: format!("Operator \"{}\" does not exist", op.as_str()),
-            lines: vec![(_op.line, _op.start, _op.end)],
+            lines: vec![(_op.start, _op.end)],
         }),
     }
 }
@@ -38,7 +38,7 @@ fn binary(left: f64, _op: &Token, right: f64) -> Result<f64, Error> {
                 // rust gives "inf" TODO: make better
                 return Err(Error {
                     msg: "Cannot divide by zero".to_string(),
-                    lines: vec![(_op.line, _op.start, _op.end)],
+                    lines: vec![(_op.start, _op.end)],
                 });
             }
             left / right
