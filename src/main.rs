@@ -14,7 +14,6 @@ fn main() {
     //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
     //let input = String::from("(1 * 1 + 1) * 1 + 1");
     loop {
-        /*
         println!("=================\n===== input =====");
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
@@ -23,27 +22,14 @@ fn main() {
             println!("Empty code, exiting program");
             return;
         }
-        */
         //let input = "1\n+\n\n\n\n\n\n\n\n\n\n\n1-1 // and this is how ya do it".to_string();
-        let input = "let x = 10-1--1".to_string();
+        //let input = "let x = 10-1--1".to_string();
         match run(input.clone()) {
             Ok(_) => {}
             Err(err) => {
                 println!("{}", err.format_message(&input.to_string()));
-                /*
-                if lines.len() < err.line {
-                    panic!(
-                        "Error line ({}) is greater than the number of lines in the code ({})",
-                        err.line,
-                        lines.len()
-                    );
-                }
-                let line = &lines[err.line];
-                println!("{}", err.format_message(line));
-                */
             }
         }
-        break;
     }
 }
 fn run(input: String) -> Result<(), Error> {
@@ -55,6 +41,7 @@ fn run(input: String) -> Result<(), Error> {
         println!("{:?}", t);
     }
 
+    // TODO: unknown operator does not report unless reassociated in binary operation
     let ast = parser::parse(tokens)?;
     println!("===== parsing =====\n{}", ast);
 

@@ -38,12 +38,12 @@ impl Error {
 }
 
 fn pos_from_idx(code: &str, idx: usize) -> Pos {
-    let mut line = 0;
-    let mut col = 0;
-    let mut i = 0;
     let code = code.chars().collect::<Vec<_>>();
     assert!(idx < code.len(), "Index {} is higher than code length {}", idx, code.len());
 
+    let mut line = 0;
+    let mut col = 0;
+    let mut i = 0;
     while i < idx {
         let chr = code[i];
         if chr == '\n' {

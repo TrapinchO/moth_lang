@@ -27,8 +27,8 @@ impl Precedence {
 
 pub fn reassociate(stmt: &Stmt) ->Result<Stmt, Error> {
     Ok(match &stmt {
-        Stmt::ExprStmt(expr) => Stmt::ExprStmt(reassoc_expr(&expr.clone())?),
-        Stmt::AssingmentStmt(ident, expr) => Stmt::AssingmentStmt(ident.clone(), reassoc_expr(&expr)?)
+        Stmt::ExprStmt(expr) => Stmt::ExprStmt(reassoc_expr(expr)?),
+        Stmt::AssingmentStmt(ident, expr) => Stmt::AssingmentStmt(ident.clone(), reassoc_expr(expr)?)
     })
 }
 
