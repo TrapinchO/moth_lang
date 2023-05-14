@@ -1,14 +1,45 @@
+use std::collections::HashMap;
+
 use crate::lexer::{Token, TokenType};
-use crate::parser::ExprType;
+use crate::parser::{ExprType, Stmt};
 use crate::{error::Error, parser::Expr};
 
-pub fn interpret(expr: &Expr) -> Result<f64, Error> {
+pub fn interpret(stmt: &Vec<Stmt>) {
+    
+}
+
+// TODO: use visitor patter? make a trait?
+struct Interpreter {
+    environment: HashMap<String, f64>
+}
+
+impl Interpreter {
+    pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
+        for s in stmt {
+            match s {
+                Stmt::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr)?,
+                Stmt::ExprStmt(expr) => self.expr(expr)?,
+            }
+        }
+        Ok(())
+    }
+
+    fn assignmentstmt(&mut self, ident: &Token, expr: &Expr) -> Result<(), Error> {
+        let TokenType::Identifier(name) = ident.typ else {
+            panic!("Expected an identifier");
+        };
+        self.environment.insert(name, self.expr(expr));
+        Ok(())
+    }
+}
+
+pub fn interpret_(expr: &Expr) -> Result<f64, Error> {
     match &expr.typ {
         ExprType::Number(n) => Ok((*n).into()),
         ExprType::String(_) => todo!("not implemented yet!"),
-        ExprType::Parens(expr) => interpret(expr),
-        ExprType::UnaryOperation(op, expr) => unary(op, interpret(expr)?),
-        ExprType::BinaryOperation(left, op, right) => binary(interpret(left)?, op, interpret(right)?),
+        ExprType::Parens(expr) => interpret_(expr),
+        ExprType::UnaryOperation(op, expr) => unary(op, interpret_(expr)?),
+        ExprType::BinaryOperation(left, op, right) => binary(interpret_(left)?, op, interpret_(right)?),
     }
 }
 
