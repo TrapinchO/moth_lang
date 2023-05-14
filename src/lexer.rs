@@ -31,6 +31,10 @@ impl TokenType {
             typ => typ.to_string(),
         }
     }
+
+    pub fn compare_variant(&self, other: &TokenType) -> bool {
+        std::mem::discriminant(self) == std::mem::discriminant(other)
+    }
 }
 impl Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

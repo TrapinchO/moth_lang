@@ -1,6 +1,5 @@
 use crate::error::Error;
 use crate::lexer::{Token, TokenType};
-use std::collections::HashMap;
 use std::fmt::Display;
 use std::rc::Rc;
 
@@ -47,12 +46,12 @@ impl Display for Expr {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-enum Stmt {
+pub enum Stmt {
     ExprStmt(Expr),
     AssingmentStmt(Token, Expr),
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<Expr, Error> {
+pub fn parse(tokens: Vec<Token>) -> Result<Stmt, Error> {
     Parser::new(tokens).parse()
 }
 
@@ -83,12 +82,46 @@ impl Parser {
         }
         &self.tokens[self.idx]
     }
+
+    fn expect(&mut self, typ: &TokenType, msg: &str) -> Result<Token, Error> {
+        let tok = self.get_current().clone();
+        if !tok.typ.compare_variant(typ) {
+            Err(Error {
+                msg: msg.to_string(),
+                lines: vec![(tok.line, tok.start, tok.end)]
+            })
+        } else {
+            self.advance();
+            Ok(tok)
+        }
+    }
+
     fn advance(&mut self) {
         self.idx += 1;
     }
 
-    pub fn parse(&mut self) -> Result<Expr, Error> {
-        self.parse_expression()
+    pub fn parse(&mut self) -> Result<Stmt, Error> {
+        self.parse_statement()
+    }
+
+    fn parse_statement(&mut self) -> Result<Stmt, Error> {
+        let tok = self.get_current();
+        match tok.typ {
+            TokenType::Let => {
+                self.advance();
+                let (ident, expr) = self.parse_assignment()?;
+                Ok(Stmt::AssingmentStmt(ident, expr))
+            },
+            _ => {
+                Ok(Stmt::ExprStmt(self.parse_expression()?))
+            },
+        }
+    }
+
+    fn parse_assignment(&mut self) -> Result<(Token, Expr), Error> {
+        let ident = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
+        self.expect(&TokenType::Equals, "Expected an equals symbol")?;
+        Ok((ident, self.parse_expression()?))
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {
