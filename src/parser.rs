@@ -102,7 +102,7 @@ impl Parser {
         if !tok.typ.compare_variant(typ) {
             Err(Error {
                 msg: msg.to_string(),
-                lines: vec![(tok.line, tok.start, tok.end)]
+                lines: vec![(tok.line, tok.start, tok.line, tok.end)]
             })
         } else {
             self.advance();
@@ -182,13 +182,7 @@ impl Parser {
             TokenType::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
-                let tok = self.get_current();
-                if tok.typ != TokenType::RParen {
-                    return Err(Error {
-                        msg: "Expected closing parenthesis".to_string(),
-                        lines: vec![(tok.line, tok.start, tok.end)],
-                    });
-                }
+                self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
                 ExprType::Parens(expr.into())
             }
             TokenType::RParen => return Err(Error {
