@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::error::Error;
 use crate::lexer::{Token, TokenType};
-use crate::parser::{Expr, ExprType};
+use crate::parser::{Expr, ExprType, Stmt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Associativity {
@@ -25,20 +25,27 @@ impl Precedence {
     }
 }
 
+pub fn reassociate(stmt: &Stmt) ->Result<Stmt, Error> {
+    Ok(match &stmt {
+        Stmt::ExprStmt(expr) => Stmt::ExprStmt(reassoc_expr(&expr.clone())?),
+        Stmt::AssingmentStmt(ident, expr) => Stmt::AssingmentStmt(ident.clone(), reassoc_expr(&expr)?)
+    })
+}
+
 // https://stackoverflow.com/a/67992584
-pub fn reassoc(expr: &Expr) -> Result<Expr, Error> {
+fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
     Ok(match &expr.typ {
         ExprType::BinaryOperation(left, op, right) => reassoc_(
-            &reassoc(&left.clone())?,
+            &reassoc_expr(&left.clone())?,
             op,
-            &reassoc(&right.clone())?
+            &reassoc_expr(&right.clone())?
         )?,
         ExprType::Parens(expr) => Expr {
-            typ: ExprType::Parens(reassoc(expr.as_ref())?.into()),
+            typ: ExprType::Parens(reassoc_expr(expr.as_ref())?.into()),
             ..expr.as_ref().clone()
         },
         ExprType::UnaryOperation(op, expr) => Expr {
-            typ: ExprType::UnaryOperation(op.clone(), reassoc(expr.as_ref())?.into()),
+            typ: ExprType::UnaryOperation(op.clone(), reassoc_expr(expr.as_ref())?.into()),
             ..expr.as_ref().clone()
         },
         ExprType::Number(_) => expr.clone(),

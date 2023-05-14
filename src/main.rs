@@ -25,7 +25,7 @@ fn main() {
         }
         */
         //let input = "1\n+\n\n\n\n\n\n\n\n\n\n\n1-1 // and this is how ya do it".to_string();
-        let input = "let x = 10".to_string();
+        let input = "let x = 10-1-1".to_string();
         match run(input.clone()) {
             Ok(_) => {}
             Err(err) => {
@@ -57,12 +57,12 @@ fn run(input: String) -> Result<(), Error> {
     }
 
     let ast = parser::parse(tokens)?;
-    println!("===== parsing =====\n{:?}", ast);
+    println!("===== parsing =====\n{}", ast);
 
-    /*
-    let resassoc = reassoc::reassoc(&ast)?;
+    let resassoc = reassoc::reassociate(&ast)?;
     println!("===== reassociating =====\n{}", resassoc);
 
+    /*
     let val = interpreter::interpret(&resassoc)?;
     println!("===== evaluating =====\n{}\n", val);
     */

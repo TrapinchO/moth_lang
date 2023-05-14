@@ -50,6 +50,20 @@ pub enum Stmt {
     ExprStmt(Expr),
     AssingmentStmt(Token, Expr),
 }
+impl Stmt {
+    fn format(&self) -> String {
+        match self {
+            Self::ExprStmt(expr) => expr.to_string(),
+            Self::AssingmentStmt(ident, expr) => format!("let {} = {}", ident.typ, expr)
+        }
+    }
+}
+
+impl Display for Stmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.format())
+    }
+}
 
 pub fn parse(tokens: Vec<Token>) -> Result<Stmt, Error> {
     Parser::new(tokens).parse()

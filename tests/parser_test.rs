@@ -1,4 +1,4 @@
-use moth_lang::parser::{Expr, ExprType};
+use moth_lang::parser::{Expr, ExprType, Stmt};
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -68,15 +68,27 @@ macro_rules! expr {
     };
 }
 
-fn compare_elements(left: &Expr, right: &Expr) -> bool {
+fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
+    match (&left, &right) {
+        (Stmt::ExprStmt(expr1), Stmt::ExprStmt(expr2)) => {
+            compare_elements_expr(&expr1, &expr2)
+        }
+        (Stmt::AssingmentStmt(ident1, expr1), Stmt::AssingmentStmt(ident2, expr2)) => {
+            ident1 == ident2 && compare_elements_expr(expr1, expr2)
+        }
+        (s1, s2) => s1 == s2
+    }
+}
+
+fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
     match (&left.typ, &right.typ) {
         (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => {
-            compare_elements(&l1, &l2) && o1.typ == o2.typ && compare_elements(&r1, &r2)
+            compare_elements_expr(&l1, &l2) && o1.typ == o2.typ && compare_elements_expr(&r1, &r2)
         }
         (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => {
-            o1.typ == o2.typ && compare_elements(&e1, &e2)
+            o1.typ == o2.typ && compare_elements_expr(&e1, &e2)
         }
-        (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements(&e1, &e2),
+        (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements_expr(&e1, &e2),
         (e1, e2) => e1 == e2,
     }
 }
@@ -115,7 +127,7 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                     &parse(lex(s).unwrap()).unwrap(),
-                    &op
+                    &Stmt::ExprStmt(op)
             ));
         }
     }
@@ -163,7 +175,7 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                 &parse(lex(s).unwrap()).unwrap(),
-                &expr!(op)
+                &Stmt::ExprStmt(expr!(op))
             ));
         }
     }
@@ -178,7 +190,7 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                 &parse(lex(s).unwrap()).unwrap(),
-                &expr!(op)
+                &Stmt::ExprStmt(expr!(op))
             ));
         }
     }
@@ -197,8 +209,8 @@ mod tests {
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc::reassoc(&parse(lex(s).unwrap()).unwrap()).unwrap(),
-                &expr!(op)
+                &reassoc::reassociate(&parse(lex(s).unwrap()).unwrap()).unwrap(),
+                &Stmt::ExprStmt(expr!(op))
             ))
         }
     }
