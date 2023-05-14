@@ -177,8 +177,16 @@ impl Parser {
     fn parse_primary(&mut self) -> Result<Expr, Error> {
         let tok = self.get_current().clone();
         let expr = match &tok.typ {
-            TokenType::String(s) => ExprType::String(s.to_string()),
-            TokenType::Number(n) => ExprType::Number(*n),
+            TokenType::String(s) => {
+                let expr = ExprType::String(s.to_string());
+                self.advance();
+                expr
+            },
+            TokenType::Number(n) => {
+                let expr = ExprType::Number(*n);
+                self.advance();
+                expr
+            },
             TokenType::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
@@ -203,7 +211,6 @@ impl Parser {
                 })
             }
         };
-        self.advance();
         Ok(Expr {
             start: tok.start,
             end: tok.end,
