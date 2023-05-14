@@ -25,11 +25,15 @@ impl Precedence {
     }
 }
 
-pub fn reassociate(stmt: &Stmt) ->Result<Stmt, Error> {
-    Ok(match &stmt {
-        Stmt::ExprStmt(expr) => Stmt::ExprStmt(reassoc_expr(expr)?),
-        Stmt::AssingmentStmt(ident, expr) => Stmt::AssingmentStmt(ident.clone(), reassoc_expr(expr)?)
-    })
+pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
+    let mut ls = vec![];
+    for s in stmt {
+        ls.push(match s {
+            Stmt::ExprStmt(expr) => Stmt::ExprStmt(reassoc_expr(expr)?),
+            Stmt::AssingmentStmt(ident, expr) => Stmt::AssingmentStmt(ident.clone(), reassoc_expr(expr)?)
+        })
+    }
+    Ok(ls)
 }
 
 // https://stackoverflow.com/a/67992584

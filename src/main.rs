@@ -43,10 +43,16 @@ fn run(input: String) -> Result<(), Error> {
 
     // TODO: unknown operator does not report unless reassociated in binary operation
     let ast = parser::parse(tokens)?;
-    println!("===== parsing =====\n{}", ast);
+    println!("===== parsing =====");
+    for s in &ast {
+        println!("{:?}", s);
+    }
 
     let resassoc = reassoc::reassociate(&ast)?;
-    println!("===== reassociating =====\n{}", resassoc);
+    println!("===== reassociating =====");
+    for s in &resassoc {
+        println!("{:?}", s);
+    }
 
     /*
     let val = interpreter::interpret(&resassoc)?;

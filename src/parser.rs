@@ -64,7 +64,7 @@ impl Display for Stmt {
     }
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<Stmt, Error> {
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
     Parser::new(tokens).parse()
 }
 
@@ -113,8 +113,21 @@ impl Parser {
         self.idx += 1;
     }
 
-    pub fn parse(&mut self) -> Result<Stmt, Error> {
-        self.parse_statement()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
+        self.parse_block()
+    }
+
+    fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
+        let mut ls = vec![];
+        ls.push(self.parse_statement()?);
+        self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+        println!("{} {} {}", self.is_at_end(), self.idx, self.tokens.len());
+        while !self.is_at_end() && !self.get_current().typ.compare_variant(&TokenType::Eof) {
+            ls.push(self.parse_statement()?);
+            self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+        }
+
+        Ok(ls)
     }
 
     fn parse_statement(&mut self) -> Result<Stmt, Error> {

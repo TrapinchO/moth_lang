@@ -39,7 +39,7 @@ impl Error {
 
 fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let code = code.chars().collect::<Vec<_>>();
-    assert!(idx < code.len(), "Index {} is higher than code length {}", idx, code.len());
+    assert!(idx <= code.len(), "Index {} is higher than code length {}", idx, code.len());
 
     let mut line = 0;
     let mut col = 0;
