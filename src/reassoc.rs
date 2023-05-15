@@ -54,6 +54,7 @@ fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
         },
         ExprType::Number(_) => expr.clone(),
         ExprType::String(_) => expr.clone(),
+        ExprType::Identifier(_) => expr.clone(),
     })
 }
 

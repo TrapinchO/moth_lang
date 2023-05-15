@@ -37,9 +37,11 @@ fn run(input: String) -> Result<(), Error> {
     let tokens = lexer::lex(&input)?;
 
     println!("===== lexing =====");
+    /*
     for t in &tokens {
         println!("{:?}", t);
     }
+    */
 
     // TODO: unknown operator does not report unless reassociated in binary operation
     let ast = parser::parse(tokens)?;
@@ -50,14 +52,14 @@ fn run(input: String) -> Result<(), Error> {
 
     let resassoc = reassoc::reassociate(&ast)?;
     println!("===== reassociating =====");
+    /*
     for s in &resassoc {
         println!("{:?}", s);
     }
-
-    /*
-    let val = interpreter::interpret(&resassoc)?;
-    println!("===== evaluating =====\n{}\n", val);
     */
+
+    println!("===== evaluating =====");
+    interpreter::interpret(&resassoc)?;
 
     Ok(())
 }
