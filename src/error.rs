@@ -13,18 +13,18 @@ pub struct Error {
 impl Error {
     pub fn format_message(&self, code: &str) -> String {
         let code_lines = code.lines().collect::<Vec<_>>();
-        let last_line = self.lines.iter().map(|x| x.0).max()
+        let x = self.lines.iter()
+            .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx))).collect::<Vec<_>>();
+        let last_line = x.iter().map(|x| x.0.line).max()
             .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
 
         assert!(last_line < code_lines.len(),
                 "Error's line ({}) is greater than that of the code ({})",
                 last_line,
-                code.len()
+                code_lines.len()
         );
 
-        let x = self.lines.iter()
-            .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
-            .map(|(start, end)| format!(
+        let x = x.iter().map(|(start, end)| format!(
                 "{:width$} | {}\n   {:width$}{}{}",
                 start.line+1,
                 code_lines[start.line],  // line of the code
