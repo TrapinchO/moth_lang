@@ -118,7 +118,7 @@ mod tests {
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                    &parse(lex(s).unwrap()).unwrap(),
+                    &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
                     &Stmt::ExprStmt(op)
             ));
         }
@@ -166,7 +166,7 @@ mod tests {
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                &parse(lex(s).unwrap()).unwrap(),
+                &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
                 &Stmt::ExprStmt(expr!(op))
             ));
         }
@@ -181,7 +181,7 @@ mod tests {
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                &parse(lex(s).unwrap()).unwrap(),
+                &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
                 &Stmt::ExprStmt(expr!(op))
             ));
         }
@@ -201,7 +201,7 @@ mod tests {
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc::reassociate(&parse(lex(s).unwrap()).unwrap()).unwrap(),
+                &reassoc::reassociate(&parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()).unwrap()[0],
                 &Stmt::ExprStmt(expr!(op))
             ))
         }
