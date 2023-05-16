@@ -1,4 +1,4 @@
-use moth_lang::parser::{Expr, ExprType, Stmt};
+use moth_lang::parser::{Expr, ExprType, Stmt, StmtType};
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -61,12 +61,22 @@ macro_rules! expr {
     };
 }
 
+macro_rules! stmt {
+    ($e:expr) => {
+        Stmt {
+            typ: $e,
+            start: 0,
+            end: 0,
+        }
+    };
+}
+
 fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
-    match (&left, &right) {
-        (Stmt::ExprStmt(expr1), Stmt::ExprStmt(expr2)) => {
+    match (&left.typ, &right.typ) {
+        (StmtType::ExprStmt(expr1), StmtType::ExprStmt(expr2)) => {
             compare_elements_expr(&expr1, &expr2)
         }
-        (Stmt::AssingmentStmt(ident1, expr1), Stmt::AssingmentStmt(ident2, expr2)) => {
+        (StmtType::AssingmentStmt(ident1, expr1), StmtType::AssingmentStmt(ident2, expr2)) => {
             ident1 == ident2 && compare_elements_expr(expr1, expr2)
         }
         (s1, s2) => s1 == s2
@@ -119,7 +129,7 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                     &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                    &Stmt::ExprStmt(op)
+                    &stmt!(StmtType::ExprStmt(op))
             ));
         }
     }
@@ -167,7 +177,7 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                 &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                &Stmt::ExprStmt(expr!(op))
+                &stmt!(StmtType::ExprStmt(expr!(op)))
             ));
         }
     }
@@ -182,7 +192,7 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                 &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                &Stmt::ExprStmt(expr!(op))
+                &stmt!(StmtType::ExprStmt(expr!(op)))
             ));
         }
     }
@@ -202,8 +212,8 @@ mod tests {
         for (s, op) in ops {
             assert!(compare_elements(
                 &reassoc::reassociate(&parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()).unwrap()[0],
-                &Stmt::ExprStmt(expr!(op))
-            ))
+                &stmt!(StmtType::ExprStmt(expr!(op)))
+            ));
         }
     }
 }

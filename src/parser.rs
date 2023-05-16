@@ -65,6 +65,7 @@ impl Display for StmtType {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Stmt {
     pub typ: StmtType,
     pub start: usize,
