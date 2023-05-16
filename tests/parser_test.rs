@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn parens_empty() {
         let err = Error {
-            msg: "Expected an expression".to_string(),
+            msg: "Unknown element: RParen".to_string(),
             lines: vec![(1, 1)],
         };
         let op = parse(lex("()").unwrap()).unwrap_err();

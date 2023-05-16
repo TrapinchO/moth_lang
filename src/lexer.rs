@@ -22,6 +22,7 @@ pub enum TokenType {
 }
 
 impl TokenType {
+    // TODO: better format for non-value types
     fn format(&self) -> String {
         match self {
             Self::Number(n) => n.to_string(),

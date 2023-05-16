@@ -33,6 +33,8 @@ impl Display for ExprType {
 }
 
 // TODO: Stuff will probably break when multiline expressions because of the indexes
+// TODO: consider moving this to the bottom again, as rust seems to be
+// affected by position of the arguments, at least regarding the borrow checker
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Expr {
     pub typ: ExprType,
@@ -132,8 +134,6 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
-        ls.push(self.parse_statement()?);
-        self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
         while !self.is_at_end() && !self.get_current().typ.compare_variant(&TokenType::Eof) {
             ls.push(self.parse_statement()?);
             self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
@@ -149,17 +149,17 @@ impl Parser {
                 self.advance();
                 let (ident, expr) = self.parse_assignment()?;
                 Ok(Stmt {
-                    typ: StmtType::AssingmentStmt(ident, expr.clone()),
                     start: tok.start,
                     end: expr.end,
+                    typ: StmtType::AssingmentStmt(ident, expr),
                 })
             },
             _ => {
                 let expr = self.parse_expression()?;
                 Ok(Stmt {
-                    typ: StmtType::ExprStmt(expr.clone()),
                     start: expr.start,
                     end: expr.end,
+                    typ: StmtType::ExprStmt(expr),
                 })
             },
         }
@@ -222,27 +222,22 @@ impl Parser {
                 let expr = ExprType::Identifier(ident.to_string());
                 self.advance();
                 expr
-            }
+            },
             TokenType::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
                 self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
                 ExprType::Parens(expr.into())
-            }
-            TokenType::RParen => return Err(Error {
-                msg: "Expected an expression".to_string(),
-                lines: vec![(tok.start, tok.end)],
-            }),
-
+            },
             TokenType::Eof => {
                 return Err(Error {
                     msg: "Expected an element".to_string(),
                     lines: vec![(tok.start, tok.end)],
                 })
-            }
+            },
             _ => {
                 return Err(Error {
-                    msg: format!("Unknown element: {:?}", tok),
+                    msg: format!("Unknown element: {}", tok),
                     lines: vec![(tok.start, tok.end)],
                 })
             }
