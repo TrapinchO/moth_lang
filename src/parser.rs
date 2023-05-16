@@ -55,7 +55,7 @@ impl Stmt {
     fn format(&self) -> String {
         match self {
             Self::ExprStmt(expr) => expr.to_string(),
-            Self::AssingmentStmt(ident, expr) => format!("let {} = {}", ident.typ, expr)
+            Self::AssingmentStmt(ident, expr) => format!("let {} = {}", ident, expr)
         }
     }
 }
@@ -123,7 +123,6 @@ impl Parser {
         let mut ls = vec![];
         ls.push(self.parse_statement()?);
         self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
-        println!("{} {} {}", self.is_at_end(), self.idx, self.tokens.len());
         while !self.is_at_end() && !self.get_current().typ.compare_variant(&TokenType::Eof) {
             ls.push(self.parse_statement()?);
             self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;

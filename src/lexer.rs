@@ -28,7 +28,7 @@ impl TokenType {
             Self::String(s) => format!("\"{}\"", s),
             Self::Symbol(s) => s.to_string(),
             Self::Identifier(i) => i.to_string(),
-            typ => typ.to_string(),
+            typ => format!("{:?}", typ),
         }
     }
 
@@ -47,6 +47,11 @@ pub struct Token {
     pub start: usize,
     pub end: usize,
     pub typ: TokenType,
+}
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.typ)
+    }
 }
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:";

@@ -16,8 +16,8 @@ impl Error {
         let last_line = self.lines.iter().map(|x| x.0).max()
             .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
 
-        assert!(last_line >= code_lines.len(),
-                "Error's line is greater than the code's: {} and {}",
+        assert!(last_line < code_lines.len(),
+                "Error's line ({}) is greater than that of the code ({})",
                 last_line,
                 code.len()
         );

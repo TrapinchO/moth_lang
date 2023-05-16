@@ -33,6 +33,12 @@ impl Interpreter {
         let TokenType::Identifier(name) = &ident.typ else {
             panic!("Expected an identifier");
         };
+        if self.environment.contains_key(&name.to_string()) {
+            return Err(Error {
+                msg: format!("Variable \"{}\" already exists!", name),
+                lines: vec![(0, 0)]  // TODO: fix
+            })
+        }
         self.environment.insert(name.to_string(), self.expr(expr)?);
         Ok(())
     }
@@ -41,9 +47,9 @@ impl Interpreter {
         match &expr.typ {
             ExprType::Number(n) => Ok((*n).into()),
             ExprType::String(_) => todo!("strings are not implemented yet!"),
-            ExprType::Identifier(ident) => self.environment.get(ident).map(|&n| n).ok_or(Error {
+            ExprType::Identifier(ident) => self.environment.get(ident).cloned().ok_or(Error {
                 msg: format!("Identifier not found: \"{}\"", ident),
-                lines: vec![(0, 0)] // todo: fix
+                lines: vec![(0, 0)] // TODO: fix
             }),
             ExprType::Parens(expr) => self.expr(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),
