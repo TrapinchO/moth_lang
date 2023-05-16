@@ -109,17 +109,14 @@ impl Lexer {
         let mut tokens = vec![];
 
         while !self.is_at_end() {
-            self.start_idx = self.idx;
+            self.start_idx = self.idx;  // beginning to lex a new tokens
             let typ = match self.get_current() {
                 ' ' | '\n' => {
                     self.advance();
                     continue;
                 },
                 // TODO: floats, different bases
-                num if num.is_ascii_digit() => match self.lex_number() {
-                    Err(msg) => return Err(self.error(msg)),
-                    Ok(num) => TokenType::Number(num),
-                },
+                num if num.is_ascii_digit() => TokenType::Number(self.lex_number()?),
                 ident if ident.is_alphanumeric() => {
                     let keywords: HashMap<&str, TokenType> = [
                         ("let", TokenType::Let),
@@ -149,10 +146,8 @@ impl Lexer {
                         "/**/" => continue,
                         "/*" => {
                             // might come useful one day for documentation
-                            match self.lex_block_comment() {
-                                Err(msg) => return Err(self.error(msg)),
-                                Ok(_) => continue,
-                            }
+                            self.lex_block_comment()?;
+                            continue;
                         }
                         // ignore comments
                         // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
@@ -164,10 +159,7 @@ impl Lexer {
                     }
                 }
                 // +1 to ignore the quote
-                '\"' => match self.lex_string() {
-                    Err(msg) => return Err(self.error(msg)),
-                    Ok(string) => TokenType::String(string),
-                },
+                '\"' => TokenType::String(self.lex_string()?),
                 unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
             tokens.push(Token {
@@ -185,7 +177,7 @@ impl Lexer {
         Ok(tokens)
     }
 
-    fn lex_number(&mut self) -> Result<i32, String> {
+    fn lex_number(&mut self) -> Result<i32, Error> {
         let mut num = String::from("");
 
         while !self.is_at_end() {
@@ -193,7 +185,7 @@ impl Lexer {
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
-                return Err(format!("Invalid digit: \"{}\"", cur_char));
+                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)));
             } else {
                 break;
             }
@@ -230,7 +222,7 @@ impl Lexer {
         s
     }
 
-    fn lex_string(&mut self) -> Result<String, String> {
+    fn lex_string(&mut self) -> Result<String, Error> {
         let mut s = String::from("");
 
         // move behind the opening quote
@@ -242,12 +234,12 @@ impl Lexer {
                 return Ok(s);
             }
             if self.is_char('\n') {
-                return Err("EOL while parsing string".to_string());
+                return Err(self.error("EOL while parsing string".to_string()));
             }
             s.push(self.get_current());
             self.advance();
         }
-        Err("EOF while parsing string".to_string())
+        Err(self.error("EOF while parsing string".to_string()))
     }
 
     fn lex_line_comment(&mut self) {
@@ -257,7 +249,7 @@ impl Lexer {
     }
 
     // TODO: /*** ... */ and similar edge cases
-    fn lex_block_comment(&mut self) -> Result<String, String> {
+    fn lex_block_comment(&mut self) -> Result<String, Error> {
         let mut comment = String::new();
         while !self.is_at_end() {
             // necessary to get correct line and pos positions
@@ -274,6 +266,6 @@ impl Lexer {
             comment.push(self.get_current());
             self.advance();
         }
-        Err("EOF while lexing block comment".to_string())
+        Err(self.error("EOF while lexing block comment".to_string()))
     }
 }
