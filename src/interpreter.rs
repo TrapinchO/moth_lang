@@ -21,8 +21,8 @@ impl Interpreter {
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmt {
             match &s.typ {
-                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(&ident, &expr)?,
-                StmtType::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(&expr)?); },
+                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr)?,
+                StmtType::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(expr)?); },
             }
         }
         println!("{:?}", self.environment);

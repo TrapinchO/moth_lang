@@ -30,11 +30,11 @@ pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     for s in stmt {
         ls.push(match &s.typ {
             StmtType::ExprStmt(expr) => Stmt {
-                typ: StmtType::ExprStmt(reassoc_expr(&expr)?),
+                typ: StmtType::ExprStmt(reassoc_expr(expr)?),
                 ..*s
             },
             StmtType::AssingmentStmt(ident, expr) => Stmt {
-                typ: StmtType::AssingmentStmt(ident.clone(), reassoc_expr(&expr)?),
+                typ: StmtType::AssingmentStmt(ident.clone(), reassoc_expr(expr)?),
                 ..*s
             }
         })
@@ -46,9 +46,9 @@ pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
 fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
     Ok(match &expr.typ {
         ExprType::BinaryOperation(left, op, right) => reassoc_(
-            &reassoc_expr(&left.clone())?,
+            &reassoc_expr(left)?,
             op,
-            &reassoc_expr(&right.clone())?
+            &reassoc_expr(right)?
         )?,
         ExprType::Parens(expr) => Expr {
             typ: ExprType::Parens(reassoc_expr(expr.as_ref())?.into()),
@@ -58,9 +58,7 @@ fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
             typ: ExprType::UnaryOperation(op.clone(), reassoc_expr(expr.as_ref())?.into()),
             ..expr.as_ref().clone()
         },
-        ExprType::Number(_) => expr.clone(),
-        ExprType::String(_) => expr.clone(),
-        ExprType::Identifier(_) => expr.clone(),
+        ExprType::Number(_) | ExprType::String(_) | ExprType::Identifier(_) => expr.clone(),
     })
 }
 
@@ -85,7 +83,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         })
     };
 
-    let Token {typ: TokenType::Symbol(op1_sym), ..} = op1.clone() else {
+    let TokenType::Symbol(op1_sym) = &op1.typ else {
         panic!("Operator token 1 is not a symbol");
     };
     let prec1 = prec_table.get(op1_sym.as_str()).ok_or(Error {
@@ -93,7 +91,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         lines: vec![(op1.start, op1.end)],
     })?;
 
-    let Token {typ: TokenType::Symbol(op2_sym), ..} = op2.clone() else {
+    let TokenType::Symbol(op2_sym) = &op2.typ else {
         panic!("Operator token 2 is not a symbol");
     };
     let prec2 = prec_table.get(op2_sym.as_str()).ok_or(Error {
@@ -101,6 +99,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         lines: vec![(op2.start, op2.end)],
     })?;
 
+    // TODO: make functions like in the answer
     match prec1.precedence.cmp(&prec2.precedence) {
         std::cmp::Ordering::Greater => {
             let left = reassoc_(left, op1, left2)?.into();
@@ -143,18 +142,7 @@ fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
                     "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
                     op1.typ, prec1.associativity, op2.typ, prec2.associativity, prec1.precedence
                 ),
-                // TODO: change to expr positions later
                 lines: vec![(op1.start, op1.end), (op2.start, op2.end)]
-                /*
-                lines: if op1.line == op2.line {
-                    vec![(op1.line, op1.start, op2.end)]
-                } else {
-                    vec![
-                        (op1.line, op1.start, op1.end),
-                        (op2.line, op2.start, op2.end)
-                    ]
-                }
-                */
             }),
         },
     }
