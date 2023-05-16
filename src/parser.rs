@@ -35,9 +35,9 @@ impl Display for ExprType {
 // TODO: Stuff will probably break when multiline expressions because of the indexes
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Expr {
+    pub typ: ExprType,
     pub start: usize,
     pub end: usize,
-    pub typ: ExprType,
 }
 
 impl Display for Expr {
@@ -47,11 +47,11 @@ impl Display for Expr {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-pub enum Stmt {
+pub enum StmtType {
     ExprStmt(Expr),
     AssingmentStmt(Token, Expr),
 }
-impl Stmt {
+impl StmtType {
     fn format(&self) -> String {
         match self {
             Self::ExprStmt(expr) => expr.to_string(),
@@ -59,10 +59,20 @@ impl Stmt {
         }
     }
 }
-
-impl Display for Stmt {
+impl Display for StmtType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.format())
+    }
+}
+
+pub struct Stmt {
+    pub typ: StmtType,
+    pub start: usize,
+    pub end: usize,
+}
+impl Display for Stmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.typ)
     }
 }
 
@@ -132,15 +142,24 @@ impl Parser {
     }
 
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
-        let tok = self.get_current();
+        let tok = self.get_current().clone();
         match tok.typ {
             TokenType::Let => {
                 self.advance();
                 let (ident, expr) = self.parse_assignment()?;
-                Ok(Stmt::AssingmentStmt(ident, expr))
+                Ok(Stmt {
+                    typ: StmtType::AssingmentStmt(ident, expr.clone()),
+                    start: tok.start,
+                    end: expr.end,
+                })
             },
             _ => {
-                Ok(Stmt::ExprStmt(self.parse_expression()?))
+                let expr = self.parse_expression()?;
+                Ok(Stmt {
+                    typ: StmtType::ExprStmt(expr.clone()),
+                    start: expr.start,
+                    end: expr.end,
+                })
             },
         }
     }

@@ -44,9 +44,9 @@ impl Display for TokenType {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Token {
+    pub typ: TokenType,
     pub start: usize,
     pub end: usize,
-    pub typ: TokenType,
 }
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

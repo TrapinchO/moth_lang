@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::error::Error;
 use crate::lexer::{Token, TokenType};
-use crate::parser::{Expr, ExprType, Stmt};
+use crate::parser::{Expr, ExprType, StmtType, Stmt};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Associativity {
@@ -28,9 +28,15 @@ impl Precedence {
 pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut ls = vec![];
     for s in stmt {
-        ls.push(match s {
-            Stmt::ExprStmt(expr) => Stmt::ExprStmt(reassoc_expr(expr)?),
-            Stmt::AssingmentStmt(ident, expr) => Stmt::AssingmentStmt(ident.clone(), reassoc_expr(expr)?)
+        ls.push(match &s.typ {
+            StmtType::ExprStmt(expr) => Stmt {
+                typ: StmtType::ExprStmt(reassoc_expr(&expr)?),
+                ..*s
+            },
+            StmtType::AssingmentStmt(ident, expr) => Stmt {
+                typ: StmtType::AssingmentStmt(ident.clone(), reassoc_expr(&expr)?),
+                ..*s
+            }
         })
     }
     Ok(ls)

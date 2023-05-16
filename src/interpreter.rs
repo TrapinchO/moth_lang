@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::lexer::{Token, TokenType};
-use crate::parser::{ExprType, Stmt};
+use crate::parser::{ExprType, StmtType, Stmt};
 use crate::{error::Error, parser::Expr};
 
 pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
@@ -20,9 +20,9 @@ impl Interpreter {
 
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmt {
-            match s {
-                Stmt::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr)?,
-                Stmt::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(expr)?); },
+            match &s.typ {
+                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(&ident, &expr)?,
+                StmtType::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(&expr)?); },
             }
         }
         println!("{:?}", self.environment);
