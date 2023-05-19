@@ -43,8 +43,7 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
 
     let mut line = 0;
     let mut col = 0;
-    for i in 0..idx {
-        let chr = code[i];
+    for chr in code.iter().take(idx) {
         if chr == '\n' {
             line += 1;
             col = 0;
