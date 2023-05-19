@@ -12,7 +12,7 @@ struct Environment {
 
 impl Environment {
     pub fn insert(&mut self, name: String, val: f64) -> Result<(), Error> {
-        if self.env.contains_key(&name.to_string()) {
+        if self.env.contains_key(&name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
                 lines: vec![(0, 0)]  // TODO: fix
@@ -58,11 +58,10 @@ impl Interpreter {
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmt {
             match &s.typ {
-                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr),
-                StmtType::ExprStmt(expr) => Ok({ println!("exprstmt: {:?}", self.expr(expr)?); }),
-            }?;
+                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr)?,
+                StmtType::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(expr)?); },
+            }
         }
-        1+1;
         println!("{:?}", self.environment);
         Ok(())
     }
