@@ -60,8 +60,9 @@ impl Interpreter {
             match &s.typ {
                 StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr),
                 StmtType::ExprStmt(expr) => Ok({ println!("exprstmt: {:?}", self.expr(expr)?); }),
-            }
+            }?;
         }
+        1+1;
         println!("{:?}", self.environment);
         Ok(())
     }
