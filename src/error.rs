@@ -44,7 +44,7 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let mut line = 0;
     let mut col = 0;
     for chr in code.iter().take(idx) {
-        if chr == '\n' {
+        if *chr == '\n' {
             line += 1;
             col = 0;
         } else {
