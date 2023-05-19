@@ -51,18 +51,5 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
             col += 1;
         }
     }
-    /*
-    let mut i = 0;
-    while i < idx {
-        let chr = code[i];
-        if chr == '\n' {
-            line += 1;
-            col = 0;
-        } else {
-            col += 1;
-        }
-        i += 1
-    }
-    */
     Pos { line, col }
 }
