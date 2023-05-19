@@ -85,6 +85,7 @@ impl Interpreter {
         match &expr.typ {
             ExprType::Number(n) => Ok(Value::Float(*n as f32)),  // TODO: separate to i32 and f32
             ExprType::String(s) => Ok(Value::String(s.clone())),
+            ExprType::Bool(b) => Ok(Value::Bool(*b)),
             ExprType::Identifier(ident) => self.environment.get(ident),
             ExprType::Parens(expr) => self.expr(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),

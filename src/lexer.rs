@@ -5,6 +5,8 @@ use std::{collections::HashMap, fmt::Display};
 pub enum TokenType {
     Number(i32),
     Identifier(String),
+    True,
+    False,
     Let,
     Fun,
     String(String),
@@ -119,10 +121,12 @@ impl Lexer {
                 // TODO: floats, different bases
                 num if num.is_ascii_digit() => TokenType::Number(self.lex_number()?),
                 ident if ident.is_alphanumeric() => {
-                    let keywords: HashMap<&str, TokenType> = [
+                    let keywords: HashMap<&str, TokenType> = HashMap::from([
                         ("let", TokenType::Let),
-                        ("fun", TokenType::Fun)
-                    ].iter().cloned().collect();
+                        ("fun", TokenType::Fun),
+                        ("true", TokenType::True),
+                        ("false", TokenType::False),
+                    ]);
 
                     let ident = self.lex_identifier();
                     // NOTE: I am absolutely not sure about the map stuff

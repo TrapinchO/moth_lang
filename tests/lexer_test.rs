@@ -49,6 +49,8 @@ mod tests {
         let kw = [
             ("let", TokenType::Let),
             ("fun", TokenType::Fun),
+            ("true", TokenType::True),
+            ("false", TokenType::False),
         ];
         for (k, r) in kw {
             let tok = lex(k).unwrap();

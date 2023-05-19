@@ -58,7 +58,7 @@ fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
             typ: ExprType::UnaryOperation(op.clone(), reassoc_expr(expr.as_ref())?.into()),
             ..expr.as_ref().clone()
         },
-        ExprType::Number(_) | ExprType::String(_) | ExprType::Identifier(_) => expr.clone(),
+        ExprType::Number(_) | ExprType::String(_) | ExprType::Identifier(_) | ExprType::Bool(_) => expr.clone(),
     })
 }
 

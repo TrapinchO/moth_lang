@@ -7,6 +7,7 @@ use std::rc::Rc;
 pub enum ExprType {
     Number(i32),
     String(String),
+    Bool(bool),
     Identifier(String),
     Parens(Rc<Expr>),
     UnaryOperation(Token, Rc<Expr>),
@@ -18,6 +19,7 @@ impl ExprType {
         match self {
             Self::Number(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
+            Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
             Self::Parens(expr) => format!("({})", expr.typ.format()),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
@@ -220,6 +222,16 @@ impl Parser {
             },
             TokenType::Identifier(ident) => {
                 let expr = ExprType::Identifier(ident.to_string());
+                self.advance();
+                expr
+            },
+            TokenType::True => {
+                let expr = ExprType::Bool(true);
+                self.advance();
+                expr
+            },
+            TokenType::False => {
+                let expr = ExprType::Bool(false);
                 self.advance();
                 expr
             },
