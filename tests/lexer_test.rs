@@ -101,7 +101,7 @@ mod tests {
     #[test]
     fn lex_symbols_special() {
         let symbols = [
-            ("=", TokenType::Equals),
+            ("==", TokenType::Equals),
             ("?", TokenType::QuestionMark),
             (";", TokenType::Semicolon),
             ("(", TokenType::LParen),
