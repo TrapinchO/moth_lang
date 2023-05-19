@@ -17,6 +17,7 @@ impl Error {
             .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx))).collect::<Vec<_>>();
         let last_line = lines.iter().map(|x| x.0.line).max()
             .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
+        let width = last_line.to_string.len();
 
         assert!(last_line < code_lines.len(),
                 "Error's line ({}) is greater than that of the code ({})",
@@ -30,7 +31,7 @@ impl Error {
                 code_lines[start.line],  // line of the code
                 " ".repeat(width + start.col),  // align it properly
                 "^".repeat(end.col - start.col + 1),
-                width = last_line.to_string().len())
+                width = width)
             ).collect::<Vec<_>>().join("\n");
         format!("Error: {}\n{}", self.msg, lines)
     }
