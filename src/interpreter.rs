@@ -4,18 +4,41 @@ use crate::lexer::{Token, TokenType};
 use crate::parser::{ExprType, StmtType, Stmt};
 use crate::{error::Error, parser::Expr};
 
+struct Environment {
+    env: HashMap<String, f64>
+}
+
+impl Environment {
+    pub fn insert(&mut self, name: String, val: f64) -> Result<(), Error> {
+        if self.env.contains_key(&name.to_string()) {
+            return Err(Error {
+                msg: format!("Variable \"{}\" already exists!", name),
+                lines: vec![(0, 0)]  // TODO: fix
+            })
+        }
+        self.env.insert(name.to_string(), self.expr(expr)?);
+    }
+
+    pub fn get(&self, name: String) -> Result<f64, Error> {
+        self.env.get(name).cloned().ok_or(Error {
+            msg: format!("Identifier not found: \"{}\"", name),
+            lines: vec![(0, 0)] // TODO: fix
+        }),
+    }
+}
+
 pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new().interpret(stmt)
 }
 
 // TODO: use visitor patter? make a trait?
 struct Interpreter {
-    environment: HashMap<String, f64>
+    environment: Environment
 }
 
 impl Interpreter {
     pub fn new() -> Self {
-        Interpreter { environment: HashMap::new() }
+        Interpreter { environment: Enviroment {env: HashMap::new() } }
     }
 
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
@@ -33,46 +56,36 @@ impl Interpreter {
         let TokenType::Identifier(name) = &ident.typ else {
             panic!("Expected an identifier");
         };
-        if self.environment.contains_key(&name.to_string()) {
-            return Err(Error {
-                msg: format!("Variable \"{}\" already exists!", name),
-                lines: vec![(0, 0)]  // TODO: fix
-            })
-        }
-        self.environment.insert(name.to_string(), self.expr(expr)?);
-        Ok(())
+        self.environment.insert(name.to_string(), self.expr(expr)?)?;
     }
 
     pub fn expr(&self, expr: &Expr) -> Result<f64, Error> {
         match &expr.typ {
             ExprType::Number(n) => Ok((*n).into()),
             ExprType::String(_) => todo!("strings are not implemented yet!"),
-            ExprType::Identifier(ident) => self.environment.get(ident).cloned().ok_or(Error {
-                msg: format!("Identifier not found: \"{}\"", ident),
-                lines: vec![(0, 0)] // TODO: fix
-            }),
+            ExprType::Identifier(ident) => self.environment.get(ident)?,
             ExprType::Parens(expr) => self.expr(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),
             ExprType::BinaryOperation(left, op, right) => self.binary(self.expr(left)?, op, self.expr(right)?),
         }
     }
 
-    fn unary(&self, _op: &Token, val: f64) -> Result<f64, Error> {
-        let TokenType::Symbol(op) = &_op.typ else {
-            panic!("Expected a symbol!")
+    fn unary(&self, sym: &Token, val: f64) -> Result<f64, Error> {
+        let TokenType::Symbol(op) = &sym.typ else {
+            panic!("Expected a symbol, found {:?}", sym);
         };
         match op.as_str() {
             "-" => Ok(-val),
             _ => Err(Error {
-                msg: format!("Operator \"{}\" does not exist", op.as_str()),
-                lines: vec![(_op.start, _op.end)],
+                msg: format!("Operator \"{}\" does not exist", op),
+                lines: vec![(sym.start, sym.end)],
             }),
         }
     }
 
-    fn binary(&self, left: f64, _op: &Token, right: f64) -> Result<f64, Error> {
-        let TokenType::Symbol(op) = &_op.typ else {
-            panic!("Expected a symbol!")
+    fn binary(&self, left: f64, sym: &Token, right: f64) -> Result<f64, Error> {
+        let TokenType::Symbol(op) = &sym.typ else {
+            panic!("Expected a symbol, found {:?}", sym)
         };
         Ok(match op.as_str() {
             "+" => left + right,
@@ -83,7 +96,7 @@ impl Interpreter {
                     // rust gives "inf" TODO: make better
                     return Err(Error {
                         msg: "Cannot divide by zero".to_string(),
-                        lines: vec![(_op.start, _op.end)],
+                        lines: vec![(sym.start, sym.end)],
                     });
                 }
                 left / right
