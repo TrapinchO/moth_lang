@@ -4,6 +4,8 @@ use crate::lexer::{Token, TokenType};
 use crate::parser::{ExprType, StmtType, Stmt};
 use crate::{error::Error, parser::Expr};
 
+// TODO: cannot have Eq because of the float
+#[derive(Debug, PartialEq, Clone)]
 struct Environment {
     env: HashMap<String, f64>
 }
@@ -12,18 +14,30 @@ impl Environment {
     pub fn insert(&mut self, name: String, val: f64) -> Result<(), Error> {
         if self.env.contains_key(&name.to_string()) {
             return Err(Error {
-                msg: format!("Variable \"{}\" already exists!", name),
+                msg: format!("Name \"{}\" already exists", name),
                 lines: vec![(0, 0)]  // TODO: fix
             })
         }
-        self.env.insert(name.to_string(), self.expr(expr)?);
+        self.env.insert(name, val);
+        Ok(())
     }
 
     pub fn get(&self, name: String) -> Result<f64, Error> {
         self.env.get(name).cloned().ok_or(Error {
-            msg: format!("Identifier not found: \"{}\"", name),
+            msg: format!("Name not found: \"{}\"", name),
             lines: vec![(0, 0)] // TODO: fix
-        }),
+        })
+    }
+
+    pub fn update(&mut self, name: String, val: f64) ->Result<(), Error> {
+        if !self.env.contains_key(&name.to_string()) {
+            return Err(Error {
+                msg: format!("Name \"{}\" does not exists", name),
+                lines: vec![(0, 0)]  // TODO: fix
+            })
+        }
+        *self.env.get_mut(name).unwrap() = val;
+        Ok(())
     }
 }
 
@@ -38,13 +52,13 @@ struct Interpreter {
 
 impl Interpreter {
     pub fn new() -> Self {
-        Interpreter { environment: Enviroment {env: HashMap::new() } }
+        Interpreter { environment: Environment {env: HashMap::new() } }
     }
 
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmt {
             match &s.typ {
-                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr)?,
+                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr),
                 StmtType::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(expr)?); },
             }
         }
@@ -56,14 +70,14 @@ impl Interpreter {
         let TokenType::Identifier(name) = &ident.typ else {
             panic!("Expected an identifier");
         };
-        self.environment.insert(name.to_string(), self.expr(expr)?)?;
+        self.environment.insert(name.to_string(), self.expr(expr)?);
     }
 
     pub fn expr(&self, expr: &Expr) -> Result<f64, Error> {
         match &expr.typ {
             ExprType::Number(n) => Ok((*n).into()),
             ExprType::String(_) => todo!("strings are not implemented yet!"),
-            ExprType::Identifier(ident) => self.environment.get(ident)?,
+            ExprType::Identifier(ident) => self.environment.get(ident.clone()),
             ExprType::Parens(expr) => self.expr(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),
             ExprType::BinaryOperation(left, op, right) => self.binary(self.expr(left)?, op, self.expr(right)?),

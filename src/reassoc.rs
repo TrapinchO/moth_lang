@@ -63,13 +63,13 @@ fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
 }
 
 fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
-    let prec_table: HashMap<&str, Precedence> = [
+    let prec_table: HashMap<&str, Precedence> = HashMap::from([
         ("+", Precedence::new(1, Associativity::Left)),
         ("-", Precedence::new(1, Associativity::Left)),
         ("*", Precedence::new(2, Associativity::Left)),
         ("/", Precedence::new(2, Associativity::Left)),
         ("^^", Precedence::new(10, Associativity::Right)),  // analyzer shut up now please its used
-    ].iter().cloned().collect();
+    ]);
 
     // not a binary operation, no need to reassociate it
     let ExprType::BinaryOperation(left2, op2, right2) = &right.typ else {
