@@ -22,14 +22,14 @@ impl Environment {
         Ok(())
     }
 
-    pub fn get(&self, name: String) -> Result<f64, Error> {
+    pub fn get(&self, name: &String) -> Result<f64, Error> {
         self.env.get(name).cloned().ok_or(Error {
             msg: format!("Name not found: \"{}\"", name),
             lines: vec![(0, 0)] // TODO: fix
         })
     }
 
-    pub fn update(&mut self, name: String, val: f64) ->Result<(), Error> {
+    pub fn update(&mut self, name: &String, val: f64) ->Result<(), Error> {
         if !self.env.contains_key(&name.to_string()) {
             return Err(Error {
                 msg: format!("Name \"{}\" does not exists", name),
@@ -70,14 +70,14 @@ impl Interpreter {
         let TokenType::Identifier(name) = &ident.typ else {
             panic!("Expected an identifier");
         };
-        self.environment.insert(name.to_string(), self.expr(expr)?);
+        self.environment.insert(name.to_string(), self.expr(expr)?)
     }
 
     pub fn expr(&self, expr: &Expr) -> Result<f64, Error> {
         match &expr.typ {
             ExprType::Number(n) => Ok((*n).into()),
             ExprType::String(_) => todo!("strings are not implemented yet!"),
-            ExprType::Identifier(ident) => self.environment.get(ident.clone()),
+            ExprType::Identifier(ident) => self.environment.get(ident),
             ExprType::Parens(expr) => self.expr(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),
             ExprType::BinaryOperation(left, op, right) => self.binary(self.expr(left)?, op, self.expr(right)?),
