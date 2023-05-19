@@ -41,6 +41,15 @@ impl Environment {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
+enum Value {
+    String(String),
+    Bool(bool),
+    Int(i32),
+    Float(f32),
+}
+
+
 pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new().interpret(stmt)
 }
