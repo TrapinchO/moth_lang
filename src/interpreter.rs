@@ -4,14 +4,22 @@ use crate::lexer::{Token, TokenType};
 use crate::parser::{ExprType, StmtType, Stmt};
 use crate::{error::Error, parser::Expr};
 
+#[derive(Debug, PartialEq, Clone)]
+enum Value {
+    String(String),
+    Bool(bool),
+    Int(i32),
+    Float(f32),
+}
+
 // TODO: cannot have Eq because of the float
 #[derive(Debug, PartialEq, Clone)]
 struct Environment {
-    env: HashMap<String, f64>
+    env: HashMap<String, Value>
 }
 
 impl Environment {
-    pub fn insert(&mut self, name: String, val: f64) -> Result<(), Error> {
+    pub fn insert(&mut self, name: String, val: Value) -> Result<(), Error> {
         if self.env.contains_key(&name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
@@ -22,14 +30,14 @@ impl Environment {
         Ok(())
     }
 
-    pub fn get(&self, name: &String) -> Result<f64, Error> {
+    pub fn get(&self, name: &String) -> Result<Value, Error> {
         self.env.get(name).cloned().ok_or(Error {
             msg: format!("Name not found: \"{}\"", name),
             lines: vec![(0, 0)] // TODO: fix
         })
     }
 
-    pub fn update(&mut self, name: &String, val: f64) ->Result<(), Error> {
+    pub fn update(&mut self, name: &String, val: Value) ->Result<(), Error> {
         if !self.env.contains_key(&name.to_string()) {
             return Err(Error {
                 msg: format!("Name \"{}\" does not exists", name),
@@ -40,15 +48,6 @@ impl Environment {
         Ok(())
     }
 }
-
-#[derive(Debug, PartialEq, Clone)]
-enum Value {
-    String(String),
-    Bool(bool),
-    Int(i32),
-    Float(f32),
-}
-
 
 pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new().interpret(stmt)
@@ -82,10 +81,10 @@ impl Interpreter {
         self.environment.insert(name.to_string(), self.expr(expr)?)
     }
 
-    pub fn expr(&self, expr: &Expr) -> Result<f64, Error> {
+    pub fn expr(&self, expr: &Expr) -> Result<Value, Error> {
         match &expr.typ {
-            ExprType::Number(n) => Ok((*n).into()),
-            ExprType::String(_) => todo!("strings are not implemented yet!"),
+            ExprType::Number(n) => Ok(Value::Float(*n as f32)),  // TODO: separate to i32 and f32
+            ExprType::String(s) => Ok(Value::String(s.clone())),
             ExprType::Identifier(ident) => self.environment.get(ident),
             ExprType::Parens(expr) => self.expr(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),
@@ -93,38 +92,64 @@ impl Interpreter {
         }
     }
 
-    fn unary(&self, sym: &Token, val: f64) -> Result<f64, Error> {
+    fn unary(&self, sym: &Token, val: Value) -> Result<Value, Error> {
         let TokenType::Symbol(op) = &sym.typ else {
             panic!("Expected a symbol, found {:?}", sym);
         };
-        match op.as_str() {
-            "-" => Ok(-val),
-            _ => Err(Error {
-                msg: format!("Operator \"{}\" does not exist", op),
-                lines: vec![(sym.start, sym.end)],
-            }),
-        }
+        Ok(match val {
+            Value::Float(n) => {
+                match op.as_str() {
+                    "-" => Value::Float(-n),  // TODO fix Int vs Float
+                    _ => return operator_error(sym),
+                }
+            },
+            Value::Int(n) => {
+                match op.as_str() {
+                    "-" => Value::Int(-n),  // TODO fix Int vs Float
+                    _ => return operator_error(sym),
+                }
+            },
+            _ => todo!("Not yet implemented!")
+        })
     }
 
-    fn binary(&self, left: f64, sym: &Token, right: f64) -> Result<f64, Error> {
+    fn binary(&self, left: Value, sym: &Token, right: Value) -> Result<Value, Error> {
         let TokenType::Symbol(op) = &sym.typ else {
             panic!("Expected a symbol, found {:?}", sym)
         };
-        Ok(match op.as_str() {
-            "+" => left + right,
-            "-" => left - right,
-            "*" => left * right,
-            "/" => {
-                if right == 0.0 {
-                    // rust gives "inf" TODO: make better
-                    return Err(Error {
-                        msg: "Cannot divide by zero".to_string(),
-                        lines: vec![(sym.start, sym.end)],
-                    });
+        Ok(match (left, right) {
+            (Value::Float(f1), Value::Float(f2)) => Value::Float(match op.as_str() {
+                "+" => f1 + f2,
+                "-" => f1 - f2,
+                "*" => f1 * f2,
+                "/" => {
+                    if f2 == 0.0 {
+                        // rust gives "inf" TODO: make better
+                        return Err(Error {
+                            msg: "Cannot divide by zero".to_string(),
+                            lines: vec![(sym.start, sym.end)],
+                        });
+                    }
+                    f1 / f2
                 }
-                left / right
-            }
-            _ => todo!("Unary not implemented yet!"),
+                _ => return operator_error(sym),
+            }),
+            (Value::String(s1), Value::String(s2)) => Value::String(match op.as_str() {
+                "+" => s1 + &s2,
+                _ => return operator_error(sym),
+            }),
+            (val1, val2) => todo!("Values {:?} and {:?} not supported", val1, val2)
         })
     }
+}
+
+
+fn operator_error<T>(sym: &Token) -> Result<T, Error> {
+    let TokenType::Symbol(op) = &sym.typ else {
+        panic!("Expected a symbol, found {:?}", sym)
+    };
+    Err(Error {
+        msg: format!("Operator \"{}\" not found", op),
+        lines: vec![(sym.start, sym.end)]
+    })
 }
