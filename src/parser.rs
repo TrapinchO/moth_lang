@@ -3,7 +3,7 @@ use crate::lexer::{Token, TokenType};
 use std::fmt::Display;
 use std::rc::Rc;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ExprType {
     Number(i32),
     String(String),
@@ -37,7 +37,7 @@ impl Display for ExprType {
 // TODO: Stuff will probably break when multiline expressions because of the indexes
 // TODO: consider moving this to the bottom again, as rust seems to be
 // affected by position of the arguments, at least regarding the borrow checker
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Expr {
     pub typ: ExprType,
     pub start: usize,
@@ -50,7 +50,7 @@ impl Display for Expr {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
     ExprStmt(Expr),
     AssingmentStmt(Token, Expr),
@@ -69,7 +69,7 @@ impl Display for StmtType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Stmt {
     pub typ: StmtType,
     pub start: usize,

@@ -1,7 +1,7 @@
 use crate::error::Error;
 use std::{collections::HashMap, fmt::Display};
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     Number(i32),
     Identifier(String),
@@ -45,7 +45,7 @@ impl Display for TokenType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub typ: TokenType,
     pub start: usize,
@@ -58,6 +58,23 @@ impl Display for Token {
 }
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:";
+
+const KEYWORDS: [(&str, TokenType); 4] = [
+    ("let", TokenType::Let),
+    ("fun", TokenType::Fun),
+    ("true", TokenType::True),
+    ("false", TokenType::False),
+];
+
+const SPECIAL_SYMBOLS: [(char, TokenType); 7] = [
+    ('(', TokenType::LParen),
+    (')', TokenType::RParen),
+    ('[', TokenType::LBracket),
+    (']', TokenType::RBracket),
+    ('{', TokenType::LBrace),
+    ('}', TokenType::RBrace),
+    (';', TokenType::Semicolon),
+];
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
     Lexer::new(code).lex()
@@ -119,30 +136,23 @@ impl Lexer {
                     continue;
                 },
                 // TODO: floats, different bases
-                num if num.is_ascii_digit() => TokenType::Number(self.lex_number()?),
+                num if num.is_ascii_digit() => {
+                    let n = TokenType::Number(self.lex_number()?);
+                    n
+                },
                 ident if ident.is_alphanumeric() => {
-                    let keywords: HashMap<&str, TokenType> = HashMap::from([
-                        ("let", TokenType::Let),
-                        ("fun", TokenType::Fun),
-                        ("true", TokenType::True),
-                        ("false", TokenType::False),
-                    ]);
-
                     let ident = self.lex_identifier();
-                    // NOTE: I am absolutely not sure about the map stuff
-                    // but it works, so... yeah...
-                    match keywords.get(&ident.as_str()) {
+                    let keywords = HashMap::from(KEYWORDS);
+                    match keywords.get(ident.as_str()) {
                         Some(kw) => kw.clone(),
                         None => TokenType::Identifier(ident),
                     }
                 }
-                '(' => {self.advance(); TokenType::LParen},
-                ')' => {self.advance(); TokenType::RParen},
-                '[' => {self.advance(); TokenType::LBracket},
-                ']' => {self.advance(); TokenType::RBracket},
-                '{' => {self.advance(); TokenType::LBrace},
-                '}' => {self.advance(); TokenType::RBrace},
-                ';' => {self.advance(); TokenType::Semicolon},
+                s if SPECIAL_SYMBOLS.map(|x| x.0).contains(&s) => {
+                    self.advance();
+                    let special_symbols = HashMap::from(SPECIAL_SYMBOLS);
+                    special_symbols.get(&s).unwrap().clone()
+                },
                 sym if SYMBOLS.contains(sym) => {
                     let sym = self.lex_symbol();
                     match sym.as_str() {
