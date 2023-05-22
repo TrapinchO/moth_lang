@@ -138,6 +138,8 @@ impl Lexer {
                     continue;
                 },
                 num if num.is_ascii_digit() => {
+                    // floats: should be anything that matches <number>.<number>
+                    // no spaces, missing whole/decimal part
                     self.lex_number()?
                 },
                 ident if ident.is_alphanumeric() => {

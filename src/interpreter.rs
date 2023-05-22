@@ -84,7 +84,7 @@ impl Interpreter {
     pub fn expr(&self, expr: &Expr) -> Result<Value, Error> {
         match &expr.typ {
             ExprType::Int(n) => Ok(Value::Float(*n as f32)),
-            ExprType::Float(n) => Ok(Value::Float(*n as f32)),
+            ExprType::Float(n) => Ok(Value::Float(*n)),
             ExprType::String(s) => Ok(Value::String(s.clone())),
             ExprType::Bool(b) => Ok(Value::Bool(*b)),
             ExprType::Identifier(ident) => self.environment.get(ident),
