@@ -6,6 +6,7 @@ use std::rc::Rc;
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExprType {
     Number(i32),
+    Float(f32),
     String(String),
     Bool(bool),
     Identifier(String),
@@ -18,6 +19,7 @@ impl ExprType {
     fn format(&self) -> String {
         match self {
             Self::Number(n) => n.to_string(),
+            Self::Float(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
@@ -217,6 +219,11 @@ impl Parser {
             },
             TokenType::Number(n) => {
                 let expr = ExprType::Number(*n);
+                self.advance();
+                expr
+            },
+            TokenType::Float(n) => {
+                let expr = ExprType::Float(*n);
                 self.advance();
                 expr
             },

@@ -4,6 +4,7 @@ use std::{collections::HashMap, fmt::Display};
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     Number(i32),
+    Float(f32),
     Identifier(String),
     True,
     False,
@@ -21,6 +22,7 @@ pub enum TokenType {
     Equals,
     QuestionMark,
     Semicolon,
+    Dot,
 }
 
 impl TokenType {
@@ -135,10 +137,8 @@ impl Lexer {
                     self.advance();
                     continue;
                 },
-                // TODO: floats, different bases
                 num if num.is_ascii_digit() => {
-                    let n = TokenType::Number(self.lex_number()?);
-                    n
+                    self.lex_number()?
                 },
                 ident if ident.is_alphanumeric() => {
                     let ident = self.lex_identifier();
@@ -158,6 +158,7 @@ impl Lexer {
                     match sym.as_str() {
                         "=" => TokenType::Equals,
                         "?" => TokenType::QuestionMark,
+                        "." => TokenType::Dot,
                         "/**/" => continue,
                         "/*" => {
                             // might come useful one day for documentation
@@ -192,21 +193,40 @@ impl Lexer {
         Ok(tokens)
     }
 
-    fn lex_number(&mut self) -> Result<i32, Error> {
+    fn lex_number(&mut self) -> Result<TokenType, Error> {
         let mut num = String::from("");
+        let mut is_float = false;
 
         while !self.is_at_end() {
             let cur_char = self.get_current();
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
-                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)));
+                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)))
+            }
+            // check if the number is a float
+            else if self.is_char('.') {
+                if self.idx < self.code.len() - 1 && self.code[self.idx + 1].is_ascii_digit() {
+                    
+                    if is_float {
+                        self.advance();  // for prettier error message
+                        return Err(self.error("Found two floating point number delimiters".to_string()))
+                    }
+                    is_float = true;
+                    num.push('.');
+                } else {
+                    break;
+                }
             } else {
                 break;
             }
             self.advance();
         }
-        Ok(num.parse::<i32>().unwrap())
+        Ok(if is_float {
+            TokenType::Float(num.parse::<f32>().unwrap())
+        } else {
+            TokenType::Number(num.parse::<i32>().unwrap())
+        })
     }
 
     fn lex_identifier(&mut self) -> String {

@@ -10,9 +10,6 @@ fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     env::set_var("RUST_BACKTRACE", "1");
 
-    //let input = String::from("1 + 1 // - 2 *3a =\n+ \"Hello World!\" 123");
-    //let input = String::from("hello /* fasd \n fsdf sd 4566 */ 1000a");
-    //let input = String::from("(1 * 1 + 1) * 1 + 1");
     loop {
         println!("=================\n===== input =====");
         let mut input = String::new();
@@ -34,29 +31,30 @@ fn main() {
         }
     }
 }
+
 fn run(input: String) -> Result<(), Error> {
     println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
 
     println!("===== lexing =====");
-    /*
+    // /*
     for t in &tokens {
         println!("{:?}", t);
     }
-    */
+    //*/
 
     // TODO: unknown operator does not report unless reassociated in binary operation
     let ast = parser::parse(tokens)?;
-    /*
+    // /*
     println!("===== parsing =====");
     for s in &ast {
         println!("{}", s);
     }
-    */
+    //*/
 
     let resassoc = reassoc::reassociate(&ast)?;
     println!("===== reassociating =====");
-    ///*
+    // /*
     for s in &resassoc {
         println!("{}", s);
     }

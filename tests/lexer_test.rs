@@ -91,7 +91,7 @@ mod tests {
     #[test]
     fn lex_symbols() {
         let symbols = [
-            "+", "-", "*", "/", "==", "<", ">", "!", "|", ".", "$", "&", "@", "#", "??", "~", "^", ":",
+            "+", "-", "*", "/", "==", "<", ">", "!", "|", "..", "$", "&", "@", "#", "??", "~", "^", ":",
         ];
 
         for s in symbols {
@@ -105,6 +105,7 @@ mod tests {
         let symbols = [
             ("=", TokenType::Equals),
             ("?", TokenType::QuestionMark),
+            (".", TokenType::Dot),
             (";", TokenType::Semicolon),
             ("(", TokenType::LParen),
             (")", TokenType::RParen),
