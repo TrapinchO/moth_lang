@@ -3,7 +3,7 @@ use std::{collections::HashMap, fmt::Display};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
-    Number(i32),
+    Int(i32),
     Float(f32),
     Identifier(String),
     True,
@@ -29,7 +29,7 @@ impl TokenType {
     // TODO: better format for non-value types
     fn format(&self) -> String {
         match self {
-            Self::Number(n) => n.to_string(),
+            Self::Int(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::Symbol(s) => s.to_string(),
             Self::Identifier(i) => i.to_string(),
@@ -225,7 +225,7 @@ impl Lexer {
         Ok(if is_float {
             TokenType::Float(num.parse::<f32>().unwrap())
         } else {
-            TokenType::Number(num.parse::<i32>().unwrap())
+            TokenType::Int(num.parse::<i32>().unwrap())
         })
     }
 

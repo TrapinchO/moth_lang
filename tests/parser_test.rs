@@ -119,12 +119,12 @@ mod tests {
     #[test]
     fn parse_primary() {
         let ops = [
-            ("1", expr!(ExprType::Number(1))),
-            ("1234", expr!(ExprType::Number(1234))),
+            ("1", expr!(ExprType::Int(1))),
+            ("1234", expr!(ExprType::Int(1234))),
             ("\"\"", expr!(ExprType::String("".to_string()))),
             ("\"test\"", expr!(ExprType::String("test".to_string()))),
-            ("(1)", expr!(ExprType::Parens(expr!(ExprType::Number(1)).into()))),
-            ("(1 + 1)", expr!(parenop!(binop!(ExprType::Number(1), "+", ExprType::Number(1))))),
+            ("(1)", expr!(ExprType::Parens(expr!(ExprType::Int(1)).into()))),
+            ("(1 + 1)", expr!(parenop!(binop!(ExprType::Int(1), "+", ExprType::Int(1))))),
         ];
         for (s, op) in ops {
             assert!(compare_elements(
@@ -167,47 +167,47 @@ mod tests {
     #[test]
     fn parse_binary() {
         let ops = [
-            ("1+1", binop!(ExprType::Number(1), "+", ExprType::Number(1))),
-            ("1 + 1", binop!(ExprType::Number(1), "+", ExprType::Number(1))),
-            ("1-1", binop!(ExprType::Number(1), "-", ExprType::Number(1))),
-            ("1**1", binop!(ExprType::Number(1), "**", ExprType::Number(1))),
+            ("1+1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
+            ("1 + 1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
+            ("1-1", binop!(ExprType::Int(1), "-", ExprType::Int(1))),
+            ("1**1", binop!(ExprType::Int(1), "**", ExprType::Int(1))),
 
-            ("1+1+1", binop!(ExprType::Number(1), "+", binop!(ExprType::Number(1), "+", ExprType::Number(1)))),
-        ];
-        for (s, op) in ops {
-            assert!(compare_elements(
-                &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                &stmt!(StmtType::ExprStmt(expr!(op)))
-            ));
+                ("1+1+1", binop!(ExprType::Int(1), "+", binop!(ExprType::Int(1), "+", ExprType::Int(1)))),
+            ];
+            for (s, op) in ops {
+                assert!(compare_elements(
+                    &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
+                    &stmt!(StmtType::ExprStmt(expr!(op)))
+                ));
+            }
         }
-    }
 
-    #[test]
-    fn parse_unary() {
-        let ops = [
-            ("+1", unop!("+", ExprType::Number(1))),
-            ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Number(1))))),
-            ("*-+1", unop!("*-+", ExprType::Number(1))),
-        ];
-        for (s, op) in ops {
-            assert!(compare_elements(
-                &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                &stmt!(StmtType::ExprStmt(expr!(op)))
-            ));
+        #[test]
+        fn parse_unary() {
+            let ops = [
+                ("+1", unop!("+", ExprType::Int(1))),
+                ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Int(1))))),
+                ("*-+1", unop!("*-+", ExprType::Int(1))),
+            ];
+            for (s, op) in ops {
+                assert!(compare_elements(
+                    &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
+                    &stmt!(StmtType::ExprStmt(expr!(op)))
+                ));
+            }
         }
-    }
 
-    #[test]
-    fn test_reassoc() {
-        let ops = [
-            ("1 - 1 - 1", binop!(
-                    binop!(ExprType::Number(1), "-", ExprType::Number(1)),
+        #[test]
+        fn test_reassoc() {
+            let ops = [
+                ("1 - 1 - 1", binop!(
+                        binop!(ExprType::Int(1), "-", ExprType::Int(1)),
+                        "-",
+                        ExprType::Int(1))),
+                ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
+                        binop!(ExprType::Int(1), "-", ExprType::Int(1)),
                     "-",
-                    ExprType::Number(1))),
-            ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
-                    binop!(ExprType::Number(1), "-", ExprType::Number(1)),
-                    "-",
-                    ExprType::Number(1))))),
+                    ExprType::Int(1))))),
         ];
         for (s, op) in ops {
             assert!(compare_elements(

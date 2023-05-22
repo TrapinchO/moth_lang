@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExprType {
-    Number(i32),
+    Int(i32),
     Float(f32),
     String(String),
     Bool(bool),
@@ -18,7 +18,7 @@ pub enum ExprType {
 impl ExprType {
     fn format(&self) -> String {
         match self {
-            Self::Number(n) => n.to_string(),
+            Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::Bool(b) => b.to_string(),
@@ -217,8 +217,8 @@ impl Parser {
                 self.advance();
                 expr
             },
-            TokenType::Number(n) => {
-                let expr = ExprType::Number(*n);
+            TokenType::Int(n) => {
+                let expr = ExprType::Int(*n);
                 self.advance();
                 expr
             },

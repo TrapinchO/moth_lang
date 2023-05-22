@@ -12,7 +12,7 @@ mod tests {
     fn lex_number() {
         let n = "10";
         let t = lex(n).unwrap();
-        assert_eq!(t[0].typ, TokenType::Number(10))
+        assert_eq!(t[0].typ, TokenType::Int(10))
     }
 
     #[test]
@@ -148,25 +148,25 @@ mod tests {
     #[test]
     fn lex_symbols_special2() {
         let symbols = [
-            ("=1", vec![TokenType::Equals, TokenType::Number(1), TokenType::Eof]),
-            ("?1", vec![TokenType::QuestionMark, TokenType::Number(1), TokenType::Eof]),
-            (";1", vec![TokenType::Semicolon, TokenType::Number(1), TokenType::Eof]),
-            ("(1", vec![TokenType::LParen, TokenType::Number(1), TokenType::Eof]),
-            (")1", vec![TokenType::RParen, TokenType::Number(1), TokenType::Eof]),
-            ("[1", vec![TokenType::LBracket, TokenType::Number(1), TokenType::Eof]),
-            ("]1", vec![TokenType::RBracket, TokenType::Number(1), TokenType::Eof]),
-            ("{1", vec![TokenType::LBrace, TokenType::Number(1), TokenType::Eof]),
-            ("}1", vec![TokenType::RBrace, TokenType::Number(1), TokenType::Eof]),
+            ("=1", vec![TokenType::Equals, TokenType::Int(1), TokenType::Eof]),
+            ("?1", vec![TokenType::QuestionMark, TokenType::Int(1), TokenType::Eof]),
+            (";1", vec![TokenType::Semicolon, TokenType::Int(1), TokenType::Eof]),
+            ("(1", vec![TokenType::LParen, TokenType::Int(1), TokenType::Eof]),
+            (")1", vec![TokenType::RParen, TokenType::Int(1), TokenType::Eof]),
+            ("[1", vec![TokenType::LBracket, TokenType::Int(1), TokenType::Eof]),
+            ("]1", vec![TokenType::RBracket, TokenType::Int(1), TokenType::Eof]),
+            ("{1", vec![TokenType::LBrace, TokenType::Int(1), TokenType::Eof]),
+            ("}1", vec![TokenType::RBrace, TokenType::Int(1), TokenType::Eof]),
 
-            ("= 1", vec![TokenType::Equals, TokenType::Number(1), TokenType::Eof]),
-            ("? 1", vec![TokenType::QuestionMark, TokenType::Number(1), TokenType::Eof]),
-            ("; 1", vec![TokenType::Semicolon, TokenType::Number(1), TokenType::Eof]),
-            ("( 1", vec![TokenType::LParen, TokenType::Number(1), TokenType::Eof]),
-            (") 1", vec![TokenType::RParen, TokenType::Number(1), TokenType::Eof]),
-            ("[ 1", vec![TokenType::LBracket, TokenType::Number(1), TokenType::Eof]),
-            ("] 1", vec![TokenType::RBracket, TokenType::Number(1), TokenType::Eof]),
-            ("{ 1", vec![TokenType::LBrace, TokenType::Number(1), TokenType::Eof]),
-            ("} 1", vec![TokenType::RBrace, TokenType::Number(1), TokenType::Eof]),
+            ("= 1", vec![TokenType::Equals, TokenType::Int(1), TokenType::Eof]),
+            ("? 1", vec![TokenType::QuestionMark, TokenType::Int(1), TokenType::Eof]),
+            ("; 1", vec![TokenType::Semicolon, TokenType::Int(1), TokenType::Eof]),
+            ("( 1", vec![TokenType::LParen, TokenType::Int(1), TokenType::Eof]),
+            (") 1", vec![TokenType::RParen, TokenType::Int(1), TokenType::Eof]),
+            ("[ 1", vec![TokenType::LBracket, TokenType::Int(1), TokenType::Eof]),
+            ("] 1", vec![TokenType::RBracket, TokenType::Int(1), TokenType::Eof]),
+            ("{ 1", vec![TokenType::LBrace, TokenType::Int(1), TokenType::Eof]),
+            ("} 1", vec![TokenType::RBrace, TokenType::Int(1), TokenType::Eof]),
         ];
 
         for (s, r) in symbols {
@@ -239,15 +239,15 @@ mod tests {
         // tests positions and whether lexer advances properly
         let exprs = [
             ("1 + 12", vec![
-                Token { start: 0, end:0, typ: TokenType::Number(1) },
+                Token { start: 0, end:0, typ: TokenType::Int(1) },
                 Token { start: 2, end:2, typ: TokenType::Symbol("+".to_string()) },
-                Token { start: 4, end:5, typ: TokenType::Number(12) },
+                Token { start: 4, end:5, typ: TokenType::Int(12) },
                 Token { start: 6, end:6, typ: TokenType::Eof }]),
 
             ("1+12", vec![
-                Token { start: 0, end:0, typ: TokenType::Number(1) },
+                Token { start: 0, end:0, typ: TokenType::Int(1) },
                 Token { start: 1, end:1, typ: TokenType::Symbol("+".to_string()) },
-                Token { start: 2, end:3, typ: TokenType::Number(12) },
+                Token { start: 2, end:3, typ: TokenType::Int(12) },
                 Token { start: 4, end:4, typ: TokenType::Eof }]),
             
             ("test2+test", vec![
