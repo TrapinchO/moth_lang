@@ -16,6 +16,30 @@ mod tests {
     }
 
     #[test]
+    fn lex_float() {
+        let nums = [
+            ("1.1", 1.1),
+            ("10.1", 10.1),
+        ];
+
+        for (f, r) in nums {
+            let tok = lex(f).unwrap();
+            assert_eq!(tok[0].typ, TokenType::Float(r));
+        }
+    }
+
+    #[test]
+    fn lex_float_error() {
+        assert_eq!(
+            lex("1.1.1"),
+            Err(Error {
+                msg: "Found two floating point number delimiters".to_string(),
+                lines: vec![(0, 4)]
+            })
+        );
+    }
+
+    #[test]
     fn lex_number_err() {
         let nums = [
             ("1a", Error { msg: "Invalid digit: \"a\"".to_string(), lines: vec![(0, 1)]})
