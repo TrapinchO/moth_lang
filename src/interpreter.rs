@@ -10,6 +10,7 @@ enum Value {
     Bool(bool),
     Int(i32),
     Float(f32),
+    Function(fn(Vec<Value>)->Result<Value, Error>),
 }
 
 // TODO: cannot have Eq because of the float
@@ -49,8 +50,36 @@ impl Environment {
     }
 }
 
+const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
+    ("+", |args| {
+        // TODO: add proper positions
+        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
+        Ok(match (left, right) {
+            (Value::Int(a), Value::Int(b)) => Value::Int(a + b),
+            (Value::Float(a), Value::Float(b)) => Value::Float(a + b),
+            (Value::String(a), Value::String(b)) => Value::String(a.clone() + b),
+            _ => return Err(Error {
+                msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
+                lines: vec![(0, 0)]
+            })
+        })
+    }),
+    ("-", |args| {
+        // TODO: add proper positions
+        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
+        Ok(match (left, right) {
+            (Value::Int(a), Value::Int(b)) => Value::Int(a - b),
+            (Value::Float(a), Value::Float(b)) => Value::Float(a - b),
+            _ => return Err(Error {
+                msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
+                lines: vec![(0, 0)]
+            })
+        })
+    }),
+];
 pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
-    Interpreter::new().interpret(stmt)
+    let defaults = HashMap::from(BUILTINS.map(|(name, f)| (name.to_string(), Value::Function(f))));
+    Interpreter::new(defaults).interpret(stmt)
 }
 
 // TODO: use visitor patter? make a trait?
@@ -59,8 +88,8 @@ struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new() -> Self {
-        Interpreter { environment: Environment {env: HashMap::new() } }
+    pub fn new(defaults: HashMap<String, Value>) -> Self {
+        Interpreter { environment: Environment {env: defaults } }
     }
 
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
@@ -116,32 +145,16 @@ impl Interpreter {
     }
 
     fn binary(&self, left: Value, sym: &Token, right: Value) -> Result<Value, Error> {
-        let TokenType::Symbol(op) = &sym.typ else {
+        let TokenType::Symbol(op_name) = &sym.typ else {
             panic!("Expected a symbol, found {:?}", sym)
         };
-        Ok(match (left, right) {
-            (Value::Float(f1), Value::Float(f2)) => Value::Float(match op.as_str() {
-                "+" => f1 + f2,
-                "-" => f1 - f2,
-                "*" => f1 * f2,
-                "/" => {
-                    if f2 == 0.0 {
-                        // rust gives "inf" TODO: make better
-                        return Err(Error {
-                            msg: "Cannot divide by zero".to_string(),
-                            lines: vec![(sym.start, sym.end)],
-                        });
-                    }
-                    f1 / f2
-                }
-                _ => return operator_error(sym),
-            }),
-            (Value::String(s1), Value::String(s2)) => Value::String(match op.as_str() {
-                "+" => s1 + &s2,
-                _ => return operator_error(sym),
-            }),
-            (val1, val2) => todo!("Values {:?} and {:?} not supported", val1, val2)
-        })
+        let Value::Function(op) = self.environment.get(op_name)? else {
+            return Err(Error {
+                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                lines: vec![(sym.start, sym.end)]
+            })
+        };
+        op(vec![left, right])
     }
 }
 
