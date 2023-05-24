@@ -5,12 +5,19 @@ use crate::parser::{ExprType, StmtType, Stmt};
 use crate::{error::Error, parser::Expr};
 
 #[derive(Debug, PartialEq, Clone)]
-enum Value {
+enum ValueType {
     String(String),
     Bool(bool),
     Int(i32),
     Float(f32),
     Function(fn(Vec<Value>)->Result<Value, Error>),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+struct Value {
+    typ: ValueType,
+    start: usize,
+    end: usize,
 }
 
 // TODO: cannot have Eq because of the float
@@ -24,7 +31,7 @@ impl Environment {
         if self.env.contains_key(&name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
-                lines: vec![(0, 0)]  // TODO: fix
+                lines: vec![(val.start, val.end)]
             })
         }
         self.env.insert(name, val);
@@ -42,7 +49,7 @@ impl Environment {
         if !self.env.contains_key(&name.to_string()) {
             return Err(Error {
                 msg: format!("Name \"{}\" does not exists", name),
-                lines: vec![(0, 0)]  // TODO: fix
+                lines: vec![(val.start, val.end)]
             })
         }
         *self.env.get_mut(name).unwrap() = val;
@@ -54,31 +61,41 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
     ("+", |args| {
         // TODO: add proper positions
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        Ok(match (left, right) {
-            (Value::Int(a), Value::Int(b)) => Value::Int(a + b),
-            (Value::Float(a), Value::Float(b)) => Value::Float(a + b),
-            (Value::String(a), Value::String(b)) => Value::String(a.clone() + b),
+        let typ = match (left.typ, right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
+            (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + &b),
             _ => return Err(Error {
                 msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
                 lines: vec![(0, 0)]
             })
+        };
+        Ok(Value {
+            typ,
+            start: left.start,
+            end: right.end,
         })
     }),
     ("-", |args| {
         // TODO: add proper positions
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        Ok(match (left, right) {
-            (Value::Int(a), Value::Int(b)) => Value::Int(a - b),
-            (Value::Float(a), Value::Float(b)) => Value::Float(a - b),
-            _ => return Err(Error {
-                msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                lines: vec![(0, 0)]
-            })
+        Ok(Value {
+            typ: match (left.typ, right.typ) {
+                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
+                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
+                _ => return Err(Error {
+                    msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
+                    lines: vec![(0, 0)]
+                })
+            },
+            start: left.start,
+            end: right.end,
         })
     }),
 ];
 pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
-    let defaults = HashMap::from(BUILTINS.map(|(name, f)| (name.to_string(), Value::Function(f))));
+    // TODO: solve positions for builtin stuff
+    let defaults = HashMap::from(BUILTINS.map(|(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })));
     Interpreter::new(defaults).interpret(stmt)
 }
 
@@ -111,32 +128,35 @@ impl Interpreter {
     }
 
     pub fn expr(&self, expr: &Expr) -> Result<Value, Error> {
-        match &expr.typ {
-            ExprType::Int(n) => Ok(Value::Float(*n as f32)),
-            ExprType::Float(n) => Ok(Value::Float(*n)),
-            ExprType::String(s) => Ok(Value::String(s.clone())),
-            ExprType::Bool(b) => Ok(Value::Bool(*b)),
-            ExprType::Identifier(ident) => self.environment.get(ident),
-            ExprType::Parens(expr) => self.expr(expr),
-            ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?),
-            ExprType::BinaryOperation(left, op, right) => self.binary(self.expr(left)?, op, self.expr(right)?),
-        }
+        let typ = match &expr.typ {
+            ExprType::Int(n) => ValueType::Float(*n as f32),
+            ExprType::Float(n) => ValueType::Float(*n),
+            ExprType::String(s) => ValueType::String(s.clone()),
+            ExprType::Bool(b) => ValueType::Bool(*b),
+            // TODO: fix the arms below, they discard positions
+            // keep? discard? store somewhere else?
+            ExprType::Identifier(ident) => self.environment.get(ident)?.typ,
+            ExprType::Parens(expr) => self.expr(expr)?.typ,
+            ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?)?.typ,
+            ExprType::BinaryOperation(left, op, right) => self.binary(self.expr(left)?, op, self.expr(right)?)?.typ,
+        };
+        Ok(Value { typ, start: expr.start, end: expr.end })
     }
 
     fn unary(&self, sym: &Token, val: Value) -> Result<Value, Error> {
         let TokenType::Symbol(op) = &sym.typ else {
             panic!("Expected a symbol, found {:?}", sym);
         };
-        Ok(match val {
-            Value::Float(n) => {
+        Ok(match val.typ {
+            ValueType::Float(n) => {
                 match op.as_str() {
-                    "-" => Value::Float(-n),  // TODO fix Int vs Float
+                    "-" => ValueType::Float(-n),  // TODO fix Int vs Float
                     _ => return operator_error(sym),
                 }
             },
-            Value::Int(n) => {
+            ValueType::Int(n) => {
                 match op.as_str() {
-                    "-" => Value::Int(-n),  // TODO fix Int vs Float
+                    "-" => ValueType::Int(-n),  // TODO fix Int vs Float
                     _ => return operator_error(sym),
                 }
             },
@@ -148,7 +168,7 @@ impl Interpreter {
         let TokenType::Symbol(op_name) = &sym.typ else {
             panic!("Expected a symbol, found {:?}", sym)
         };
-        let Value::Function(op) = self.environment.get(op_name)? else {
+        let ValueType::Function(op) = self.environment.get(op_name)?.typ else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function!", op_name),
                 lines: vec![(sym.start, sym.end)]
