@@ -33,7 +33,7 @@ trait StmtVisitor<T> {
 }
 
 trait ExprVisitor<T> {
-    fn visit(&mut self, expr: Expr) -> Result<Value, Error> {
+    fn visit(&mut self, expr: Expr) -> Result<T, Error> {
         match expr.typ {
             ExprType::Int(_) => self.int(&expr),
             ExprType::Float(_) => self.float(&expr),
@@ -48,7 +48,7 @@ trait ExprVisitor<T> {
     fn int(&mut self, expr: &Expr) -> Result<T, Error>;
     fn float(&mut self, expr: &Expr) -> Result<T, Error>;
     fn string(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn bool(&mut self, b, expr: &Expr) -> Result<T, Error>;
+    fn bool(&mut self, expr: &Expr) -> Result<T, Error>;
     fn identifier(&mut self, ident: String) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<T, Error>;
@@ -146,10 +146,11 @@ struct Interpreter2 {
 
 impl ExprVisitor<Value> for Interpreter2 {
     fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Int(n) = &expr.typ else { unreachable!() }
+        let ExprType::Int(*n) = &expr.typ else { unreachable!() };
         Ok(Value {
             typ: ValueType::Int(n),
-            expr.start, expr.end
+            start: expr.start,
+            end: expr.end,
         })
     }
     fn float(&mut self, expr: &Expr) -> Result<Value, Error>;
