@@ -178,16 +178,56 @@ impl ExprVisitor<Value> for Interpreter2 {
         })
     }
     fn bool(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::String(b) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Bool(b) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
             typ: ValueType::Bool(*b),
             start: expr.start,
             end: expr.end,
         })
     }
-    fn parens(&mut self, expr: &Expr) -> Result<Value, Error>;
-    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error>;
-    fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error>;
+    fn parens(&mut self, expr: &Expr) -> Result<Value, Error> {
+        self.visit(&expr)
+    }
+    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
+        let val = self.visit(&expr);
+
+        let TokenType::Symbol(op) = &sym.typ else {
+            panic!("Expected a symbol, found {:?}", sym);
+        };
+        Ok(Value {
+            typ: match val.typ {
+                ValueType::Float(n) => {
+                  match op.as_str() {
+                       "-" => ValueType::Float(-n),  // TODO fix Int vs Float
+                       _ => return operator_error(sym),
+                  }
+                },
+                ValueType::Int(n) => {
+                    match op.as_str() {
+                        "-" => ValueType::Int(-n),  // TODO fix Int vs Float
+                        _ => return operator_error(sym),
+                    }
+                },
+                _ => todo!("Not yet implemented!")
+            },
+            start: sym.start,
+            end: val.end
+        })
+    }
+    fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
+        let left2 = self.visit(&left);
+        let right2 = self.visit(&right);
+        let TokenType::Symbol(op_name) = &sym.typ else {
+            panic!("Expected a symbol, found {:?}", sym)
+        };
+        let ValueType::Function(op) = self.environment.get(op_name)?.typ else {
+            return Err(Error {
+                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                lines: vec![(sym.start, sym.end)]
+            })
+        };
+        op(vec![left, right])
+    }
 }
 
 
