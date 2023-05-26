@@ -40,9 +40,9 @@ trait ExprVisitor<T> {
             ExprType::String(s) => self.string(s),
             ExprType::Bool(b) => self.bool(b),
             ExprType::Identifier(ident) => self.identifier(ident),
-            ExprType::Parens(expr) => self.parens(expr),
-            ExprType::UnaryOperation(op, expr) => self.unary(op, expr),
-            ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
+            ExprType::Parens(expr) => self.parens(expr.into()),
+            ExprType::UnaryOperation(op, expr) => self.unary(op, expr.into()),
+            ExprType::BinaryOperation(left, op, right) => self.binary(left.into(), op, right.into()),
         }
     }
     fn int(&mut self, n: i32) -> Result<T, Error>;
