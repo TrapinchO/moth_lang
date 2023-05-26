@@ -24,7 +24,7 @@ trait StmtVisitor<T> {
     fn visit(&mut self, stmt: Stmt) -> Result<T, Error> {
         match stmt.typ {
             StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
-            StmtType::ExprStmt(expr) => self.expr,
+            StmtType::ExprStmt(expr) => self.expr(),
         }
     }
 
@@ -43,7 +43,7 @@ trait ExprVisitor<T> {
             ExprType::Parens(expr) => self.parens(expr),
             ExprType::UnaryOperation(op, expr) => self.unary(op, expr),
             ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
-        };
+        }
     }
     fn int(&mut self, n: i32) -> Result<T, Error>;
     fn float(&mut self, n: f32) -> Result<T, Error>;
