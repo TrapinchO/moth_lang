@@ -49,7 +49,7 @@ trait ExprVisitor<T> {
     fn float(&mut self, expr: &Expr) -> Result<T, Error>;
     fn string(&mut self, expr: &Expr) -> Result<T, Error>;
     fn bool(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn identifier(&mut self, ident: String) -> Result<T, Error>;
+    fn identifier(&mut self, expr: &Expr) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<T, Error>;
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
@@ -146,7 +146,7 @@ struct Interpreter2 {
 
 impl ExprVisitor<Value> for Interpreter2 {
     fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Int(*n) = &expr.typ else { unreachable!() };
+        let ExprType::Int(n) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
             typ: ValueType::Int(n),
             start: expr.start,
