@@ -153,7 +153,8 @@ impl Interpreter {
 
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmts {
-            self.visit_stmt(s)?;
+            // TODO: change to references later
+            self.visit_stmt(s.clone())?;
         }
         Ok(())
     }
