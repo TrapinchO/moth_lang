@@ -33,22 +33,22 @@ trait StmtVisitor<T> {
 }
 
 trait ExprVisitor<T> {
-    fn visit(&mut self, expr: Expr) -> Result<T, Error> {
+    fn visit(&mut self, expr: Expr) -> Result<Value, Error> {
         match expr.typ {
-            ExprType::Int(n) => self.int(n),
-            ExprType::Float(n) => self.float(n),
-            ExprType::String(s) => self.string(s),
-            ExprType::Bool(b) => self.bool(b),
-            ExprType::Identifier(ident) => self.identifier(ident),
+            ExprType::Int(_) => self.int(&expr),
+            ExprType::Float(_) => self.float(&expr),
+            ExprType::String(_) => self.string(&expr),
+            ExprType::Bool(_) => self.bool(&expr),
+            ExprType::Identifier(_) => self.identifier(&expr),
             ExprType::Parens(expr) => self.parens(&expr),
             ExprType::UnaryOperation(op, expr) => self.unary(&op, &expr),
             ExprType::BinaryOperation(left, op, right) => self.binary(&left, &op, &right),
         }
     }
-    fn int(&mut self, n: i32) -> Result<T, Error>;
-    fn float(&mut self, n: f32) -> Result<T, Error>;
-    fn string(&mut self, s: String) -> Result<T, Error>;
-    fn bool(&mut self, b: bool) -> Result<T, Error>;
+    fn int(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn float(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn string(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn bool(&mut self, b, expr: &Expr) -> Result<T, Error>;
     fn identifier(&mut self, ident: String) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<T, Error>;
@@ -139,6 +139,28 @@ pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
 struct Interpreter {
     environment: Environment
 }
+
+struct Interpreter2 {
+    environment: Environment
+}
+
+impl ExprVisitor<Value> for Interpreter2 {
+    fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::Int(n) = &expr.typ else { unreachable!() }
+        Ok(Value {
+            typ: ValueType::Int(n),
+            expr.start, expr.end
+        })
+    }
+    fn float(&mut self, expr: &Expr) -> Result<Value, Error>;
+    fn string(&mut self, expr: &Expr) -> Result<Value, Error>;
+    fn bool(&mut self, expr: &Expr) -> Result<Value, Error>;
+    fn identifier(&mut self, expr: &Expr) -> Result<Value, Error>;
+    fn parens(&mut self, expr: &Expr) -> Result<Value, Error>;
+    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error>;
+    fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error>;
+}
+
 
 impl Interpreter {
     pub fn new(defaults: HashMap<String, Value>) -> Self {
