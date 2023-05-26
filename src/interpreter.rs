@@ -134,7 +134,7 @@ pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     let defaults = HashMap::from(BUILTINS.map(
         |(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })
     ));
-    Interpreter::new(defaults).interpret(stmts)
+    Interpreter::new(defaults).interpret(&stmts)
 }
 
 // TODO: use visitor patter? make a trait?
@@ -151,8 +151,8 @@ impl Interpreter {
         Interpreter { environment: Environment {env: defaults } }
     }
 
-    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), Error> {
-        for s in stmts {
+    pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
+        for s in &stmts {
             self.visit_stmt(s)?;
         }
         Ok(())
