@@ -35,14 +35,14 @@ trait StmtVisitor<T> {
 trait ExprVisitor<T> {
     fn visit(&mut self, expr: &Expr) -> Result<T, Error> {
         match &expr.typ {
-            ExprType::Int(_) => self.int(&expr),
-            ExprType::Float(_) => self.float(&expr),
-            ExprType::String(_) => self.string(&expr),
-            ExprType::Bool(_) => self.bool(&expr),
-            ExprType::Identifier(_) => self.identifier(&expr),
-            ExprType::Parens(new_expr) => self.parens(&new_expr),
-            ExprType::UnaryOperation(op, new_expr) => self.unary(&op, &new_expr),
-            ExprType::BinaryOperation(left, op, right) => self.binary(&left, &op, &right),
+            ExprType::Int(_) => self.int(expr),
+            ExprType::Float(_) => self.float(expr),
+            ExprType::String(_) => self.string(expr),
+            ExprType::Bool(_) => self.bool(expr),
+            ExprType::Identifier(_) => self.identifier(expr),
+            ExprType::Parens(new_expr) => self.parens(new_expr),
+            ExprType::UnaryOperation(op, new_expr) => self.unary(op, new_expr),
+            ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
         }
     }
     fn int(&mut self, expr: &Expr) -> Result<T, Error>;
