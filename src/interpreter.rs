@@ -147,7 +147,11 @@ struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn interpret(stmts: Vec<Stmt>) -> Result<(), Error> {
+    pub fn new(defaults: HashMap<String, Value>) -> Self {
+        Interpreter { environment: Environment {env: defaults } }
+    }
+
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), Error> {
         for s in stmts {
             self.visit_stmt(s)?;
         }
@@ -253,14 +257,14 @@ impl StmtVisitor<()> for Interpreter {
         let TokenType::Identifier(name) = &ident.typ else {
             panic!("Expected an identifier");
         };
-        let val = self.visit_expr(expr)?
+        let val = self.visit_expr(&expr)?;
         self.environment.insert(name.to_string(), val)?;
         Ok(())
     }
 
     fn expr(&mut self, expr: Expr) -> Result<(), Error> {
-        let val = self.visit_expr(expr);
-        println("{:?}", val);
+        let val = self.visit_expr(&expr);
+        println!("{:?}", val);
         Ok(())
     }
 }
@@ -276,7 +280,7 @@ impl StmtVisitor<()> for Interpreter {
 
 impl Interpreter2 {
     pub fn new(defaults: HashMap<String, Value>) -> Self {
-        Interpreter { environment: Environment {env: defaults } }
+        Interpreter2 { environment: Environment {env: defaults } }
     }
 
     pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
