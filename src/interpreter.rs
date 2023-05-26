@@ -217,16 +217,16 @@ impl ExprVisitor<Value> for Interpreter2 {
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
         let left2 = self.visit(&left);
         let right2 = self.visit(&right);
-        let TokenType::Symbol(op_name) = &sym.typ else {
+        let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", sym)
         };
-        let ValueType::Function(op) = self.environment.get(op_name)?.typ else {
+        let ValueType::Function(func) = self.environment.get(op_name)?.typ else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function!", op_name),
-                lines: vec![(sym.start, sym.end)]
+                lines: vec![(op.start, op.end)]
             })
         };
-        op(vec![left, right])
+        func(vec![left2, right2])
     }
 }
 
