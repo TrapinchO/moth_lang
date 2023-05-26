@@ -188,25 +188,12 @@ impl Parser {
             let TokenType::Identifier(name) = ident.typ else { unreachable!() };
             Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(name.clone(), expr) }
         } else {
+            // since the identifier can be a part of an expression, it has to backtrack a little
+            // bit; and since we already moved at least once, it is safe
             self.idx -= 1;
             let expr = self.parse_expression()?;
             Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
         })
-        /*
-        let expr = self.parse_expression()?;
-        Ok(match &expr.typ {
-            ExprType::Identifier(ident) => {
-                if self.get_current().typ.compare_variant(&TokenType::Equals) {
-                    self.advance();
-                    let right = self.parse_expression()?;
-                    Stmt { start: expr.start, end: right.end, typ: StmtType::AssignStmt(ident.clone(), right) }
-                } else {
-                    Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
-                }
-            },
-            _ => Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
-        })
-        */
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {
@@ -284,7 +271,7 @@ impl Parser {
             },
             TokenType::Eof => {
                 return Err(Error {
-                    msg: "Expected an element".to_string(),
+                    msg: "Expected an element but reached EOF".to_string(),
                     lines: vec![(tok.start, tok.end)],
                 })
             },

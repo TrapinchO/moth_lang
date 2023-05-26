@@ -75,8 +75,11 @@ fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
     match (&left.typ, &right.typ) {
         (StmtType::ExprStmt(expr1), StmtType::ExprStmt(expr2)) => {
             compare_elements_expr(&expr1, &expr2)
-        }
-        (StmtType::AssingmentStmt(ident1, expr1), StmtType::AssingmentStmt(ident2, expr2)) => {
+        },
+        (StmtType::VarDeclStmt(ident1, expr1), StmtType::VarDeclStmt(ident2, expr2)) => {
+            ident1 == ident2 && compare_elements_expr(expr1, expr2)
+        },
+        (StmtType::AssignStmt(ident1, expr1), StmtType::AssignStmt(ident2, expr2)) => {
             ident1 == ident2 && compare_elements_expr(expr1, expr2)
         }
         (s1, s2) => s1 == s2
@@ -137,7 +140,7 @@ mod tests {
     #[test]
     fn expr_error() {
         let err = Error {
-            msg: "Expected an element".to_string(),
+            msg: "Expected an element but reached EOF".to_string(),
             lines: vec![(2, 2)],
         };
         let op = parse(lex("1+").unwrap()).unwrap_err();
