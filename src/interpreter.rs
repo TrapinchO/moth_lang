@@ -20,6 +20,42 @@ struct Value {
     end: usize,
 }
 
+trait StmtVisitor<T> {
+    fn visit(&mut self, stmt: Stmt) -> Result<T, Error> {
+        match stmt.typ {
+            StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
+            StmtType::ExprStmt(expr) => self.expr,
+        }
+    }
+
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<T, Error>
+    fn expr(&mut self, expr: Expr) -> Result<T, Error>
+}
+
+trait ExprVisitor<T> {
+    fn visit(&mut self, expr: Expr) -> Result<T, Error> {
+        match expr.typ {
+            ExprType::Int(n) => self.int(n),
+            ExprType::Float(n) => self.float(n),
+            ExprType::String(s) => self.string(s),
+            ExprType::Bool(b) => self.bool(b),
+            ExprType::Identifier(ident) => self.identifier(ident),
+            ExprType::Parens(expr) => self.parens(expr),
+            ExprType::UnaryOperation(op, expr) => self.unary(op, expr),
+            ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
+        };
+    }
+    fn int(&mut self, n: i32) -> Result<T, Error>
+    fn float(&mut self, n: f32) -> Result<T, Error>
+    fn string(&mut self, s: String) -> Result<T, Error>
+    fn bool(&mut self, b: bool) -> Result<T, Error>
+    fn identifier(&mut self, ident: String) -> Result<T, Error>
+    fn parens(&mut self, expr: Expr) -> Result<T, Error>
+    fn unary(&mut self, op: Token, expr: Expr) -> Result<T, Error>
+    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<T, Error>
+}
+
+
 // TODO: cannot have Eq because of the float
 #[derive(Debug, PartialEq, Clone)]
 struct Environment {
