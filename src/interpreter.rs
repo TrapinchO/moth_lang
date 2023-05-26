@@ -241,7 +241,7 @@ impl ExprVisitor<Value> for Interpreter {
     }
 }
 
-trait StmtVisitor for Interpreter {
+impl StmtVisitor<()> for Interpreter {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), Error> {
         match stmt.typ {
             StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
