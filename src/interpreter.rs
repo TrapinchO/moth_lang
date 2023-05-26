@@ -21,7 +21,7 @@ struct Value {
 }
 
 trait StmtVisitor<T> {
-    fn visit(&mut self, stmt: Stmt) -> Result<T, Error> {
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
         match stmt.typ {
             StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
             StmtType::ExprStmt(expr) => self.expr(expr),
@@ -33,7 +33,7 @@ trait StmtVisitor<T> {
 }
 
 trait ExprVisitor<T> {
-    fn visit(&mut self, expr: &Expr) -> Result<T, Error> {
+    fn visit_expr(&mut self, expr: &Expr) -> Result<T, Error> {
         match &expr.typ {
             ExprType::Int(_) => self.int(expr),
             ExprType::Float(_) => self.float(expr),
@@ -136,15 +136,15 @@ pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
 }
 
 // TODO: use visitor patter? make a trait?
-struct Interpreter {
-    environment: Environment
-}
-
 struct Interpreter2 {
     environment: Environment
 }
 
-impl ExprVisitor<Value> for Interpreter2 {
+struct Interpreter {
+    environment: Environment
+}
+
+impl ExprVisitor<Value> for Interpreter {
     fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
         let ExprType::Int(n) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
@@ -186,10 +186,10 @@ impl ExprVisitor<Value> for Interpreter2 {
         })
     }
     fn parens(&mut self, expr: &Expr) -> Result<Value, Error> {
-        self.visit(expr)
+        self.visit_expr(expr)
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
-        let val = self.visit(expr)?;
+        let val = self.visit_expr(expr)?;
 
         let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", op);
@@ -215,8 +215,8 @@ impl ExprVisitor<Value> for Interpreter2 {
         })
     }
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
-        let left2 = self.visit(left)?;
-        let right2 = self.visit(right)?;
+        let left2 = self.visit_expr(left)?;
+        let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", op)
         };
@@ -230,8 +230,40 @@ impl ExprVisitor<Value> for Interpreter2 {
     }
 }
 
+trait StmtVisitor<()> for Interpreter {
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), Error> {
+        match stmt.typ {
+            StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
+            StmtType::ExprStmt(expr) => self.expr(expr),
+        }
+    }
 
-impl Interpreter {
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
+        let TokenType::Identifier(name) = &ident.typ else {
+            panic!("Expected an identifier");
+        };
+        let val = self.visit_expr(expr)?
+        self.environment.insert(name.to_string(), val)?;
+        Ok(())
+    }
+
+    fn expr(&mut self, expr: Expr) -> Result<(), Error> {
+        let val = self.visit_expr(expr);
+        println("{:?}", val);
+        Ok(())
+    }
+}
+
+
+
+
+
+
+
+
+
+
+impl Interpreter2 {
     pub fn new(defaults: HashMap<String, Value>) -> Self {
         Interpreter { environment: Environment {env: defaults } }
     }
