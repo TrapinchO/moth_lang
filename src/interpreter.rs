@@ -170,7 +170,7 @@ impl ExprVisitor<Value> for Interpreter2 {
         })
     }
     fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Ident(ident) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Identifier(ident) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
             typ: self.environment.get(ident)?.typ,
             start: expr.start,
@@ -189,36 +189,36 @@ impl ExprVisitor<Value> for Interpreter2 {
         self.visit(&expr)
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
-        let val = self.visit(&expr);
+        let val = self.visit(expr)?;
 
-        let TokenType::Symbol(op) = &sym.typ else {
+        let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", sym);
         };
         Ok(Value {
             typ: match val.typ {
                 ValueType::Float(n) => {
-                  match op.as_str() {
+                  match op_name.as_str() {
                        "-" => ValueType::Float(-n),  // TODO fix Int vs Float
-                       _ => return operator_error(sym),
+                       _ => return operator_error(op),
                   }
                 },
                 ValueType::Int(n) => {
-                    match op.as_str() {
+                    match op_name.as_str() {
                         "-" => ValueType::Int(-n),  // TODO fix Int vs Float
-                        _ => return operator_error(sym),
+                        _ => return operator_error(op),
                     }
                 },
                 _ => todo!("Not yet implemented!")
             },
-            start: sym.start,
+            start: op.start,
             end: val.end
         })
     }
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
-        let left2 = self.visit(&left);
-        let right2 = self.visit(&right);
+        let left2 = self.visit(left)?;
+        let right2 = self.visit(right)?;
         let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {:?}", sym)
+            panic!("Expected a symbol, found {:?}", op)
         };
         let ValueType::Function(func) = self.environment.get(op_name)?.typ else {
             return Err(Error {
