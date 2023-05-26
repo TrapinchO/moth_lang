@@ -40,9 +40,9 @@ trait ExprVisitor<T> {
             ExprType::String(s) => self.string(s),
             ExprType::Bool(b) => self.bool(b),
             ExprType::Identifier(ident) => self.identifier(ident),
-            ExprType::Parens(expr) => self.parens(expr.into()),
-            ExprType::UnaryOperation(op, expr) => self.unary(op, expr.into()),
-            ExprType::BinaryOperation(left, op, right) => self.binary(left.into(), op, right.into()),
+            ExprType::Parens(expr) => self.parens(&expr),
+            ExprType::UnaryOperation(op, expr) => self.unary(op, &expr),
+            ExprType::BinaryOperation(left, op, right) => self.binary(&left, op, &right),
         }
     }
     fn int(&mut self, n: i32) -> Result<T, Error>;
@@ -50,9 +50,9 @@ trait ExprVisitor<T> {
     fn string(&mut self, s: String) -> Result<T, Error>;
     fn bool(&mut self, b: bool) -> Result<T, Error>;
     fn identifier(&mut self, ident: String) -> Result<T, Error>;
-    fn parens(&mut self, expr: Expr) -> Result<T, Error>;
-    fn unary(&mut self, op: Token, expr: Expr) -> Result<T, Error>;
-    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<T, Error>;
+    fn parens(&mut self, &expr: &Expr) -> Result<T, Error>;
+    fn unary(&mut self, op: Token, expr: &Expr) -> Result<T, Error>;
+    fn binary(&mut self, left: &Expr, op: Token, right: &Expr) -> Result<T, Error>;
 }
 
 
