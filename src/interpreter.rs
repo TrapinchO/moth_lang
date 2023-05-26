@@ -129,10 +129,12 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
         })
     }),
 ];
-pub fn interpret(stmt: &Vec<Stmt>) -> Result<(), Error> {
+pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     // TODO: solve positions for builtin stuff
-    let defaults = HashMap::from(BUILTINS.map(|(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })));
-    Interpreter::new(defaults).interpret(stmt)
+    let defaults = HashMap::from(BUILTINS.map(
+        |(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })
+    ));
+    Interpreter::new(defaults).interpret(stmts)
 }
 
 // TODO: use visitor patter? make a trait?
@@ -142,6 +144,15 @@ struct Interpreter2 {
 
 struct Interpreter {
     environment: Environment
+}
+
+impl Interpreter {
+    pub fn interpret(stmts: Vec<Stmt>) -> Result<(), Error> {
+        for s in stmts {
+            self.visit_stmt(s)?;
+        }
+        Ok(())
+    }
 }
 
 impl ExprVisitor<Value> for Interpreter {
