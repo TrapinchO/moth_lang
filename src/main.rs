@@ -37,20 +37,20 @@ fn run(input: String) -> Result<(), Error> {
     let tokens = lexer::lex(&input)?;
 
     println!("===== lexing =====");
-    // /*
+    /*
     for t in &tokens {
         println!("{:?}", t);
     }
-    //*/
+    */
 
     // TODO: unknown operator does not report unless reassociated in binary operation
     let ast = parser::parse(tokens)?;
-    // /*
+    /*
     println!("===== parsing =====");
     for s in &ast {
         println!("{}", s);
     }
-    //*/
+    */
 
     let resassoc = reassoc::reassociate(&ast)?;
     println!("===== reassociating =====");

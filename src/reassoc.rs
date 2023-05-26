@@ -33,10 +33,14 @@ pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
                 typ: StmtType::ExprStmt(reassoc_expr(expr)?),
                 ..*s
             },
-            StmtType::AssingmentStmt(ident, expr) => Stmt {
-                typ: StmtType::AssingmentStmt(ident.clone(), reassoc_expr(expr)?),
+            StmtType::VarDeclStmt(ident, expr) => Stmt {
+                typ: StmtType::VarDeclStmt(ident.clone(), reassoc_expr(expr)?),
                 ..*s
-            }
+            },
+            StmtType::AssignStmt(name, expr) => Stmt {
+                typ: StmtType::AssignStmt(name.clone(), reassoc_expr(expr)?),
+                ..*s
+            },
         })
     }
     Ok(ls)

@@ -23,12 +23,14 @@ struct Value {
 trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
         match stmt.typ {
-            StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
+            StmtType::VarDeclStmt(ident, expr) => self.var_decl(ident, expr),
+            StmtType::AssignStmt(name, expr) => self.assignment(name, expr),
             StmtType::ExprStmt(expr) => self.expr(expr),
         }
     }
 
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
+    fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
+    fn assignment(&mut self, ident: String, expr: Expr) -> Result<T, Error>;
     fn expr(&mut self, expr: Expr) -> Result<T, Error>;
 }
 
@@ -56,13 +58,13 @@ trait ExprVisitor<T> {
 }
 
 
-// TODO: cannot have Eq because of the float
 #[derive(Debug, PartialEq, Clone)]
 struct Environment {
     env: HashMap<String, Value>
 }
 
 impl Environment {
+    // TODO: fix error positions not being displayed properly
     pub fn insert(&mut self, name: String, val: Value) -> Result<(), Error> {
         if self.env.contains_key(&name) {
             return Err(Error {
@@ -95,7 +97,7 @@ impl Environment {
 
 const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
     ("+", |args| {
-        // TODO: add proper positions
+        // TODO: add proper positions for the argument list
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
         let typ = match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
@@ -103,7 +105,7 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
             (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + &b),
             _ => return Err(Error {
                 msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                lines: vec![(0, 0)]
+                lines: vec![(left.start, right.end)]
             })
         };
         Ok(Value {
@@ -113,7 +115,6 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
         })
     }),
     ("-", |args| {
-        // TODO: add proper positions
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
         Ok(Value {
             typ: match (&left.typ, &right.typ) {
@@ -121,7 +122,7 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
                 _ => return Err(Error {
                     msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                    lines: vec![(0, 0)]
+                lines: vec![(left.start, right.end)]
                 })
             },
             start: left.start,
@@ -157,19 +158,18 @@ impl Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), Error> {
-        match stmt.typ {
-            StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
-            StmtType::ExprStmt(expr) => self.expr(expr),
-        }
-    }
-
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
+    fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
         let TokenType::Identifier(name) = &ident.typ else {
             panic!("Expected an identifier");
         };
         let val = self.visit_expr(&expr)?;
         self.environment.insert(name.to_string(), val)?;
+        Ok(())
+    }
+
+    fn assignment(&mut self, ident: String, expr: Expr) -> Result<(), Error> {
+        let val = self.visit_expr(&expr)?;
+        self.environment.update(&ident, val)?;
         Ok(())
     }
 

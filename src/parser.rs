@@ -55,13 +55,15 @@ impl Display for Expr {
 #[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
     ExprStmt(Expr),
-    AssingmentStmt(Token, Expr),
+    VarDeclStmt(Token, Expr),
+    AssignStmt(String, Expr),
 }
 impl StmtType {
     fn format(&self) -> String {
         match self {
             Self::ExprStmt(expr) => expr.to_string(),
-            Self::AssingmentStmt(ident, expr) => format!("let {} = {}", ident, expr)
+            Self::VarDeclStmt(ident, expr) => format!("let {} = {}", ident, expr),
+            Self::AssignStmt(name, expr) => format!("{} = {}", name, expr),
         }
     }
 }
@@ -155,9 +157,10 @@ impl Parser {
                 Ok(Stmt {
                     start: tok.start,
                     end: expr.end,
-                    typ: StmtType::AssingmentStmt(ident, expr),
+                    typ: StmtType::VarDeclStmt(ident, expr),
                 })
             },
+            TokenType::Identifier(_) => self.parse_assign(),
             _ => {
                 let expr = self.parse_expression()?;
                 Ok(Stmt {
@@ -173,6 +176,37 @@ impl Parser {
         let ident = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
         self.expect(&TokenType::Equals, "Expected an equals symbol")?;
         Ok((ident, self.parse_expression()?))
+    }
+
+    fn parse_assign(&mut self) -> Result<Stmt, Error> {
+        let ident = self.get_current().clone();
+        self.advance();
+
+        Ok(if self.get_current().typ.compare_variant(&TokenType::Equals) {
+            self.advance();
+            let expr = self.parse_expression()?;
+            let TokenType::Identifier(name) = ident.typ else { unreachable!() };
+            Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(name.clone(), expr) }
+        } else {
+            self.idx -= 1;
+            let expr = self.parse_expression()?;
+            Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
+        })
+        /*
+        let expr = self.parse_expression()?;
+        Ok(match &expr.typ {
+            ExprType::Identifier(ident) => {
+                if self.get_current().typ.compare_variant(&TokenType::Equals) {
+                    self.advance();
+                    let right = self.parse_expression()?;
+                    Stmt { start: expr.start, end: right.end, typ: StmtType::AssignStmt(ident.clone(), right) }
+                } else {
+                    Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
+                }
+            },
+            _ => Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
+        })
+        */
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {
