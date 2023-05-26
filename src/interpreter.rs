@@ -129,17 +129,13 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
         })
     }),
 ];
+
 pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     // TODO: solve positions for builtin stuff
     let defaults = HashMap::from(BUILTINS.map(
         |(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })
     ));
     Interpreter::new(defaults).interpret(&stmts)
-}
-
-// TODO: use visitor patter? make a trait?
-struct Interpreter2 {
-    environment: Environment
 }
 
 struct Interpreter {
@@ -156,6 +152,30 @@ impl Interpreter {
             // TODO: change to references later
             self.visit_stmt(s.clone())?;
         }
+        Ok(())
+    }
+}
+
+impl StmtVisitor<()> for Interpreter {
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), Error> {
+        match stmt.typ {
+            StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
+            StmtType::ExprStmt(expr) => self.expr(expr),
+        }
+    }
+
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
+        let TokenType::Identifier(name) = &ident.typ else {
+            panic!("Expected an identifier");
+        };
+        let val = self.visit_expr(&expr)?;
+        self.environment.insert(name.to_string(), val)?;
+        Ok(())
+    }
+
+    fn expr(&mut self, expr: Expr) -> Result<(), Error> {
+        let val = self.visit_expr(&expr)?;
+        println!("{:?}", val);
         Ok(())
     }
 }
@@ -243,117 +263,6 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         func(vec![left2, right2])
-    }
-}
-
-impl StmtVisitor<()> for Interpreter {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), Error> {
-        match stmt.typ {
-            StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
-            StmtType::ExprStmt(expr) => self.expr(expr),
-        }
-    }
-
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.typ else {
-            panic!("Expected an identifier");
-        };
-        let val = self.visit_expr(&expr)?;
-        self.environment.insert(name.to_string(), val)?;
-        Ok(())
-    }
-
-    fn expr(&mut self, expr: Expr) -> Result<(), Error> {
-        let val = self.visit_expr(&expr);
-        println!("{:?}", val);
-        Ok(())
-    }
-}
-
-
-
-
-
-
-
-
-
-
-impl Interpreter2 {
-    pub fn new(defaults: HashMap<String, Value>) -> Self {
-        Interpreter2 { environment: Environment {env: defaults } }
-    }
-
-    pub fn interpret(&mut self, stmt: &Vec<Stmt>) -> Result<(), Error> {
-        for s in stmt {
-            match &s.typ {
-                StmtType::AssingmentStmt(ident, expr) => self.assignmentstmt(ident, expr)?,
-                StmtType::ExprStmt(expr) => { println!("exprstmt: {:?}", self.expr(expr)?); },
-            }
-        }
-        println!("{:?}", self.environment);
-        Ok(())
-    }
-
-    fn assignmentstmt(&mut self, ident: &Token, expr: &Expr) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.typ else {
-            panic!("Expected an identifier");
-        };
-        self.environment.insert(name.to_string(), self.expr(expr)?)
-    }
-
-    pub fn expr(&self, expr: &Expr) -> Result<Value, Error> {
-        let typ = match &expr.typ {
-            ExprType::Int(n) => ValueType::Float(*n as f32),
-            ExprType::Float(n) => ValueType::Float(*n),
-            ExprType::String(s) => ValueType::String(s.clone()),
-            ExprType::Bool(b) => ValueType::Bool(*b),
-            // TODO: fix the arms below, they discard positions
-            // keep? discard? store somewhere else?
-            ExprType::Identifier(ident) => self.environment.get(ident)?.typ,
-            ExprType::Parens(expr) => self.expr(expr)?.typ,
-            ExprType::UnaryOperation(op, expr) => self.unary(op, self.expr(expr)?)?.typ,
-            ExprType::BinaryOperation(left, op, right) => self.binary(self.expr(left)?, op, self.expr(right)?)?.typ,
-        };
-        Ok(Value { typ, start: expr.start, end: expr.end })
-    }
-
-    fn unary(&self, sym: &Token, val: Value) -> Result<Value, Error> {
-        let TokenType::Symbol(op) = &sym.typ else {
-            panic!("Expected a symbol, found {:?}", sym);
-        };
-        Ok(Value {
-            typ: match val.typ {
-                ValueType::Float(n) => {
-                  match op.as_str() {
-                       "-" => ValueType::Float(-n),  // TODO fix Int vs Float
-                       _ => return operator_error(sym),
-                  }
-                },
-                ValueType::Int(n) => {
-                    match op.as_str() {
-                        "-" => ValueType::Int(-n),  // TODO fix Int vs Float
-                        _ => return operator_error(sym),
-                    }
-                },
-                _ => todo!("Not yet implemented!")
-            },
-            start: sym.start,
-            end: val.end
-        })
-    }
-
-    fn binary(&self, left: Value, sym: &Token, right: Value) -> Result<Value, Error> {
-        let TokenType::Symbol(op_name) = &sym.typ else {
-            panic!("Expected a symbol, found {:?}", sym)
-        };
-        let ValueType::Function(op) = self.environment.get(op_name)?.typ else {
-            return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function!", op_name),
-                lines: vec![(sym.start, sym.end)]
-            })
-        };
-        op(vec![left, right])
     }
 }
 
