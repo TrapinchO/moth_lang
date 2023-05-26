@@ -153,10 +153,38 @@ impl ExprVisitor<Value> for Interpreter2 {
             end: expr.end,
         })
     }
-    fn float(&mut self, expr: &Expr) -> Result<Value, Error>;
-    fn string(&mut self, expr: &Expr) -> Result<Value, Error>;
-    fn bool(&mut self, expr: &Expr) -> Result<Value, Error>;
-    fn identifier(&mut self, expr: &Expr) -> Result<Value, Error>;
+    fn float(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::Float(f) = &expr.typ.clone() else { unreachable!() };
+        Ok(Value {
+            typ: ValueType::Float(*f),
+            start: expr.start,
+            end: expr.end,
+        })
+    }
+    fn string(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::String(s) = &expr.typ.clone() else { unreachable!() };
+        Ok(Value {
+            typ: ValueType::String(*s),
+            start: expr.start,
+            end: expr.end,
+        })
+    }
+    fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::Ident(ident) = &expr.typ.clone() else { unreachable!() };
+        Ok(Value {
+            typ: self.environment.get(ident)?.typ,
+            start: expr.start,
+            end: expr.end,
+        })
+    }
+    fn bool(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::String(b) = &expr.typ.clone() else { unreachable!() };
+        Ok(Value {
+            typ: ValueType::Bool(*b),
+            start: expr.start,
+            end: expr.end,
+        })
+    }
     fn parens(&mut self, expr: &Expr) -> Result<Value, Error>;
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error>;
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error>;
