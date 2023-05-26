@@ -52,7 +52,7 @@ trait ExprVisitor<T> {
     fn identifier(&mut self, ident: String) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<T, Error>;
-    fn binary(&mut self, left: &Expr, &op: Token, right: &Expr) -> Result<T, Error>;
+    fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
 }
 
 
