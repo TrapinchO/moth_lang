@@ -33,7 +33,7 @@ trait StmtVisitor<T> {
 }
 
 trait ExprVisitor<T> {
-    fn visit(&mut self, expr: Expr) -> Result<T, Error> {
+    fn visit(&mut self, expr: &Expr) -> Result<T, Error> {
         match expr.typ {
             ExprType::Int(_) => self.int(&expr),
             ExprType::Float(_) => self.float(&expr),
@@ -186,13 +186,13 @@ impl ExprVisitor<Value> for Interpreter2 {
         })
     }
     fn parens(&mut self, expr: &Expr) -> Result<Value, Error> {
-        self.visit(&expr)
+        self.visit(expr)
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
         let val = self.visit(expr)?;
 
         let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {:?}", sym);
+            panic!("Expected a symbol, found {:?}", op);
         };
         Ok(Value {
             typ: match val.typ {
