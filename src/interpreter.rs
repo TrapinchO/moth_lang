@@ -41,8 +41,8 @@ trait ExprVisitor<T> {
             ExprType::Bool(b) => self.bool(b),
             ExprType::Identifier(ident) => self.identifier(ident),
             ExprType::Parens(expr) => self.parens(&expr),
-            ExprType::UnaryOperation(op, expr) => self.unary(op, &expr),
-            ExprType::BinaryOperation(left, op, right) => self.binary(&left, op, &right),
+            ExprType::UnaryOperation(op, expr) => self.unary(&op, &expr),
+            ExprType::BinaryOperation(left, op, right) => self.binary(&left, &op, &right),
         }
     }
     fn int(&mut self, n: i32) -> Result<T, Error>;
@@ -51,8 +51,8 @@ trait ExprVisitor<T> {
     fn bool(&mut self, b: bool) -> Result<T, Error>;
     fn identifier(&mut self, ident: String) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn unary(&mut self, op: Token, expr: &Expr) -> Result<T, Error>;
-    fn binary(&mut self, left: &Expr, op: Token, right: &Expr) -> Result<T, Error>;
+    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<T, Error>;
+    fn binary(&mut self, left: &Expr, &op: Token, right: &Expr) -> Result<T, Error>;
 }
 
 
@@ -97,7 +97,7 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
     ("+", |args| {
         // TODO: add proper positions
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        let typ = match (left.typ, right.typ) {
+        let typ = match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
             (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
             (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + &b),
@@ -116,7 +116,7 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
         // TODO: add proper positions
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
         Ok(Value {
-            typ: match (left.typ, right.typ) {
+            typ: match (&left.typ, &right.typ) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
                 _ => return Err(Error {
