@@ -24,7 +24,7 @@ trait StmtVisitor<T> {
     fn visit(&mut self, stmt: Stmt) -> Result<T, Error> {
         match stmt.typ {
             StmtType::AssingmentStmt(ident, expr) => self.assignment(ident, expr),
-            StmtType::ExprStmt(expr) => self.expr(),
+            StmtType::ExprStmt(expr) => self.expr(expr),
         }
     }
 
@@ -183,20 +183,24 @@ impl Interpreter {
         let TokenType::Symbol(op) = &sym.typ else {
             panic!("Expected a symbol, found {:?}", sym);
         };
-        Ok(match val.typ {
-            ValueType::Float(n) => {
-                match op.as_str() {
-                    "-" => ValueType::Float(-n),  // TODO fix Int vs Float
-                    _ => return operator_error(sym),
-                }
+        Ok(Value {
+            typ: match val.typ {
+                ValueType::Float(n) => {
+                  match op.as_str() {
+                       "-" => ValueType::Float(-n),  // TODO fix Int vs Float
+                       _ => return operator_error(sym),
+                  }
+                },
+                ValueType::Int(n) => {
+                    match op.as_str() {
+                        "-" => ValueType::Int(-n),  // TODO fix Int vs Float
+                        _ => return operator_error(sym),
+                    }
+                },
+                _ => todo!("Not yet implemented!")
             },
-            ValueType::Int(n) => {
-                match op.as_str() {
-                    "-" => ValueType::Int(-n),  // TODO fix Int vs Float
-                    _ => return operator_error(sym),
-                }
-            },
-            _ => todo!("Not yet implemented!")
+            start: sym.start,
+            end: val.end
         })
     }
 
