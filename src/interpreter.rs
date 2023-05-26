@@ -28,8 +28,8 @@ trait StmtVisitor<T> {
         }
     }
 
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<T, Error>
-    fn expr(&mut self, expr: Expr) -> Result<T, Error>
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
+    fn expr(&mut self, expr: Expr) -> Result<T, Error>;
 }
 
 trait ExprVisitor<T> {
@@ -45,14 +45,14 @@ trait ExprVisitor<T> {
             ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
         };
     }
-    fn int(&mut self, n: i32) -> Result<T, Error>
-    fn float(&mut self, n: f32) -> Result<T, Error>
-    fn string(&mut self, s: String) -> Result<T, Error>
-    fn bool(&mut self, b: bool) -> Result<T, Error>
-    fn identifier(&mut self, ident: String) -> Result<T, Error>
-    fn parens(&mut self, expr: Expr) -> Result<T, Error>
-    fn unary(&mut self, op: Token, expr: Expr) -> Result<T, Error>
-    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<T, Error>
+    fn int(&mut self, n: i32) -> Result<T, Error>;
+    fn float(&mut self, n: f32) -> Result<T, Error>;
+    fn string(&mut self, s: String) -> Result<T, Error>;
+    fn bool(&mut self, b: bool) -> Result<T, Error>;
+    fn identifier(&mut self, ident: String) -> Result<T, Error>;
+    fn parens(&mut self, expr: Expr) -> Result<T, Error>;
+    fn unary(&mut self, op: Token, expr: Expr) -> Result<T, Error>;
+    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<T, Error>;
 }
 
 
