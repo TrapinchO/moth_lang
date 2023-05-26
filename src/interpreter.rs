@@ -148,7 +148,7 @@ impl ExprVisitor<Value> for Interpreter2 {
     fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
         let ExprType::Int(n) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
-            typ: ValueType::Int(n),
+            typ: ValueType::Int(*n),
             start: expr.start,
             end: expr.end,
         })
