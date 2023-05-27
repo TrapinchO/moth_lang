@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::error::Error;
 use crate::lexer::{Token, TokenType};
 use crate::parser::{Expr, ExprType, StmtType, Stmt};
+use crate::visitor::{ExprVisitor, StmtVisitor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Associativity {
@@ -12,146 +13,175 @@ enum Associativity {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Precedence {
-    precedence: usize,
-    associativity: Associativity,
+    prec: usize,
+    assoc: Associativity,
 }
 
 impl Precedence {
     pub fn new(prec: usize, assoc: Associativity) -> Self {
         Precedence {
-            precedence: prec,
-            associativity: assoc,
+            prec,
+            assoc,
         }
     }
 }
 
 pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
+    let ops = HashMap::from(DEFAULT_OPS.map(|(name, prec)| { (name.to_string(), prec) }));
+    let mut reassoc = Reassociate { ops };
     let mut ls = vec![];
     for s in stmt {
-        ls.push(match &s.typ {
-            StmtType::ExprStmt(expr) => Stmt {
-                typ: StmtType::ExprStmt(reassoc_expr(expr)?),
-                ..*s
-            },
-            StmtType::VarDeclStmt(ident, expr) => Stmt {
-                typ: StmtType::VarDeclStmt(ident.clone(), reassoc_expr(expr)?),
-                ..*s
-            },
-            StmtType::AssignStmt(name, expr) => Stmt {
-                typ: StmtType::AssignStmt(name.clone(), reassoc_expr(expr)?),
-                ..*s
-            },
-        })
+        ls.push(reassoc.reassociate(s.clone())?)
     }
     Ok(ls)
+    }
+
+const DEFAULT_OPS: [(&str, Precedence); 5] = [
+    ("+", Precedence { prec: 1, assoc: Associativity::Left }),
+    ("-", Precedence { prec: 1, assoc: Associativity::Left }),
+    ("*", Precedence { prec: 2, assoc: Associativity::Left }),
+    ("/", Precedence { prec: 2, assoc: Associativity::Left }),
+    ("^^", Precedence { prec: 10, assoc: Associativity::Right }),  // analyzer shut up now please its used
+];
+
+// empty struct, it does not need to hold any data
+struct Reassociate {
+    ops: HashMap<String, Precedence>
 }
-
-// https://stackoverflow.com/a/67992584
-fn reassoc_expr(expr: &Expr) -> Result<Expr, Error> {
-    Ok(match &expr.typ {
-        ExprType::BinaryOperation(left, op, right) => reassoc_(
-            &reassoc_expr(left)?,
-            op,
-            &reassoc_expr(right)?
-        )?,
-        ExprType::Parens(expr) => Expr {
-            typ: ExprType::Parens(reassoc_expr(expr.as_ref())?.into()),
-            ..expr.as_ref().clone()
-        },
-        ExprType::UnaryOperation(op, expr) => Expr {
-            typ: ExprType::UnaryOperation(op.clone(), reassoc_expr(expr.as_ref())?.into()),
-            ..expr.as_ref().clone()
-        },
-        ExprType::Int(_)
-            | ExprType::Float(_)
-            | ExprType::String(_)
-            | ExprType::Identifier(_)
-            | ExprType::Bool(_) => expr.clone(),
-    })
+impl Reassociate {
+    pub fn reassociate(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        self.visit_stmt(stmt)
+    }
 }
-
-fn reassoc_(left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
-    let prec_table: HashMap<&str, Precedence> = HashMap::from([
-        ("+", Precedence::new(1, Associativity::Left)),
-        ("-", Precedence::new(1, Associativity::Left)),
-        ("*", Precedence::new(2, Associativity::Left)),
-        ("/", Precedence::new(2, Associativity::Left)),
-        ("^^", Precedence::new(10, Associativity::Right)),  // analyzer shut up now please its used
-    ]);
-
-    // not a binary operation, no need to reassociate it
-    let ExprType::BinaryOperation(left2, op2, right2) = &right.typ else {
-        return Ok(Expr {
-            typ: ExprType::BinaryOperation(
-                left.clone().into(),
-                op1.clone(),
-                right.clone().into()),
-            start: left.start,
-            end: right.end,
+impl StmtVisitor<Stmt> for Reassociate {
+    fn expr(&mut self, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            typ: StmtType::ExprStmt(self.visit_expr(&expr)?),
+            start: expr.start,
+            end: expr.end,
         })
-    };
-
-    let TokenType::Symbol(op1_sym) = &op1.typ else {
-        panic!("Operator token 1 is not a symbol");
-    };
-    let prec1 = prec_table.get(op1_sym.as_str()).ok_or(Error {
-        msg: format!("Operator not found: {}", op1_sym),
-        lines: vec![(op1.start, op1.end)],
-    })?;
-
-    let TokenType::Symbol(op2_sym) = &op2.typ else {
-        panic!("Operator token 2 is not a symbol");
-    };
-    let prec2 = prec_table.get(op2_sym.as_str()).ok_or(Error {
-        msg: format!("Operator not found: {}", op2_sym),
-        lines: vec![(op2.start, op2.end)],
-    })?;
-
-    // TODO: make functions like in the answer
-    match prec1.precedence.cmp(&prec2.precedence) {
-        std::cmp::Ordering::Greater => {
-            let left = reassoc_(left, op1, left2)?.into();
-            Ok(Expr {
-                typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
-                start: right2.start,
-                end: right2.end,
+    }
+    fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            start: ident.start,
+            end: expr.end,
+            typ: StmtType::VarDeclStmt(ident, self.visit_expr(&expr)?),
+        })
+    }
+    fn assignment(&mut self, ident: String, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            typ: StmtType::AssignStmt(ident, self.visit_expr(&expr)?),
+            start: expr.start,
+            end: expr.end,
+        })
+    }
+}
+impl ExprVisitor<Expr> for Reassociate {
+    fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(expr.clone())
+    }
+    fn bool(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(expr.clone())
+    }
+    fn float(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(expr.clone())
+    }
+    fn string(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(expr.clone())
+    }
+    fn identifier(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(expr.clone())
+    }
+    fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(Expr {
+            typ: ExprType::Parens(self.visit_expr(expr)?.into()),
+            ..*expr
+        })
+    }
+    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Expr, Error> {
+        Ok(Expr {
+            typ: ExprType::UnaryOperation(op.clone(), self.visit_expr(expr)?.into()),
+            start: op.start,
+            end: expr.end,
+        })
+    }
+    // the one method this file exists for
+    // https://stackoverflow.com/questions/67978670/is-there-a-way-to-fix-an-expression-with-operators-in-it-after-parsing-using-a
+    fn binary(&mut self, left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
+        // not a binary operation, no need to reassociate it
+        let ExprType::BinaryOperation(left2, op2, right2) = &right.typ else {
+            return Ok(Expr {
+                typ: ExprType::BinaryOperation(
+                    left.clone().into(),
+                    op1.clone(),
+                    right.clone().into()),
+                start: left.start,
+                end: right.end,
             })
-        }
+        };
 
-        std::cmp::Ordering::Less => Ok(Expr {
-            typ: ExprType::BinaryOperation(
-                left.clone().into(),
-                op1.clone(),
-                right.clone().into()),
-            start: left.start,
-            end: right.end,
-        }),
+        let TokenType::Symbol(op1_sym) = &op1.typ else {
+            panic!("Operator token 1 is not a symbol");
+        };
+        let prec1 = self.ops.get(op1_sym.as_str()).ok_or(Error {
+            msg: format!("Operator not found: {}", op1_sym),
+            lines: vec![(op1.start, op1.end)],
+        })?;
 
-        std::cmp::Ordering::Equal => match (prec1.associativity, prec2.associativity) {
-            (Associativity::Left, Associativity::Left) => {
-                let left = reassoc_(left, op1, left2)?.into();
+        let TokenType::Symbol(op2_sym) = &op2.typ else {
+            panic!("Operator token 2 is not a symbol");
+        };
+        let prec2 = self.ops.get(op2_sym.as_str()).ok_or(Error {
+            msg: format!("Operator not found: {}", op2_sym),
+            lines: vec![(op2.start, op2.end)],
+        })?;
+
+        // TODO: make functions like in the answer
+        match prec1.prec.cmp(&prec2.prec) {
+            std::cmp::Ordering::Greater => {
+                let left = self.binary(left, op1, left2)?.into();
                 Ok(Expr {
                     typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                     start: right2.start,
                     end: right2.end,
                 })
             }
-            (Associativity::Right, Associativity::Right) => Ok(Expr {
+
+            std::cmp::Ordering::Less => Ok(Expr {
                 typ: ExprType::BinaryOperation(
                     left.clone().into(),
                     op1.clone(),
-                    right.clone().into(),
-                ),
+                    right.clone().into()),
                 start: left.start,
                 end: right.end,
             }),
-            _ => Err(Error {
-                msg: format!(
-                    "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
-                    op1.typ, prec1.associativity, op2.typ, prec2.associativity, prec1.precedence
-                ),
-                lines: vec![(op1.start, op1.end), (op2.start, op2.end)]
-            }),
-        },
+
+            std::cmp::Ordering::Equal => match (prec1.assoc, prec2.assoc) {
+                (Associativity::Left, Associativity::Left) => {
+                    let left = self.binary(left, op1, left2)?.into();
+                    Ok(Expr {
+                        typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
+                        start: right2.start,
+                        end: right2.end,
+                    })
+                }
+                (Associativity::Right, Associativity::Right) => Ok(Expr {
+                    typ: ExprType::BinaryOperation(
+                        left.clone().into(),
+                        op1.clone(),
+                        right.clone().into(),
+                    ),
+                    start: left.start,
+                    end: right.end,
+                }),
+                _ => Err(Error {
+                    msg: format!(
+                        "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
+                        op1.typ, prec1.assoc, op2.typ, prec2.assoc, prec1.prec
+                    ),
+                    lines: vec![(op1.start, op1.end), (op2.start, op2.end)]
+                }),
+            },
+        }
     }
 }
