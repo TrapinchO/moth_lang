@@ -153,7 +153,7 @@ impl Parser {
         match tok.typ {
             TokenType::Let => {
                 self.advance();
-                let (ident, expr) = self.parse_assignment()?;
+                let (ident, expr) = self.parse_var_decl()?;
                 Ok(Stmt {
                     start: tok.start,
                     end: expr.end,
@@ -172,7 +172,7 @@ impl Parser {
         }
     }
 
-    fn parse_assignment(&mut self) -> Result<(Token, Expr), Error> {
+    fn parse_var_decl(&mut self) -> Result<(Token, Expr), Error> {
         let ident = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
         self.expect(&TokenType::Equals, "Expected an equals symbol")?;
         Ok((ident, self.parse_expression()?))
@@ -186,7 +186,7 @@ impl Parser {
             self.advance();
             let expr = self.parse_expression()?;
             let TokenType::Identifier(name) = ident.typ else { unreachable!() };
-            Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(name.clone(), expr) }
+            Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(name, expr) }
         } else {
             // since the identifier can be a part of an expression, it has to backtrack a little
             // bit; and since we already moved at least once, it is safe

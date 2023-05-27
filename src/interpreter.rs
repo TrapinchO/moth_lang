@@ -67,7 +67,7 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
         let typ = match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
             (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
-            (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + &b),
+            (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
             _ => return Err(Error {
                 msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
                 lines: vec![(left.start, right.end)]
@@ -101,7 +101,7 @@ pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     let defaults = HashMap::from(BUILTINS.map(
         |(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })
     ));
-    Interpreter::new(defaults).interpret(&stmts)
+    Interpreter::new(defaults).interpret(stmts)
 }
 
 struct Interpreter {

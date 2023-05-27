@@ -136,7 +136,7 @@ impl ExprVisitor<Expr> for Reassociate {
             lines: vec![(op2.start, op2.end)],
         })?;
 
-        // TODO: make functions like in the answer
+        // TODO: make functions like in the SO answer
         match prec1.prec.cmp(&prec2.prec) {
             std::cmp::Ordering::Greater => {
                 let left = self.binary(left, op1, left2)?.into();
