@@ -68,7 +68,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             typ: StmtType::VarDeclStmt(ident, self.visit_expr(&expr)?),
         })
     }
-    fn assignment(&mut self, ident: String, expr: Expr) -> Result<Stmt, Error> {
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             typ: StmtType::AssignStmt(ident, self.visit_expr(&expr)?),
             start: expr.start,

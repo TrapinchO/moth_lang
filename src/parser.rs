@@ -55,8 +55,9 @@ impl Display for Expr {
 #[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
     ExprStmt(Expr),
+    // identifier, expression
     VarDeclStmt(Token, Expr),
-    AssignStmt(String, Expr),
+    AssignStmt(Token, Expr),
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -185,8 +186,7 @@ impl Parser {
         Ok(if self.get_current().typ.compare_variant(&TokenType::Equals) {
             self.advance();
             let expr = self.parse_expression()?;
-            let TokenType::Identifier(name) = ident.typ else { unreachable!() };
-            Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(name, expr) }
+            Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(ident, expr) }
         } else {
             // since the identifier can be a part of an expression, it has to backtrack a little
             // bit; and since we already moved at least once, it is safe

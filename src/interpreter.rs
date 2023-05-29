@@ -41,18 +41,19 @@ impl Environment {
         Ok(())
     }
 
-    pub fn get(&self, name: &String) -> Result<Value, Error> {
-        self.env.get(name).cloned().ok_or(Error {
-            msg: format!("Name not found: \"{}\"", name),
-            lines: vec![(0, 0)] // TODO: fix
+    pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<Value, Error> {
+        self.env.get(ident).cloned().ok_or(Error {
+            msg: format!("Name not found: \"{}\"", ident),
+            lines: vec![pos]
         })
     }
 
-    pub fn update(&mut self, name: &String, val: Value) ->Result<(), Error> {
+    pub fn update(&mut self, ident: &Token, val: Value) ->Result<(), Error> {
+        let TokenType::Identifier(name) = &ident.typ else { unreachable!() };
         if !self.env.contains_key(&name.to_string()) {
             return Err(Error {
                 msg: format!("Name \"{}\" does not exists", name),
-                lines: vec![(val.start, val.end)]
+                lines: vec![(ident.start, ident.end)]
             })
         }
         *self.env.get_mut(name).unwrap() = val;
@@ -132,7 +133,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn assignment(&mut self, ident: String, expr: Expr) -> Result<(), Error> {
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
         let val = self.visit_expr(&expr)?;
         self.environment.update(&ident, val)?;
         Ok(())
@@ -171,9 +172,9 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Identifier(ident) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Identifier(name) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
-            typ: self.environment.get(ident)?.typ,
+            typ: self.environment.get(name, (expr.start, expr.end))?.typ,
             start: expr.start,
             end: expr.end,
         })
@@ -221,7 +222,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", op)
         };
-        let ValueType::Function(func) = self.environment.get(op_name)?.typ else {
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))?.typ else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function!", op_name),
                 lines: vec![(op.start, op.end)]

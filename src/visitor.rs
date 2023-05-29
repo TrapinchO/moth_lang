@@ -13,7 +13,7 @@ pub trait StmtVisitor<T> {
     }
 
     fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
-    fn assignment(&mut self, ident: String, expr: Expr) -> Result<T, Error>;
+    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
     fn expr(&mut self, expr: Expr) -> Result<T, Error>;
 }
 
