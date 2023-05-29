@@ -59,7 +59,7 @@ impl Display for Token {
     }
 }
 
-const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:";
+const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
 const KEYWORDS: [(&str, TokenType); 4] = [
     ("let", TokenType::Let),
