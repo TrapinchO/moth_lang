@@ -61,7 +61,7 @@ impl Environment {
     }
 }
 
-const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
+const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 4] = [
     ("+", |args| {
         // TODO: add proper positions for the argument list
         let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
@@ -86,6 +86,36 @@ const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 2] = [
             typ: match (&left.typ, &right.typ) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
+                _ => return Err(Error {
+                    msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
+                lines: vec![(left.start, right.end)]
+                })
+            },
+            start: left.start,
+            end: right.end,
+        })
+    }),
+    ("*", |args| {
+        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
+        Ok(Value {
+            typ: match (&left.typ, &right.typ) {
+                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a * b),
+                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a * b),
+                _ => return Err(Error {
+                    msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
+                lines: vec![(left.start, right.end)]
+                })
+            },
+            start: left.start,
+            end: right.end,
+        })
+    }),
+    ("/", |args| {
+        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
+        Ok(Value {
+            typ: match (&left.typ, &right.typ) {
+                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a / b),
+                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
                 _ => return Err(Error {
                     msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
                 lines: vec![(left.start, right.end)]
