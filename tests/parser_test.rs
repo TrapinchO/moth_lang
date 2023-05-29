@@ -1,4 +1,5 @@
-use moth_lang::parser::{Expr, ExprType, Stmt, StmtType};
+use moth_lang::exprstmt::*;
+use moth_lang::parser::parse;
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -24,7 +25,7 @@ macro_rules! binop {
 
 macro_rules! unop {
     ($op:tt, $expr:expr) => {
-        ExprType::UnaryOperation(
+            ExprType::UnaryOperation(
             Token {
                 typ: TokenType::Symbol($op.to_string()),
                 start: 0,
@@ -102,8 +103,10 @@ fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
 #[cfg(test)]
 mod tests {
     use moth_lang::error::Error;
-    use moth_lang::lexer::{lex, Token, TokenType};
-    use moth_lang::parser::*;
+    use moth_lang::lexer::lex;
+    use moth_lang::token::{Token, TokenType};
+    use moth_lang::parser::parse;
+    use moth_lang::exprstmt::*;
     use moth_lang::reassoc;
 
     use crate::compare_elements;

@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use moth_lang::error::*;
-    use moth_lang::lexer::*;
+    use moth_lang::lexer::lex;
+    use moth_lang::token::*;
 
     #[test]
     fn empty() {

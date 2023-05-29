@@ -1,25 +1,11 @@
 use std::collections::HashMap;
 
-use crate::lexer::{Token, TokenType};
-use crate::parser::{ExprType, Stmt};
-use crate::{error::Error, parser::Expr};
+use crate::token::*;
+use crate::exprstmt::{ExprType, Expr, Stmt};
+use crate::error::Error;
 use crate::visitor::{ExprVisitor, StmtVisitor};
+use crate::value::*;
 
-#[derive(Debug, PartialEq, Clone)]
-enum ValueType {
-    String(String),
-    Bool(bool),
-    Int(i32),
-    Float(f32),
-    Function(fn(Vec<Value>)->Result<Value, Error>),
-}
-
-#[derive(Debug, PartialEq, Clone)]
-struct Value {
-    typ: ValueType,
-    start: usize,
-    end: usize,
-}
 
 
 
@@ -61,71 +47,6 @@ impl Environment {
     }
 }
 
-const BUILTINS: [(&str, fn(Vec<Value>)->Result<Value, Error>); 4] = [
-    ("+", |args| {
-        // TODO: add proper positions for the argument list
-        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        let typ = match (&left.typ, &right.typ) {
-            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
-            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
-            (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
-            _ => return Err(Error {
-                msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                lines: vec![(left.start, right.end)]
-            })
-        };
-        Ok(Value {
-            typ,
-            start: left.start,
-            end: right.end,
-        })
-    }),
-    ("-", |args| {
-        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        Ok(Value {
-            typ: match (&left.typ, &right.typ) {
-                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
-                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
-                _ => return Err(Error {
-                    msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                lines: vec![(left.start, right.end)]
-                })
-            },
-            start: left.start,
-            end: right.end,
-        })
-    }),
-    ("*", |args| {
-        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        Ok(Value {
-            typ: match (&left.typ, &right.typ) {
-                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a * b),
-                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a * b),
-                _ => return Err(Error {
-                    msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                lines: vec![(left.start, right.end)]
-                })
-            },
-            start: left.start,
-            end: right.end,
-        })
-    }),
-    ("/", |args| {
-        let [left, right] = &args[..] else { return Err(Error { msg: format!("Wrong number of arguemtns {}", args.len()), lines: vec![(0, 0)] }) };
-        Ok(Value {
-            typ: match (&left.typ, &right.typ) {
-                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a / b),
-                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
-                _ => return Err(Error {
-                    msg: format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right),
-                lines: vec![(left.start, right.end)]
-                })
-            },
-            start: left.start,
-            end: right.end,
-        })
-    }),
-];
 
 pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     // TODO: solve positions for builtin stuff

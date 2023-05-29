@@ -1,7 +1,6 @@
-
-use crate::lexer::Token;
-use crate::parser::{ExprType, StmtType, Stmt};
-use crate::{error::Error, parser::Expr};
+use crate::token::Token;
+use crate::exprstmt::*;
+use crate::error::Error;
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {

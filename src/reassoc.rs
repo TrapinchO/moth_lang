@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::error::Error;
-use crate::lexer::{Token, TokenType};
-use crate::parser::{Expr, ExprType, StmtType, Stmt};
+use crate::token::*;
+use crate::exprstmt::*;
 use crate::visitor::{ExprVisitor, StmtVisitor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
