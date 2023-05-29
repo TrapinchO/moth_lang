@@ -15,15 +15,15 @@ struct Environment {
 }
 
 impl Environment {
-    // TODO: fix error positions not being displayed properly
-    pub fn insert(&mut self, name: String, val: Value) -> Result<(), Error> {
-        if self.env.contains_key(&name) {
+    pub fn insert(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
+        let TokenType::Identifier(name) = &ident.typ else { unreachable!() };
+        if self.env.contains_key(name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
-                lines: vec![(val.start, val.end)]
+                lines: vec![(ident.start, ident.end)]
             })
         }
-        self.env.insert(name, val);
+        self.env.insert(name.clone(), val);
         Ok(())
     }
 
@@ -76,11 +76,8 @@ impl Interpreter {
 
 impl StmtVisitor<()> for Interpreter {
     fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.typ else {
-            panic!("Expected an identifier");
-        };
         let val = self.visit_expr(&expr)?;
-        self.environment.insert(name.to_string(), val)?;
+        self.environment.insert(&ident, val)?;
         Ok(())
     }
 
