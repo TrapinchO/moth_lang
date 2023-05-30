@@ -11,7 +11,7 @@ use crate::value::*;
 
 #[derive(Debug, PartialEq, Clone)]
 struct Environment {
-    env: HashMap<String, Value>
+    env: HashMap<String, ValueType>
 }
 
 impl Environment {
@@ -23,11 +23,11 @@ impl Environment {
                 lines: vec![(ident.start, ident.end)]
             })
         }
-        self.env.insert(name.clone(), val);
+        self.env.insert(name.clone(), val.typ);
         Ok(())
     }
 
-    pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<Value, Error> {
+    pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
         self.env.get(ident).cloned().ok_or(Error {
             msg: format!("Name not found: \"{}\"", ident),
             lines: vec![pos]
@@ -42,7 +42,7 @@ impl Environment {
                 lines: vec![(ident.start, ident.end)]
             })
         }
-        *self.env.get_mut(name).unwrap() = val;
+        *self.env.get_mut(name).unwrap() = val.typ;
         Ok(())
     }
 }
@@ -51,7 +51,7 @@ impl Environment {
 pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     // TODO: solve positions for builtin stuff
     let defaults = HashMap::from(BUILTINS.map(
-        |(name, f)| (name.to_string(), Value { typ: ValueType::Function(f), start: 0, end: 0 })
+        |(name, f)| (name.to_string(), ValueType::Function(f))
     ));
     Interpreter::new(defaults).interpret(stmts)
 }
@@ -61,7 +61,7 @@ struct Interpreter {
 }
 
 impl Interpreter {
-    pub fn new(defaults: HashMap<String, Value>) -> Self {
+    pub fn new(defaults: HashMap<String, ValueType>) -> Self {
         Interpreter { environment: Environment {env: defaults } }
     }
 
@@ -122,7 +122,7 @@ impl ExprVisitor<Value> for Interpreter {
     fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
         let ExprType::Identifier(name) = &expr.typ.clone() else { unreachable!() };
         Ok(Value {
-            typ: self.environment.get(name, (expr.start, expr.end))?.typ,
+            typ: self.environment.get(name, (expr.start, expr.end))?,
             start: expr.start,
             end: expr.end,
         })
@@ -144,24 +144,16 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", op);
         };
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+            return Err(Error {
+                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                lines: vec![(op.start, op.end)]
+            })
+        };
         Ok(Value {
-            typ: match val.typ {
-                ValueType::Float(n) => {
-                  match op_name.as_str() {
-                       "-" => ValueType::Float(-n),  // TODO fix Int vs Float
-                       _ => return operator_error(op),
-                  }
-                },
-                ValueType::Int(n) => {
-                    match op_name.as_str() {
-                        "-" => ValueType::Int(-n),  // TODO fix Int vs Float
-                        _ => return operator_error(op),
-                    }
-                },
-                _ => todo!("Not yet implemented!")
-            },
+            typ: func(vec![val]).or_else(|msg| Err(Error { msg, lines: vec![(op.start, expr.end)] }))?,
             start: op.start,
-            end: val.end
+            end: expr.end,
         })
     }
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
@@ -170,13 +162,17 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.typ else {
             panic!("Expected a symbol, found {:?}", op)
         };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))?.typ else {
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function!", op_name),
                 lines: vec![(op.start, op.end)]
             })
         };
-        func(vec![left2, right2])
+        Ok(Value {
+            typ: func(vec![left2, right2]).or_else(|msg| Err(Error { msg, lines: vec![(left.start, right.end)] }))?,
+            start: left.start,
+            end: right.end,
+        })
     }
 }
 

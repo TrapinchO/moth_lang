@@ -99,15 +99,18 @@ impl ExprVisitor<Expr> for Reassociate {
         })
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Expr, Error> {
+        let expr = self.visit_expr(expr)?;
         Ok(Expr {
-            typ: ExprType::UnaryOperation(op.clone(), self.visit_expr(expr)?.into()),
             start: op.start,
             end: expr.end,
+            typ: ExprType::UnaryOperation(op.clone(), expr.into()),
         })
     }
     // the one method this file exists for
     // https://stackoverflow.com/questions/67978670/is-there-a-way-to-fix-an-expression-with-operators-in-it-after-parsing-using-a
     fn binary(&mut self, left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
+        let left = self.visit_expr(left)?;
+        let right = self.visit_expr(right)?;
         // not a binary operation, no need to reassociate it
         let ExprType::BinaryOperation(left2, op2, right2) = &right.typ else {
             return Ok(Expr {
@@ -136,10 +139,11 @@ impl ExprVisitor<Expr> for Reassociate {
             lines: vec![(op2.start, op2.end)],
         })?;
 
+        println!("{:?} {:?}", prec1, prec2);
         // TODO: make functions like in the SO answer
         match prec1.prec.cmp(&prec2.prec) {
             std::cmp::Ordering::Greater => {
-                let left = self.binary(left, op1, left2)?.into();
+                let left = self.binary(&left, op1, left2)?.into();
                 Ok(Expr {
                     typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                     start: right2.start,
@@ -158,7 +162,7 @@ impl ExprVisitor<Expr> for Reassociate {
 
             std::cmp::Ordering::Equal => match (prec1.assoc, prec2.assoc) {
                 (Associativity::Left, Associativity::Left) => {
-                    let left = self.binary(left, op1, left2)?.into();
+                    let left = self.binary(&left, op1, left2)?.into();
                     Ok(Expr {
                         typ: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                         start: right2.start,
