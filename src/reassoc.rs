@@ -36,12 +36,23 @@ pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     Ok(ls)
     }
 
-const DEFAULT_OPS: [(&str, Precedence); 5] = [
-    ("+", Precedence { prec: 1, assoc: Associativity::Left }),
-    ("-", Precedence { prec: 1, assoc: Associativity::Left }),
-    ("*", Precedence { prec: 2, assoc: Associativity::Left }),
-    ("/", Precedence { prec: 2, assoc: Associativity::Left }),
-    ("^^", Precedence { prec: 10, assoc: Associativity::Right }),  // analyzer shut up now please its used
+const DEFAULT_OPS: [(&str, Precedence); 13] = [
+    ("||", Precedence { prec: 4, assoc: Associativity::Left }),
+    ("&&", Precedence { prec: 4, assoc: Associativity::Left }),
+
+    ("==", Precedence { prec: 4, assoc: Associativity::Left }),
+    ("!=", Precedence { prec: 4, assoc: Associativity::Left }),
+    (">=", Precedence { prec: 4, assoc: Associativity::Left }),
+    ("<=", Precedence { prec: 4, assoc: Associativity::Left }),
+    (">", Precedence { prec: 4, assoc: Associativity::Left }),
+    ("<", Precedence { prec: 4, assoc: Associativity::Left }),
+
+    ("+", Precedence { prec: 5, assoc: Associativity::Left }),
+    ("-", Precedence { prec: 5, assoc: Associativity::Left }),
+
+    ("*", Precedence { prec: 6, assoc: Associativity::Left }),
+    ("/", Precedence { prec: 6, assoc: Associativity::Left }),
+    ("%", Precedence { prec: 6, assoc: Associativity::Left }),
 ];
 
 // empty struct, it does not need to hold any data

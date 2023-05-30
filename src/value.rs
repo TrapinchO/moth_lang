@@ -14,7 +14,7 @@ pub struct Value {
     pub end: usize,
 }
 
-pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 4] = [
+pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
     ("+", |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
@@ -52,6 +52,87 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 4] = [
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a / b),
             (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    ("%", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a % b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a % b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+
+    ("==", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a == b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a == b),
+            (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a == b),
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    ("!=", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a != b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a != b),
+            (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a != b),
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    (">=", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a >= b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a >= b),
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a >= b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    ("<=", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a <= b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a <= b),
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a <= b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    (">", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a > b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a > b),
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a > b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    ("<", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a < b),
+            (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a < b),
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a < b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+
+
+    ("||", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a || *b),
+            _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
+        })
+    }),
+    ("&&", |args| {
+        let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+        Ok(match (&left.typ, &right.typ) {
+            (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a && *b),
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
