@@ -17,6 +17,8 @@ pub struct Value {
     pub end: usize,
 }
 
+// TODO: this is very smart, as it can currently hold only Functions
+// PIE anyone?
 pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
     ("+",
      Precedence {prec: 5, assoc: Associativity::Left },

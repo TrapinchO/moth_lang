@@ -36,7 +36,6 @@ impl Display for ExprType {
     }
 }
 
-// TODO: Stuff will probably break when multiline expressions because of the indexes
 // TODO: consider moving this to the bottom again, as rust seems to be
 // affected by position of the arguments, at least regarding the borrow checker
 #[derive(Debug, PartialEq, Clone)]

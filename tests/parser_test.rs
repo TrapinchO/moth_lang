@@ -108,6 +108,7 @@ mod tests {
     use moth_lang::parser::parse;
     use moth_lang::exprstmt::*;
     use moth_lang::reassoc;
+    use moth_lang::value::BUILTINS;
 
     use crate::compare_elements;
 
@@ -188,36 +189,37 @@ mod tests {
             }
         }
 
-        #[test]
-        fn parse_unary() {
-            let ops = [
-                ("+1", unop!("+", ExprType::Int(1))),
-                ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Int(1))))),
-                ("*-+1", unop!("*-+", ExprType::Int(1))),
-            ];
-            for (s, op) in ops {
-                assert!(compare_elements(
-                    &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                    &stmt!(StmtType::ExprStmt(expr!(op)))
-                ));
-            }
-        }
-
-        #[test]
-        fn test_reassoc() {
-            let ops = [
-                ("1 - 1 - 1", binop!(
-                        binop!(ExprType::Int(1), "-", ExprType::Int(1)),
-                        "-",
-                        ExprType::Int(1))),
-                ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
-                        binop!(ExprType::Int(1), "-", ExprType::Int(1)),
-                    "-",
-                    ExprType::Int(1))))),
+    #[test]
+    fn parse_unary() {
+        let ops = [
+            ("+1", unop!("+", ExprType::Int(1))),
+            ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Int(1))))),
+            ("*-+1", unop!("*-+", ExprType::Int(1))),
         ];
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc::reassociate(&parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()).unwrap()[0],
+                &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
+                &stmt!(StmtType::ExprStmt(expr!(op)))
+            ));
+        }
+    }
+
+    #[test]
+    fn test_reassoc() {
+        let ops = [
+            ("1 - 1 - 1", binop!(
+                    binop!(ExprType::Int(1), "-", ExprType::Int(1)),
+                    "-",
+                    ExprType::Int(1))),
+            ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
+                    binop!(ExprType::Int(1), "-", ExprType::Int(1)),
+                "-",
+                ExprType::Int(1))))),
+        ];
+        let symbols: std::collections::HashMap<String, reassoc::Precedence> = BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into();
+        for (s, op) in ops {
+            assert!(compare_elements(
+                &reassoc::reassociate(symbols.clone(), &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()).unwrap()[0],
                 &stmt!(StmtType::ExprStmt(expr!(op)))
             ));
         }

@@ -36,6 +36,7 @@ fn main() {
 }
 
 fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
+    // this are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
 
