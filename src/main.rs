@@ -1,8 +1,11 @@
 use moth_lang::error::Error;
-use moth_lang::interpreter;
+use moth_lang::interpreter::Interpreter;
 use moth_lang::lexer;
 use moth_lang::parser;
 use moth_lang::reassoc;
+use moth_lang::value::BUILTINS;
+use moth_lang::value::ValueType;
+use std::collections::HashMap;
 use std::env;
 use std::io;
 
@@ -10,6 +13,9 @@ fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     env::set_var("RUST_BACKTRACE", "1");
 
+    let mut interp = Interpreter::new(HashMap::from(
+        BUILTINS.map(|(name, f)| (name.to_string(), ValueType::Function(f)))
+    ));
     loop {
         println!("=================\n===== input =====");
         let mut input = String::new();
@@ -23,7 +29,7 @@ fn main() {
             println!("Empty code, exiting program");
             return;
         }
-        match run(input.clone()) {
+        match run(&mut interp, input.clone()) {
             Ok(_) => {}
             Err(err) => {
                 println!("{}", err.format_message(&input.to_string()));
@@ -32,12 +38,12 @@ fn main() {
     }
 }
 
-fn run(input: String) -> Result<(), Error> {
-    println!("===== source =====\n{:?}\n=====        =====", input);
+fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
+    //println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
 
-    println!("===== lexing =====");
     /*
+    println!("===== lexing =====");
     for t in &tokens {
         println!("{:?}", t);
     }
@@ -61,7 +67,7 @@ fn run(input: String) -> Result<(), Error> {
     //*/
 
     println!("===== evaluating =====");
-    interpreter::interpret(&resassoc)?;
+    interp.interpret(&resassoc)?;
 
     Ok(())
 }
