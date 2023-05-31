@@ -6,56 +6,26 @@ use crate::exprstmt::*;
 use crate::visitor::{ExprVisitor, StmtVisitor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Associativity {
+pub enum Associativity {
     Left,
     Right,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Precedence {
-    prec: usize,
-    assoc: Associativity,
+pub struct Precedence {
+    pub prec: usize,
+    pub assoc: Associativity,
 }
 
-impl Precedence {
-    pub fn new(prec: usize, assoc: Associativity) -> Self {
-        Precedence {
-            prec,
-            assoc,
-        }
-    }
-}
-
-pub fn reassociate(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
-    let ops = HashMap::from(DEFAULT_OPS.map(|(name, prec)| { (name.to_string(), prec) }));
+pub fn reassociate(ops: HashMap<String, Precedence>, stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
     let mut ls = vec![];
     for s in stmt {
         ls.push(reassoc.reassociate(s.clone())?)
     }
     Ok(ls)
-    }
+}
 
-const DEFAULT_OPS: [(&str, Precedence); 13] = [
-    ("||", Precedence { prec: 4, assoc: Associativity::Left }),
-    ("&&", Precedence { prec: 4, assoc: Associativity::Left }),
-
-    ("==", Precedence { prec: 4, assoc: Associativity::Left }),
-    ("!=", Precedence { prec: 4, assoc: Associativity::Left }),
-    (">=", Precedence { prec: 4, assoc: Associativity::Left }),
-    ("<=", Precedence { prec: 4, assoc: Associativity::Left }),
-    (">", Precedence { prec: 4, assoc: Associativity::Left }),
-    ("<", Precedence { prec: 4, assoc: Associativity::Left }),
-
-    ("+", Precedence { prec: 5, assoc: Associativity::Left }),
-    ("-", Precedence { prec: 5, assoc: Associativity::Left }),
-
-    ("*", Precedence { prec: 6, assoc: Associativity::Left }),
-    ("/", Precedence { prec: 6, assoc: Associativity::Left }),
-    ("%", Precedence { prec: 6, assoc: Associativity::Left }),
-];
-
-// empty struct, it does not need to hold any data
 struct Reassociate {
     ops: HashMap<String, Precedence>
 }

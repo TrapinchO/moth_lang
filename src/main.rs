@@ -14,7 +14,7 @@ fn main() {
     env::set_var("RUST_BACKTRACE", "1");
 
     let mut interp = Interpreter::new(HashMap::from(
-        BUILTINS.map(|(name, f)| (name.to_string(), ValueType::Function(f)))
+        BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
     ));
     loop {
         println!("=================\n===== input =====");
@@ -22,9 +22,6 @@ fn main() {
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
 
-        //let input = "1\n+\n\n\n\n\n\n\n\n\n\n\n1-1; // and this is how ya do it".to_string();
-        //let input = "let 10 = 10;".to_string();
-        //let input = "let x = 10-1--1;".to_string();
         if input.is_empty() {
             println!("Empty code, exiting program");
             return;
@@ -58,7 +55,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let resassoc = reassoc::reassociate(&ast)?;
+    let resassoc = reassoc::reassociate(BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(), &ast)?;
     println!("===== reassociating =====");
     // /*
     for s in &resassoc {

@@ -1,3 +1,6 @@
+// TODO: kinda circular import, but it should be fine
+use crate::reassoc::{Precedence, Associativity};
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueType {
     String(String),
@@ -14,8 +17,10 @@ pub struct Value {
     pub end: usize,
 }
 
-pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
-    ("+", |args| {
+pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
+    ("+",
+     Precedence {prec: 5, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
@@ -24,7 +29,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("-", |args| {
+    ("-",
+     Precedence {prec: 5, assoc: Associativity::Left },
+     |args| {
         Ok(match &args[..] {
             [expr] => match &expr.typ {
                 ValueType::Int(n) => ValueType::Int(-n),
@@ -39,7 +46,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Wrong number of arguments: {}", args.len()))
         })
     }),
-    ("*", |args| {
+    ("*", 
+     Precedence {prec: 6, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a * b),
@@ -47,7 +56,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("/", |args| {
+    ("/", 
+     Precedence {prec: 6, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a / b),
@@ -55,7 +66,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("%", |args| {
+    ("%", 
+     Precedence {prec: 6, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a % b),
@@ -64,7 +77,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
         })
     }),
 
-    ("==", |args| {
+    ("==", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a == b),
@@ -74,7 +89,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("!=", |args| {
+    ("!=", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a != b),
@@ -84,7 +101,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    (">=", |args| {
+    (">=", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a >= b),
@@ -93,7 +112,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("<=", |args| {
+    ("<=", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a <= b),
@@ -102,7 +123,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    (">", |args| {
+    (">", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a > b),
@@ -111,7 +134,9 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("<", |args| {
+    ("<", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a < b),
@@ -122,14 +147,18 @@ pub const BUILTINS: [(&str, fn(Vec<Value>)->Result<ValueType, String>); 13] = [
     }),
 
 
-    ("||", |args| {
+    ("||", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a || *b),
             _ => return Err(format!("Invalid values: \"{:?}\" and \"{:?}\"", left, right))
         })
     }),
-    ("&&", |args| {
+    ("&&", 
+     Precedence {prec: 4, assoc: Associativity::Left },
+     |args| {
         let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
         Ok(match (&left.typ, &right.typ) {
             (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a && *b),
