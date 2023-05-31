@@ -4,6 +4,18 @@ on: [push, pull_request]
 name: Clippy and tests
 
 jobs:
+  build_and_test:
+    name: Rust project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+
   check:
     name: Clippy
     runs-on: ubuntu-latest
@@ -42,20 +54,3 @@ jobs:
         continue-on-error: false
         with:
           command: test
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v2
-
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Run cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
