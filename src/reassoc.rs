@@ -61,27 +61,27 @@ struct Reassociate {
 }
 impl Reassociate {
     pub fn reassociate(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
-        self.visit_stmt(stmt)
+        self.visit_stmt(&stmt)
     }
 }
 impl StmtVisitor<Stmt> for Reassociate {
-    fn expr(&mut self, expr: Expr) -> Result<Stmt, Error> {
+    fn expr(&mut self, expr: &Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            typ: StmtType::ExprStmt(self.visit_expr(&expr)?),
+            typ: StmtType::ExprStmt(self.visit_expr(expr)?),
             start: expr.start,
             end: expr.end,
         })
     }
-    fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+    fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             start: ident.start,
             end: expr.end,
-            typ: StmtType::VarDeclStmt(ident, self.visit_expr(&expr)?),
+            typ: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(expr)?),
         })
     }
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+    fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            typ: StmtType::AssignStmt(ident, self.visit_expr(&expr)?),
+            typ: StmtType::AssignStmt(ident.clone(), self.visit_expr(expr)?),
             start: expr.start,
             end: expr.end,
         })

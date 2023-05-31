@@ -3,17 +3,17 @@ use crate::exprstmt::*;
 use crate::error::Error;
 
 pub trait StmtVisitor<T> {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
-        match stmt.typ {
+    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
+        match &stmt.typ {
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(ident, expr),
             StmtType::AssignStmt(name, expr) => self.assignment(name, expr),
             StmtType::ExprStmt(expr) => self.expr(expr),
         }
     }
 
-    fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<T, Error>;
-    fn expr(&mut self, expr: Expr) -> Result<T, Error>;
+    fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
+    fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
+    fn expr(&mut self, expr: &Expr) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {

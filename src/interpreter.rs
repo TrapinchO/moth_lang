@@ -69,7 +69,7 @@ impl Interpreter {
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmts {
             // TODO: change to references later
-            self.visit_stmt(s.clone())?;
+            self.visit_stmt(s)?;
         }
         Ok(())
     }
@@ -84,6 +84,7 @@ impl Interpreter {
                 lines: vec![(op.start, op.end)]
             })
         };
+        // TODO: fix positions later
         let (start, end) = match args.len() {
             0 => (op.start, op.end),
             1 => {
@@ -101,20 +102,20 @@ impl Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn var_decl(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
-        let val = self.visit_expr(&expr)?;
-        self.environment.insert(&ident, val)?;
+    fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<(), Error> {
+        let val = self.visit_expr(expr)?;
+        self.environment.insert(ident, val)?;
         Ok(())
     }
 
-    fn assignment(&mut self, ident: Token, expr: Expr) -> Result<(), Error> {
-        let val = self.visit_expr(&expr)?;
-        self.environment.update(&ident, val)?;
+    fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<(), Error> {
+        let val = self.visit_expr(expr)?;
+        self.environment.update(ident, val)?;
         Ok(())
     }
 
-    fn expr(&mut self, expr: Expr) -> Result<(), Error> {
-        let val = self.visit_expr(&expr)?;
+    fn expr(&mut self, expr: &Expr) -> Result<(), Error> {
+        let val = self.visit_expr(expr)?;
         println!("{:?}", val.typ);
         Ok(())
     }
