@@ -58,7 +58,9 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
-        while !self.is_at_end() && !self.get_current().typ.compare_variant(&TokenType::Eof) {
+        while !self.is_at_end()
+            && !self.get_current().typ.compare_variant(&TokenType::Eof)
+            && !self.get_current().typ.compare_variant(&TokenType::RBrace) {
             ls.push(self.parse_statement()?);
             self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
         }
@@ -79,6 +81,7 @@ impl Parser {
                 })
             },
             TokenType::Identifier(_) => self.parse_assign(),
+            TokenType::If => self.parse_if_else(),
             _ => {
                 let expr = self.parse_expression()?;
                 Ok(Stmt {
@@ -110,6 +113,27 @@ impl Parser {
             self.idx -= 1;
             let expr = self.parse_expression()?;
             Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
+        })
+    }
+
+    fn parse_if_else(&mut self) -> Result<Stmt, Error> {
+        let start = self.get_current().start;
+        self.advance();
+        let cond = self.parse_expression()?;
+        self.expect(&TokenType::LBrace, "Expeted { after condition")?;
+        let if_block = self.parse_block()?;
+        self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
+        let else_block = if self.expect(&TokenType::Else, "").is_ok() {
+            self.expect(&TokenType::LBrace, "Expeted { after else")?;
+            let else_block = self.parse_block()?;
+            self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
+            Some(else_block)
+        } else { None };
+
+        Ok(Stmt {
+            typ: StmtType::IfStmt(cond, if_block, else_block),
+            start,
+            end: 0,
         })
     }
 

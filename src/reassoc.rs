@@ -52,8 +52,27 @@ impl StmtVisitor<Stmt> for Reassociate {
     fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             typ: StmtType::AssignStmt(ident.clone(), self.visit_expr(expr)?),
-            start: expr.start,
-            end: expr.end,
+            start: 0,
+            end: 0,
+        })
+    }
+
+    fn if_else(&mut self, cond: &Expr, if_block: &Vec<Stmt>, else_block: &Option<Vec<Stmt>>) -> Result<Stmt, Error> {
+        let cond = self.visit_expr(cond)?;
+        let mut if_block2: Vec<Stmt> = vec![];
+        for s in if_block {
+            if_block2.push(self.visit_stmt(s)?)
+        }
+        let mut else_block2: Vec<Stmt> = vec![];
+        if let Some(else_block) = else_block {
+            for s in else_block {
+                else_block2.push(self.visit_stmt(s)?)
+            }
+        }
+        Ok(Stmt {
+            typ: StmtType::IfStmt(cond, if_block2, Some(else_block2)),
+            start: 0,
+            end: 0,
         })
     }
 }
@@ -120,7 +139,6 @@ impl ExprVisitor<Expr> for Reassociate {
             lines: vec![(op2.start, op2.end)],
         })?;
 
-        println!("{:?} {:?}", prec1, prec2);
         // TODO: make functions like in the SO answer
         match prec1.prec.cmp(&prec2.prec) {
             std::cmp::Ordering::Greater => {

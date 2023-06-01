@@ -8,12 +8,14 @@ pub trait StmtVisitor<T> {
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(ident, expr),
             StmtType::AssignStmt(name, expr) => self.assignment(name, expr),
             StmtType::ExprStmt(expr) => self.expr(expr),
+            StmtType::IfStmt(cond, if_block, else_block) => self.if_else(cond, if_block, else_block),
         }
     }
 
     fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
     fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
     fn expr(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn if_else(&mut self, cond: &Expr, if_block: &Vec<Stmt>, else_block: &Option<Vec<Stmt>>) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {

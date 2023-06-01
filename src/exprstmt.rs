@@ -57,6 +57,7 @@ pub enum StmtType {
     // identifier, expression
     VarDeclStmt(Token, Expr),
     AssignStmt(Token, Expr),
+    IfStmt(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -64,6 +65,17 @@ impl StmtType {
             Self::ExprStmt(expr) => expr.to_string(),
             Self::VarDeclStmt(ident, expr) => format!("let {} = {}", ident, expr),
             Self::AssignStmt(name, expr) => format!("{} = {}", name, expr),
+            StmtType::IfStmt(cond, if_block, else_block) => {
+                let if_block = if_block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n");
+                let else_block = match else_block {
+                    Some(stmts) => {
+                    let stmts = stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n");
+                        format!(" else {{{}}}", stmts)
+                    },
+                    None => "".to_string()
+                };
+                format!("if {} {{{}}}{}", cond, if_block, else_block)
+            }
         }
     }
 }
