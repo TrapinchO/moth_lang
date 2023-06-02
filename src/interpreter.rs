@@ -73,32 +73,6 @@ impl Interpreter {
         }
         Ok(())
     }
-
-    fn call(&self, op: &Token, args: Vec<Value>) -> Result<Value, Error> {
-        let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {:?}", op)
-        };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
-            return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function!", op_name),
-                lines: vec![(op.start, op.end)]
-            })
-        };
-        // TODO: fix positions later
-        let (start, end) = match args.len() {
-            0 => (op.start, op.end),
-            1 => {
-                let val = args.first().unwrap();
-                (val.start, val.end)
-            },
-            _ => (args.first().unwrap().start, args.last().unwrap().end),
-        };
-        Ok(Value {
-            typ: func(args).map_err(|msg| Error { msg, lines: vec![(start, end)] })?,
-            start,
-            end,
-        })
-    }
 }
 
 impl StmtVisitor<()> for Interpreter {
@@ -187,12 +161,38 @@ impl ExprVisitor<Value> for Interpreter {
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
         let val = self.visit_expr(expr)?;
-        self.call(op, vec![val])
+        let TokenType::Symbol(op_name) = &op.typ else {
+            panic!("Expected a symbol, found {:?}", op);
+        };
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+            return Err(Error {
+                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                lines: vec![(op.start, op.end)]
+            })
+        };
+        Ok(Value {
+            typ: func(vec![val]).or_else(|msg| Err(Error { msg, lines: vec![(op.start, expr.end)] }))?,
+            start: op.start,
+            end: expr.end,
+        })
     }
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
-        self.call(op, vec![left2, right2])
+        let TokenType::Symbol(op_name) = &op.typ else {
+            panic!("Expected a symbol, found {:?}", op)
+        };
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+            return Err(Error {
+                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                lines: vec![(op.start, op.end)]
+            })
+        };
+        Ok(Value {
+            typ: func(vec![left2, right2]).or_else(|msg| Err(Error { msg, lines: vec![(left.start, right.end)] }))?,
+            start: left.start,
+            end: right.end,
+        })
     }
 }
 
