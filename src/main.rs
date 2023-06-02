@@ -3,28 +3,53 @@ use moth_lang::interpreter::Interpreter;
 use moth_lang::lexer;
 use moth_lang::parser;
 use moth_lang::reassoc;
-use moth_lang::value::BUILTINS;
-use moth_lang::value::ValueType;
+use moth_lang::value::{ValueType, BUILTINS};
 use std::collections::HashMap;
 use std::env;
+use std::fs;
 use std::io;
+use std::io::Write;
 
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     env::set_var("RUST_BACKTRACE", "1");
+    let args = env::args().collect::<Vec<_>>();
+    if args.len() == 1 {
+        repl();
+    } else if args.len() == 2 {
+        let file_name = &args[1];
+        let src = fs::read_to_string(file_name)
+            .expect("Invalid file!")
+            .replace("\r", "");  // TODO: windows newlines have \r which messes up the lexer
 
+        let mut interp = Interpreter::new(HashMap::from(
+            BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
+        ));
+        match run(&mut interp, src.clone()) {
+            Ok(_) => {}
+            Err(err) => {
+                println!("{}", err.format_message(&src.to_string()));
+            }
+        }
+    } else {
+        println!("Unknown amount of arguments: {}", args.len());
+    }
+
+}
+
+fn repl() {
     let mut interp = Interpreter::new(HashMap::from(
         BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
     ));
     loop {
-        println!("=================\n===== input =====");
+        print!(">>> ");
+        std::io::stdout().flush().unwrap();  // and  hope it never fails
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
 
         if input.is_empty() {
-            println!("Empty code, exiting program");
-            return;
+            continue;
         }
         match run(&mut interp, input.clone()) {
             Ok(_) => {}
@@ -56,15 +81,18 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let resassoc = reassoc::reassociate(BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(), &ast)?;
+    let resassoc = reassoc::reassociate(
+        BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(),
+        &ast
+    )?;
+    /*
     println!("===== reassociating =====");
-    // /*
     for s in &resassoc {
         println!("{}", s);
     }
-    //*/
+    */
 
-    println!("===== evaluating =====");
+    //println!("===== evaluating =====");
     interp.interpret(&resassoc)?;
 
     Ok(())

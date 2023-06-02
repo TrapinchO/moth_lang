@@ -1,0 +1,7 @@
+let x = 10;
+let y = 1000;
+if x < y {
+    "Hello!";
+} else {
+    "FALSE!";
+}
