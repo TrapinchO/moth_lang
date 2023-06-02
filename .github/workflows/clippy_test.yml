@@ -4,23 +4,23 @@ on: [push, pull_request]
 name: Clippy and tests
 
 jobs:
-  build_and_test:
-    name: Build project
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build      
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: moth_lang
-          path: target/debug/*
-          if-no-files-found: error
+#  build_and_test:
+#    name: Build project
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#      - uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: stable
+#      - uses: actions-rs/cargo@v1
+#        with:
+#          command: build      
+#      - name: Upload a Build Artifact
+#        uses: actions/upload-artifact@v2.2.4
+#        with:
+#          name: moth_lang
+#          path: target/debug/*
+#          if-no-files-found: error
 
   check:
     name: Clippy
