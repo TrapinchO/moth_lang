@@ -212,7 +212,8 @@ mod tests {
     #[test]
     fn lex_block_comment() {
         let comms = [
-            ("/**/", vec![TokenType::Eof]),
+            ("/**/", vec![TokenType::Symbol("/**/".to_string()),
+                          TokenType::Eof]),
             ("/* */", vec![TokenType::Eof]),
             ("/* \n */", vec![TokenType::Eof]),
             ("/* test */", vec![TokenType::Eof]),

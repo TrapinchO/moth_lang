@@ -182,7 +182,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             let cur_char = self.get_current();
-            if !(cur_char.is_alphabetic() || cur_char == '_') {
+            if !(cur_char.is_alphanumeric() || cur_char == '_') {
                 break;
             }
             s.push(cur_char);
