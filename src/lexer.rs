@@ -89,7 +89,7 @@ impl Lexer {
                     // no spaces, missing whole/decimal part
                     self.lex_number()?
                 },
-                ident if ident.is_alphanumeric() => {
+                ident if ident.is_alphabetic() || ident == '_' => {
                     let ident = self.lex_identifier();
                     let keywords = HashMap::from(KEYWORDS);
                     match keywords.get(ident.as_str()) {
@@ -108,9 +108,8 @@ impl Lexer {
                         "=" => TokenType::Equals,
                         "?" => TokenType::QuestionMark,
                         "." => TokenType::Dot,
-                        "/**/" => continue,
-                        "/*" => {
-                            // might come useful one day for documentation
+                        _ if sym.starts_with("/*") && sym[2..].chars().all(|s| s == '*') => {
+                            // returned string might come useful one day for documentation
                             self.lex_block_comment()?;
                             continue;
                         }
@@ -183,7 +182,7 @@ impl Lexer {
 
         while !self.is_at_end() {
             let cur_char = self.get_current();
-            if !cur_char.is_alphanumeric() {
+            if !(cur_char.is_alphabetic() || cur_char == '_') {
                 break;
             }
             s.push(cur_char);

@@ -18,10 +18,10 @@ No other types are implemented so far.
 
 ## Examples
 ```rs
-1; 20; 42; // int
-1.0; 0.0001; // float
-true; false; // bool
-"hello world!"; // string
+1; 20; 42;  // int
+1.0; 0.0001;  // float
+true; false;  // bool
+"hello world!";  // string
 "hello world!
 "; // error! string not terminated before newline
 ```
@@ -35,7 +35,11 @@ NOTE: integers and floats cannot be mixed and they return their respective type,
 
 # Variables
 Variables are declared using `let` keyword. A variable cannot be overshadowed, i.e. a variable of the same cannot be declared in the current scope.
+
+Valid variable names are strings composed of any letter (even with diacritics) or an underscore.
 ```rs
+_; _test; te_st; test_;  // all valid names
+
 let x = 10;
 let x = 100;  // error! variable x is already declared
 ```
@@ -48,18 +52,21 @@ x = 10;
 # Comments
 Line comments are made with double forward slash `//`. Multiline comments are made by surrounding the comment by `/*` and `*/`.
 <br>NOTE: line comment must not be immediately followed by a symbol, as that counts as an operator
+<BR>NOTE: like line comments, multiline comment beginning must contain only the leading slash and stars
 <br>NOTE: as of now, the comments cannot be nested
-<br>TODO: exact multiline comment specification
 ```rs
-1+1; // this comment is ignored
-1+1; // - this is fine, there is a space
-1+1; //- error! //- is an operator
-1+1; //// this is fine, as it is a slash
+1+1;  // this comment is ignored
+1+1;  // - this is fine, there is a space
+1+1;  //- error! //- is an operator
+1+1;  //// this is fine, as it is a slash
 /*
 and this comment describes in great detail why I kept the expression
 above in the code despite it not doing absolutely anything
 expect taking space and making the compiler and clippy angry at me.
 */
+/* this is ok */
+/** this is also ok, only stars */
+/*= not ok, an operator */
 ```
 
 
