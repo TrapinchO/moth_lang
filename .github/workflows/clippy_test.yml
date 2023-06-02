@@ -34,6 +34,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+      
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: moth_lang
+          path: target/debug/*
+          if-no-files-found: error
 
   test:
     name: Test Suite
