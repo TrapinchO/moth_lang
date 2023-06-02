@@ -5,7 +5,7 @@ name: Clippy and tests
 
 jobs:
   build_and_test:
-    name: Rust project
+    name: Build project
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -14,7 +14,13 @@ jobs:
           toolchain: stable
       - uses: actions-rs/cargo@v1
         with:
-          command: build
+          command: build      
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: moth_lang
+          path: target/debug/*
+          if-no-files-found: error
 
   check:
     name: Clippy
@@ -34,13 +40,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
-      
-      - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.4
-        with:
-          name: moth_lang
-          path: target/debug/*
-          if-no-files-found: error
 
   test:
     name: Test Suite
