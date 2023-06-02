@@ -171,7 +171,7 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         Ok(Value {
-            typ: func(vec![val]).or_else(|msg| Err(Error { msg, lines: vec![(op.start, expr.end)] }))?,
+            typ: func(vec![val]).map_err(|msg| Error { msg, lines: vec![(op.start, expr.end)] })?,
             start: op.start,
             end: expr.end,
         })
@@ -189,7 +189,7 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         Ok(Value {
-            typ: func(vec![left2, right2]).or_else(|msg| Err(Error { msg, lines: vec![(left.start, right.end)] }))?,
+            typ: func(vec![left2, right2]).map_err(|msg| Error { msg, lines: vec![(left.start, right.end)] })?,
             start: left.start,
             end: right.end,
         })
