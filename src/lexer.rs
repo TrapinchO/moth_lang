@@ -231,20 +231,30 @@ impl Lexer {
         }
     }
 
-    // TODO: /*** ... */ and similar edge cases
     fn lex_block_comment(&mut self) -> Result<String, Error> {
         let mut comment = String::new();
         while !self.is_at_end() {
             // necessary to get correct line and pos positions
-            if self.is_char('\n') {
-                self.advance();
-                continue;
-            }
+            // TODO: actually I dont remember why is this here
+            // remove it? actually, probably make the function return unit
+            //if self.is_char('\n') {
+            //    self.advance();
+            //    continue;
+            //}
 
-            if self.is_char('*') && self.idx < self.code.len() - 1 && self.code[self.idx + 1] == '/' {
-                self.advance();
-                self.advance();
-                return Ok(comment);
+            // could be the end of the comment
+            if self.is_char('*') {
+                // at the end of the file
+                if self.idx == self.code.len() - 2 && self.code[self.idx + 1] == '/' {
+                    self.advance();
+                    self.advance();
+                    return Ok(comment);
+                // otherwise must check whether it is not an operator instead (e.g. */*)
+                } else if self.idx < self.code.len() - 2 && self.code[self.idx + 1] == '/' && !SYMBOLS.contains(self.code[self.idx+2]) {
+                    self.advance();
+                    self.advance();
+                    return Ok(comment);
+                }
             }
             comment.push(self.get_current());
             self.advance();

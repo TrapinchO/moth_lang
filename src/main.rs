@@ -20,12 +20,13 @@ fn main() {
         let file_name = &args[1];
         let src = fs::read_to_string(file_name)
             .expect("Invalid file!")
+            .trim_end()
             .replace('\r', "");  // TODO: windows newlines have \r which messes up the lexer
 
         let mut interp = Interpreter::new(HashMap::from(
             BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
         ));
-        match run(&mut interp, src.clone()) {
+        match run(&mut interp, src.to_string()) {
             Ok(_) => {}
             Err(err) => {
                 println!("{}", err.format_message(&src));

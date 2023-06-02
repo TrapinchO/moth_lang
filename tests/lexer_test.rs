@@ -182,7 +182,6 @@ mod tests {
 
     #[test]
     fn lex_line_comment() {
-        // TODO: DEAL WITH TESTING
         let coms = [
             ("//", vec![TokenType::Eof]),
             ("//test", vec![TokenType::Eof]),
