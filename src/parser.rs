@@ -62,7 +62,6 @@ impl Parser {
             && !self.get_current().typ.compare_variant(&TokenType::Eof)
             && !self.get_current().typ.compare_variant(&TokenType::RBrace) {
             ls.push(self.parse_statement()?);
-            self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
         }
 
         Ok(ls)
@@ -74,21 +73,29 @@ impl Parser {
             TokenType::Let => {
                 self.advance();
                 let (ident, expr) = self.parse_var_decl()?;
-                Ok(Stmt {
+                let stmt = Stmt {
                     start: tok.start,
                     end: expr.end,
                     typ: StmtType::VarDeclStmt(ident, expr),
-                })
+                };
+                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+                Ok(stmt)
             },
-            TokenType::Identifier(_) => self.parse_assign(),
+            TokenType::Identifier(_) => {
+                let stmt = self.parse_assign()?;
+                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+                Ok(stmt)
+            },
             TokenType::If => self.parse_if_else(),
             _ => {
                 let expr = self.parse_expression()?;
-                Ok(Stmt {
+                let stmt = Stmt {
                     start: expr.start,
                     end: expr.end,
                     typ: StmtType::ExprStmt(expr),
-                })
+                };
+                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+                Ok(stmt)
             },
         }
     }
