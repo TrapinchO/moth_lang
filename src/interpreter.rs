@@ -1,17 +1,14 @@
 use std::collections::HashMap;
 
-use crate::token::*;
-use crate::exprstmt::{ExprType, Expr, Stmt};
 use crate::error::Error;
-use crate::visitor::{ExprVisitor, StmtVisitor};
+use crate::exprstmt::{Expr, ExprType, Stmt};
+use crate::token::*;
 use crate::value::*;
-
-
-
+use crate::visitor::{ExprVisitor, StmtVisitor};
 
 #[derive(Debug, PartialEq, Clone)]
 struct Environment {
-    env: HashMap<String, ValueType>
+    env: HashMap<String, ValueType>,
 }
 
 impl Environment {
@@ -20,8 +17,8 @@ impl Environment {
         if self.env.contains_key(name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
-                lines: vec![(ident.start, ident.end)]
-            })
+                lines: vec![(ident.start, ident.end)],
+            });
         }
         self.env.insert(name.clone(), val.typ);
         Ok(())
@@ -30,40 +27,40 @@ impl Environment {
     pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
         self.env.get(ident).cloned().ok_or(Error {
             msg: format!("Name not found: \"{}\"", ident),
-            lines: vec![pos]
+            lines: vec![pos],
         })
     }
 
-    pub fn update(&mut self, ident: &Token, val: Value) ->Result<(), Error> {
+    pub fn update(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
         let TokenType::Identifier(name) = &ident.typ else { unreachable!() };
         if !self.env.contains_key(&name.to_string()) {
             return Err(Error {
                 msg: format!("Name \"{}\" does not exists", name),
-                lines: vec![(ident.start, ident.end)]
-            })
+                lines: vec![(ident.start, ident.end)],
+            });
         }
         *self.env.get_mut(name).unwrap() = val.typ;
         Ok(())
     }
 }
 
-
 pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     // TODO: solve positions for builtin stuff
-    let defaults = HashMap::from(BUILTINS.map(
-        |(name, _, f)| (name.to_string(), ValueType::Function(f))
-    ));
+    let defaults =
+        HashMap::from(BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))));
     Interpreter::new(defaults).interpret(stmts)
 }
 
 // TODO: just for repl, consider redoing
 pub struct Interpreter {
-    environment: Environment
+    environment: Environment,
 }
 
 impl Interpreter {
     pub fn new(defaults: HashMap<String, ValueType>) -> Self {
-        Interpreter { environment: Environment {env: defaults } }
+        Interpreter {
+            environment: Environment { env: defaults },
+        }
     }
 
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
@@ -171,7 +168,10 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         Ok(Value {
-            typ: func(vec![val]).map_err(|msg| Error { msg, lines: vec![(op.start, expr.end)] })?,
+            typ: func(vec![val]).map_err(|msg| Error {
+                msg,
+                lines: vec![(op.start, expr.end)],
+            })?,
             start: op.start,
             end: expr.end,
         })
@@ -189,10 +189,12 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         Ok(Value {
-            typ: func(vec![left2, right2]).map_err(|msg| Error { msg, lines: vec![(left.start, right.end)] })?,
+            typ: func(vec![left2, right2]).map_err(|msg| Error {
+                msg,
+                lines: vec![(left.start, right.end)],
+            })?,
             start: left.start,
             end: right.end,
         })
     }
 }
-

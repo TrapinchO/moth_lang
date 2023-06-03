@@ -2,7 +2,6 @@ use crate::error::Error;
 use crate::token::*;
 use std::collections::HashMap;
 
-
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
 const KEYWORDS: [(&str, TokenType); 7] = [
@@ -78,17 +77,17 @@ impl Lexer {
         let mut tokens = vec![];
 
         while !self.is_at_end() {
-            self.start_idx = self.idx;  // beginning to lex a new tokens
+            self.start_idx = self.idx; // beginning to lex a new tokens
             let typ = match self.get_current() {
                 ' ' | '\n' => {
                     self.advance();
                     continue;
-                },
+                }
                 num if num.is_ascii_digit() => {
                     // floats: should be anything that matches <number>.<number>
                     // no spaces, missing whole/decimal part
                     self.lex_number()?
-                },
+                }
                 ident if ident.is_alphabetic() || ident == '_' => {
                     let ident = self.lex_identifier();
                     let keywords = HashMap::from(KEYWORDS);
@@ -101,7 +100,7 @@ impl Lexer {
                     self.advance();
                     let special_symbols = HashMap::from(SPECIAL_SYMBOLS);
                     special_symbols.get(&s).unwrap().clone()
-                },
+                }
                 sym if SYMBOLS.contains(sym) => {
                     let sym = self.lex_symbol();
                     match sym.as_str() {
@@ -150,15 +149,16 @@ impl Lexer {
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
-                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)))
+                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)));
             }
             // check if the number is a float
             else if self.is_char('.') {
                 if self.idx < self.code.len() - 1 && self.code[self.idx + 1].is_ascii_digit() {
-                    
                     if is_float {
-                        self.advance();  // for prettier error message
-                        return Err(self.error("Found two floating point number delimiters".to_string()))
+                        self.advance(); // for prettier error message
+                        return Err(
+                            self.error("Found two floating point number delimiters".to_string())
+                        );
                     }
                     is_float = true;
                     num.push('.');
@@ -250,7 +250,10 @@ impl Lexer {
                     self.advance();
                     return Ok(comment);
                 // otherwise must check whether it is not an operator instead (e.g. */*)
-                } else if self.idx < self.code.len() - 2 && self.code[self.idx + 1] == '/' && !SYMBOLS.contains(self.code[self.idx+2]) {
+                } else if self.idx < self.code.len() - 2
+                    && self.code[self.idx + 1] == '/'
+                    && !SYMBOLS.contains(self.code[self.idx + 2])
+                {
                     self.advance();
                     self.advance();
                     return Ok(comment);

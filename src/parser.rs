@@ -2,7 +2,6 @@ use crate::error::Error;
 use crate::exprstmt::*;
 use crate::token::*;
 
-
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
     Parser::new(tokens).parse()
 }
@@ -40,7 +39,7 @@ impl Parser {
         if !tok.typ.compare_variant(typ) {
             Err(Error {
                 msg: msg.to_string(),
-                lines: vec![(tok.start, tok.end)]
+                lines: vec![(tok.start, tok.end)],
             })
         } else {
             self.advance();
@@ -80,12 +79,12 @@ impl Parser {
                 };
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
-            },
+            }
             TokenType::Identifier(_) => {
                 let stmt = self.parse_assign()?;
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
-            },
+            }
             TokenType::If => self.parse_if_else(),
             _ => {
                 let expr = self.parse_expression()?;
@@ -96,12 +95,15 @@ impl Parser {
                 };
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
-            },
+            }
         }
     }
 
     fn parse_var_decl(&mut self) -> Result<(Token, Expr), Error> {
-        let ident = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
+        let ident = self.expect(
+            &TokenType::Identifier("".to_string()),
+            "Expected an identifier",
+        )?;
         self.expect(&TokenType::Equals, "Expected an equals symbol")?;
         Ok((ident, self.parse_expression()?))
     }
@@ -135,7 +137,9 @@ impl Parser {
             let else_block = self.parse_block()?;
             self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
             Some(else_block)
-        } else { None };
+        } else {
+            None
+        };
 
         Ok(Stmt {
             typ: StmtType::IfStmt(cond, if_block, else_block),
@@ -185,44 +189,44 @@ impl Parser {
                 let expr = ExprType::String(s.to_string());
                 self.advance();
                 expr
-            },
+            }
             TokenType::Int(n) => {
                 let expr = ExprType::Int(*n);
                 self.advance();
                 expr
-            },
+            }
             TokenType::Float(n) => {
                 let expr = ExprType::Float(*n);
                 self.advance();
                 expr
-            },
+            }
             TokenType::Identifier(ident) => {
                 let expr = ExprType::Identifier(ident.to_string());
                 self.advance();
                 expr
-            },
+            }
             TokenType::True => {
                 let expr = ExprType::Bool(true);
                 self.advance();
                 expr
-            },
+            }
             TokenType::False => {
                 let expr = ExprType::Bool(false);
                 self.advance();
                 expr
-            },
+            }
             TokenType::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
                 self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
                 ExprType::Parens(expr.into())
-            },
+            }
             TokenType::Eof => {
                 return Err(Error {
                     msg: "Expected an element but reached EOF".to_string(),
                     lines: vec![(tok.start, tok.end)],
                 })
-            },
+            }
             _ => {
                 return Err(Error {
                     msg: format!("Unknown element: {}", tok),

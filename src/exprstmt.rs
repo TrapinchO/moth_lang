@@ -66,13 +66,21 @@ impl StmtType {
             Self::VarDeclStmt(ident, expr) => format!("let {} = {}", ident, expr),
             Self::AssignStmt(name, expr) => format!("{} = {}", name, expr),
             StmtType::IfStmt(cond, if_block, else_block) => {
-                let if_block = if_block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n");
+                let if_block = if_block
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n");
                 let else_block = match else_block {
                     Some(stmts) => {
-                    let stmts = stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n");
+                        let stmts = stmts
+                            .iter()
+                            .map(|s| s.to_string())
+                            .collect::<Vec<_>>()
+                            .join("\n");
                         format!(" else {{{}}}", stmts)
-                    },
-                    None => "".to_string()
+                    }
+                    None => "".to_string(),
                 };
                 format!("if {} {{{}}}{}", cond, if_block, else_block)
             }

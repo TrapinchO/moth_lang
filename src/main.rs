@@ -21,10 +21,10 @@ fn main() {
         let src = fs::read_to_string(file_name)
             .expect("Invalid file!")
             .trim_end()
-            .replace('\r', "");  // TODO: windows newlines have \r which messes up the lexer
+            .replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
 
         let mut interp = Interpreter::new(HashMap::from(
-            BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
+            BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))),
         ));
         match run(&mut interp, src.to_string()) {
             Ok(_) => {}
@@ -35,16 +35,15 @@ fn main() {
     } else {
         println!("Unknown amount of arguments: {}", args.len());
     }
-
 }
 
 fn repl() {
     let mut interp = Interpreter::new(HashMap::from(
-        BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
+        BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))),
     ));
     loop {
         print!(">>> ");
-        std::io::stdout().flush().unwrap();  // and  hope it never fails
+        std::io::stdout().flush().unwrap(); // and  hope it never fails
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
@@ -83,8 +82,10 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     let resassoc = reassoc::reassociate(
-        BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(),
-        &ast
+        BUILTINS
+            .map(|(name, assoc, _)| (name.to_string(), assoc))
+            .into(),
+        &ast,
     )?;
     /*
     println!("===== reassociating =====");

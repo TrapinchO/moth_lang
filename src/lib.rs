@@ -5,5 +5,5 @@ pub mod lexer;
 pub mod parser;
 pub mod reassoc;
 pub mod token;
-mod visitor;
 pub mod value;
+mod visitor;

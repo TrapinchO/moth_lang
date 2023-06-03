@@ -1,6 +1,6 @@
-use crate::token::Token;
-use crate::exprstmt::*;
 use crate::error::Error;
+use crate::exprstmt::*;
+use crate::token::Token;
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {

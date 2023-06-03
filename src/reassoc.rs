@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::error::Error;
-use crate::token::*;
 use crate::exprstmt::*;
+use crate::token::*;
 use crate::visitor::{ExprVisitor, StmtVisitor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,7 +27,7 @@ pub fn reassociate(ops: HashMap<String, Precedence>, stmt: &Vec<Stmt>) -> Result
 }
 
 struct Reassociate {
-    ops: HashMap<String, Precedence>
+    ops: HashMap<String, Precedence>,
 }
 impl Reassociate {
     pub fn reassociate(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
