@@ -18,9 +18,11 @@ fn main() {
         repl();
     } else if args.len() == 2 {
         let file_name = &args[1];
-        let src = fs::read_to_string(file_name)
-            .expect("Invalid file!")
-            .trim_end()
+        let Ok(src) = fs::read_to_string(file_name) else {
+            println!("File \"{}\" not found.", file_name);
+            return;
+        };
+        let src = src.trim_end()
             .replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
 
         let mut interp = Interpreter::new(HashMap::from(
