@@ -28,7 +28,7 @@ true; false;
 // escape sequences (TODO)
 //"testing\nfwa";
 */
-
+/*
 "operators";
 1+1; 1.0+1.1; "a"+"b";
 1-1; 1.0-1.1;
@@ -51,4 +51,28 @@ false && false; true && false; true && false; true && true;
 // errors
 //1 == 1.1;
 //1.2 == "hi I am a test";
+*/
 
+//"comments";
+//this is a comment
+///// this is a comment too
+// //- this is not a comment but a symbol // (which is commented not to raise an error)
+/* this is a block comment */
+/*
+this comment
+has several lines
+*/
+/** this is ok, only stars */
+// /*- this is in fact an operator */
+// /* and this one is an operator too, but at the end *//
+
+
+"if/else";
+if true { true; }
+if false { false; }  // does nothing
+if true { true; } else { false; }
+if false { true; } else { false; }
+// errors
+//if { true; }
+//if true true;
+//if true { true;

@@ -74,6 +74,7 @@ expect taking space and making the compiler and clippy angry at me.
 /* this is ok */
 /** this is also ok, only stars */
 /*= not ok, an operator */
+/* also not ok */*
 ```
 
 
