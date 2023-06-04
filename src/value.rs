@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 // TODO: kinda circular import, but it should be fine
 use crate::reassoc::{Associativity, Precedence};
 
@@ -8,6 +10,22 @@ pub enum ValueType {
     Int(i32),
     Float(f32),
     Function(fn(Vec<Value>) -> Result<ValueType, String>),
+}
+impl ValueType {
+    fn format(&self) -> String {
+        match self {
+            Self::Int(n) => n.to_string(),
+            Self::Float(n) => n.to_string(),
+            Self::Bool(b) => b.to_string(),
+            Self::String(s) => format!("\"{}\"", s),
+            Self::Function(_) => "<function>".to_string(),  // TODO: improve
+        }
+    }
+}
+impl Display for ValueType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.format())
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -23,7 +41,7 @@ pub const BUILTINS: [(
     &str,
     Precedence,
     fn(Vec<Value>) -> Result<ValueType, String>,
-); 13] = [
+); 14] = [
     (
         "+",
         Precedence {
@@ -38,8 +56,8 @@ pub const BUILTINS: [(
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -56,15 +74,15 @@ pub const BUILTINS: [(
                 [expr] => match &expr.typ {
                     ValueType::Int(n) => ValueType::Int(-n),
                     ValueType::Float(n) => ValueType::Float(-n),
-                    _ => return Err(format!("Invalid value: \"{:?}\"", expr)),
+                    _ => return Err(format!("Invalid value: \"{}\"", expr.typ)),
                 },
                 [left, right] => match (&left.typ, &right.typ) {
                     (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
                     (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
                     _ => {
                         return Err(format!(
-                            "Invalid values: \"{:?}\" and \"{:?}\"",
-                            left, right
+                            "Invalid values: \"{}\" and \"{}\"",
+                            left.typ, right.typ
                         ))
                     }
                 },
@@ -85,8 +103,8 @@ pub const BUILTINS: [(
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a * b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -105,8 +123,8 @@ pub const BUILTINS: [(
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -125,8 +143,8 @@ pub const BUILTINS: [(
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a % b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -147,8 +165,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -169,8 +187,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -190,8 +208,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a >= b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -211,8 +229,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a <= b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -232,8 +250,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a > b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -253,10 +271,24 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a < b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
+            })
+        },
+    ),
+    (
+        "!",
+        Precedence {
+            prec: 0,
+            assoc: Associativity::Left,
+        },
+        |args| {
+            let [expr] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())); };
+            Ok(match &expr.typ {
+                ValueType::Bool(val) => ValueType::Bool(! *val),
+                _ => return Err(format!("Invalid value: \"{}\"", expr.typ))
             })
         },
     ),
@@ -272,8 +304,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a || *b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
@@ -291,8 +323,8 @@ pub const BUILTINS: [(
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a && *b),
                 _ => {
                     return Err(format!(
-                        "Invalid values: \"{:?}\" and \"{:?}\"",
-                        left, right
+                        "Invalid values: \"{}\" and \"{}\"",
+                        left.typ, right.typ
                     ))
                 }
             })
