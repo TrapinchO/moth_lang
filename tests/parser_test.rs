@@ -113,14 +113,15 @@ mod tests {
     use crate::compare_elements;
 
     #[test]
-    #[should_panic(expected = "Expected code to parse")]
     fn empty() {
-        parse(vec![Token {
-            start: 0,
-            end: 0,
-            typ: TokenType::Eof,
-        }])
-        .unwrap();
+        assert_eq!(
+            parse(vec![Token { start: 0, end: 0, typ: TokenType::Eof }]),
+            Ok(vec![])
+        );
+        assert_eq!(
+            parse(vec![]),
+            Ok(vec![])
+        );
     }
 
     #[test]
