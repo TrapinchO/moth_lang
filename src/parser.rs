@@ -61,7 +61,7 @@ impl Parser {
     fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
         while !self.is_at_end()
-            && !self.get_current().typ.compare_variant(&TokenType::Eof)
+            && !self.get_current().typ.compare_variant(&TokenType::Eof)  // TODO: apparently needed
             && !self.get_current().typ.compare_variant(&TokenType::RBrace) {
             ls.push(self.parse_statement()?);
         }
@@ -74,12 +74,7 @@ impl Parser {
         match tok.typ {
             TokenType::Let => {
                 self.advance();
-                let (ident, expr) = self.parse_var_decl()?;
-                let stmt = Stmt {
-                    start: tok.start,
-                    end: expr.end,
-                    typ: StmtType::VarDeclStmt(ident, expr),
-                };
+                let stmt = self.parse_var_decl()?;
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
             }
@@ -102,13 +97,18 @@ impl Parser {
         }
     }
 
-    fn parse_var_decl(&mut self) -> Result<(Token, Expr), Error> {
+    fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
         let ident = self.expect(
             &TokenType::Identifier("".to_string()),
             "Expected an identifier",
         )?;
         self.expect(&TokenType::Equals, "Expected an equals symbol")?;
-        Ok((ident, self.parse_expression()?))
+        let expr = self.parse_expression()?;
+        Ok(Stmt {
+            start: ident.start,
+            end: expr.end,
+            typ: StmtType::VarDeclStmt(ident, expr),
+        })
     }
 
     fn parse_assign(&mut self) -> Result<Stmt, Error> {
@@ -157,20 +157,23 @@ impl Parser {
 
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_unary()?;
+        // if it is a symbol, look for nested binary operator
         if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
             self.advance();
 
             let right = self.parse_binary()?;
-            return Ok(Expr {
+            Ok(Expr {
                 start: left.start,
                 end: right.end,
                 typ: ExprType::BinaryOperation(left.into(), tok, right.into()),
-            });
+            })
+        } else {
+            Ok(left)
         }
-        Ok(left)
     }
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
+        // if it is a symbol, look for nested unary operator
         if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
             self.advance();
 
@@ -221,8 +224,12 @@ impl Parser {
             TokenType::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
-                self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
-                ExprType::Parens(expr.into())
+                let paren = self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
+                return Ok(Expr {
+                    typ: ExprType::Parens(expr.into()),
+                    start: tok.start,
+                    end: paren.end,
+                })
             }
             TokenType::Eof => {
                 return Err(Error {

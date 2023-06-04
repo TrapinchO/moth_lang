@@ -34,6 +34,7 @@ struct Lexer {
     idx: usize,
 }
 
+// I know I could add the tokens in the functions themselves, but I like this more
 impl Lexer {
     pub fn new(code: &str) -> Self {
         Self {
@@ -107,8 +108,8 @@ impl Lexer {
                         "=" => TokenType::Equals,
                         "?" => TokenType::QuestionMark,
                         "." => TokenType::Dot,
+                        // it is a comment if it stars with /* and has only stars afterwards
                         _ if sym.starts_with("/*") && sym[2..].chars().all(|s| s == '*') => {
-                            // returned string might come useful one day for documentation
                             self.lex_block_comment()?;
                             continue;
                         }
@@ -121,7 +122,6 @@ impl Lexer {
                         _ => TokenType::Symbol(sym),
                     }
                 }
-                // +1 to ignore the quote
                 '\"' => TokenType::String(self.lex_string()?),
                 unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
@@ -153,6 +153,7 @@ impl Lexer {
             }
             // check if the number is a float
             else if self.is_char('.') {
+                // if it is just a decimal point (and not a symbol)
                 if self.idx < self.code.len() - 1 && self.code[self.idx + 1].is_ascii_digit() {
                     if is_float {
                         self.advance(); // for prettier error message
@@ -232,8 +233,7 @@ impl Lexer {
         }
     }
 
-    fn lex_block_comment(&mut self) -> Result<String, Error> {
-        let mut comment = String::new();
+    fn lex_block_comment(&mut self) -> Result<(), Error> {
         while !self.is_at_end() {
             // necessary to get correct line and pos positions
             // TODO: actually I dont remember why is this here
@@ -244,12 +244,13 @@ impl Lexer {
             //}
 
             // could be the end of the comment
+            // fun fact: clippy hates this, but it is more readable imo
             if self.is_char('*') {
                 // at the end of the file
                 if self.idx == self.code.len() - 2 && self.code[self.idx + 1] == '/' {
                     self.advance();
                     self.advance();
-                    return Ok(comment);
+                    return Ok(());
                 // otherwise must check whether it is not an operator instead (e.g. */*)
                 } else if self.idx < self.code.len() - 2
                     && self.code[self.idx + 1] == '/'
@@ -257,10 +258,9 @@ impl Lexer {
                 {
                     self.advance();
                     self.advance();
-                    return Ok(comment);
+                    return Ok(());
                 }
             }
-            comment.push(self.get_current());
             self.advance();
         }
         Err(self.error("EOF while lexing block comment".to_string()))

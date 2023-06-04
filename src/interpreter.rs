@@ -66,7 +66,6 @@ impl Interpreter {
 
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
         for s in stmts {
-            // TODO: change to references later
             self.visit_stmt(s)?;
         }
         Ok(())
@@ -89,7 +88,7 @@ impl StmtVisitor<()> for Interpreter {
     fn if_else(&mut self, cond: &Expr, if_block: &Vec<Stmt>, else_block: &Option<Vec<Stmt>>) -> Result<(), Error> {
         let ValueType::Bool(cond2) = self.visit_expr(cond)?.typ else {
             return Err(Error {
-                msg: format!("Expected bool, got {}", cond),
+                msg: format!("Expected bool, got {}", cond.typ),
                 lines: vec![(cond.start, cond.end)]
             })
         };
@@ -160,7 +159,7 @@ impl ExprVisitor<Value> for Interpreter {
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
         let val = self.visit_expr(expr)?;
         let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {:?}", op);
+            panic!("Expected a symbol, found {}", op.typ);
         };
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
@@ -181,7 +180,7 @@ impl ExprVisitor<Value> for Interpreter {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {:?}", op)
+            panic!("Expected a symbol, found {}", op.typ)
         };
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {

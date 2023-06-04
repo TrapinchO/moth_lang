@@ -12,7 +12,9 @@ use std::io::Write;
 
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
+    // provides a backtace in case of error
     env::set_var("RUST_BACKTRACE", "1");
+    
     let args = env::args().collect::<Vec<_>>();
     if args.len() == 1 {
         repl();
@@ -50,9 +52,6 @@ fn repl() {
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
 
-        if input.is_empty() {
-            continue;
-        }
         match run(&mut interp, input.clone()) {
             Ok(_) => {}
             Err(err) => {
@@ -63,7 +62,7 @@ fn repl() {
 }
 
 fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
-    // this are commented in case I wanted to show them
+    // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
 
@@ -74,7 +73,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    // TODO: unknown operator does not report unless reassociated in binary operation
+    // TODO: unknown operator is not reported unless reassociated in binary operation
     let ast = parser::parse(tokens)?;
     /*
     println!("===== parsing =====");

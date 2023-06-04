@@ -21,7 +21,7 @@ pub fn reassociate(ops: HashMap<String, Precedence>, stmt: &Vec<Stmt>) -> Result
     let mut reassoc = Reassociate { ops };
     let mut ls = vec![];
     for s in stmt {
-        ls.push(reassoc.reassociate(s.clone())?)
+        ls.push(reassoc.reassociate(s)?)
     }
     Ok(ls)
 }
@@ -30,8 +30,8 @@ struct Reassociate {
     ops: HashMap<String, Precedence>,
 }
 impl Reassociate {
-    pub fn reassociate(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
-        self.visit_stmt(&stmt)
+    pub fn reassociate(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        self.visit_stmt(stmt)
     }
 }
 impl StmtVisitor<Stmt> for Reassociate {
@@ -44,9 +44,9 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
     fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
+            typ: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(expr)?),
             start: ident.start,
             end: expr.end,
-            typ: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(expr)?),
         })
     }
     fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<Stmt, Error> {
@@ -138,8 +138,7 @@ impl ExprVisitor<Expr> for Reassociate {
             msg: format!("Operator not found: {}", op2_sym),
             lines: vec![(op2.start, op2.end)],
         })?;
-
-        // TODO: make functions like in the SO answer
+        // TODO: make functions like in the SO answer?
         match prec1.prec.cmp(&prec2.prec) {
             std::cmp::Ordering::Greater => {
                 let left = self.binary(&left, op1, left2)?.into();

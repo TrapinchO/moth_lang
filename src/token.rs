@@ -40,6 +40,7 @@ impl TokenType {
     }
 
     pub fn compare_variant(&self, other: &TokenType) -> bool {
+        // probably courtesy of https://stackoverflow.com/a/32554326 
         std::mem::discriminant(self) == std::mem::discriminant(other)
     }
 }
