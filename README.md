@@ -3,11 +3,6 @@ Mothlang is a project made to understand the inner workings of programming langu
 
 # status
 - [x] lexer
-  - TODO:
-    - [ ] multiline comments (nested, edge cases)
-    - [ ] floats
-    - [ ] escape characters
-    - [ ] number bases
 - [ ] parser
   - [x] expressions
   - [ ] statements
@@ -26,6 +21,3 @@ Mothlang is a project made to understand the inner workings of programming langu
   - [ ] reassociation
   - [ ] interpreter
   - [ ] errors
-  
-# some stuff to remember
-- any symbols made of only slashes `/` are treated as comments

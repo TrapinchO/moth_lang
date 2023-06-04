@@ -170,6 +170,7 @@ impl Lexer {
             }
             self.advance();
         }
+        // TODO: handle overflows
         Ok(if is_float {
             TokenType::Float(num.parse::<f32>().unwrap())
         } else {

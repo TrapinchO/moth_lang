@@ -3,7 +3,14 @@
 Integers are numbers. Simple. Internally they are 32-bit signed ints (`i32`).
 
 ## Floats
-Floating point numbers are internally 32-bit (`f32`).
+Floating point numbers are internally 32-bit (`f32`). Unlike many languages, both whole and decimal parts must be present.
+```rs
+// valid
+0.0; 1.0; 0.1; 1.1;
+// invalid
+.1; 1.;
+
+```
 
 ## Booleans
 Like many other languages, the boolean values are `true` and `false`. Note that unlike languages like Python they cannot be handled like numbers.
@@ -29,7 +36,7 @@ true; false;  // bool
 # Operators:
 Mothlang supports custom operators with custom precendence for both unary and binary. (TBI)
 
-The current operators operating on the data types are `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `>=`, `<`, `<=`, `&&`, `||`. `+` operator also supports string concatenation.
+The current operators operating on the data types are `+`, `-` (both binary and unary), `*`, `/`, `%`, `==`, `!=`, `>`, `>=`, `<`, `<=`, `!` (unary), `&&`, `||`. `+` operator also supports string concatenation.
 NOTE: integers and floats cannot be mixed and they return their respective type, i.e. `1 + 1.0` throws an error and `1 / 4` returns `0` (just like Rust).
 
 
