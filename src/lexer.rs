@@ -171,11 +171,14 @@ impl Lexer {
             }
             self.advance();
         }
-        // TODO: handle overflows
         Ok(if is_float {
-            TokenType::Float(num.parse::<f32>().unwrap())
+            TokenType::Float(
+                num.parse::<f32>().map_err(|_| self.error("Integer overflow".to_string()))?
+            )
         } else {
-            TokenType::Int(num.parse::<i32>().unwrap())
+            TokenType::Int(
+                num.parse::<i32>().map_err(|_| self.error("Integer overflow".to_string()))?
+            )
         })
     }
 
@@ -235,14 +238,6 @@ impl Lexer {
 
     fn lex_block_comment(&mut self) -> Result<(), Error> {
         while !self.is_at_end() {
-            // necessary to get correct line and pos positions
-            // TODO: actually I dont remember why is this here
-            // remove it? actually, probably make the function return unit
-            //if self.is_char('\n') {
-            //    self.advance();
-            //    continue;
-            //}
-
             // could be the end of the comment
             // fun fact: clippy hates this, but it is more readable imo
             if self.is_char('*') {

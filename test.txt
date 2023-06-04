@@ -72,7 +72,7 @@ has several lines
 // /*- this is in fact an operator */
 // /* and this one is an operator too, but at the end *//
 
-
+/*
 "if/else";
 if true { true; }
 if false { false; }  // does nothing
@@ -81,4 +81,5 @@ if false { true; } else { false; }
 // errors
 //if { true; }
 //if true true;
-//if true { true;
+if true { true;
+*/

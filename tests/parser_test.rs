@@ -1,5 +1,4 @@
 use moth_lang::exprstmt::*;
-use moth_lang::parser::parse;
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {

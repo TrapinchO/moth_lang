@@ -119,7 +119,12 @@ pub const BUILTINS: [(
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
             Ok(match (&left.typ, &right.typ) {
-                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a / b),
+                (ValueType::Int(a), ValueType::Int(b)) => {
+                    if *b == 0 {
+                        return Err("Attempted division by zero".to_string());
+                    }
+                    ValueType::Int(a / b)
+                },
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
                 _ => {
                     return Err(format!(

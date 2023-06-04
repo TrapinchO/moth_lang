@@ -13,9 +13,9 @@ When running the program without arguments it enters a repl mode, where a line o
 - [ ] checks
   - [ ] types
   - [ ] other stuff
-- [ ] interpreter (provisional)
-  - [ ] division by 0 (decide, implement; probably throw an exception)
+- [x] interpreter (provisional)
 - [x] errors (framework is in place)
+  - [ ] error types
 - [ ] tests
   - [x] lexer
   - [ ] parser
