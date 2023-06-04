@@ -107,7 +107,7 @@ impl ExprVisitor<Expr> for Reassociate {
         })
     }
     // the one method this file exists for
-    // https://stackoverflow.com/questions/67978670/is-there-a-way-to-fix-an-expression-with-operators-in-it-after-parsing-using-a
+    // https://stackoverflow.com/a/67992584
     fn binary(&mut self, left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
         let left = self.visit_expr(left)?;
         let right = self.visit_expr(right)?;

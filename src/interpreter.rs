@@ -56,6 +56,7 @@ pub struct Interpreter {
     environment: Environment,
 }
 
+// TODO: why do I even need Value and not just ValueType?
 impl Interpreter {
     pub fn new(defaults: HashMap<String, ValueType>) -> Self {
         Interpreter {

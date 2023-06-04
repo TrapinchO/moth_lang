@@ -3,6 +3,9 @@ use crate::exprstmt::*;
 use crate::token::*;
 
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
+    if tokens.is_empty() || tokens.len() == 1 && tokens[0].typ == TokenType::Eof {
+        return Ok(vec![]);
+    }
     Parser::new(tokens).parse()
 }
 
