@@ -16,6 +16,6 @@ impl<T> Located<T> {
 
 impl<T: std::fmt::Display> Display for Located<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Located({}, {}, {})", self.val, self.start, self.end)
+        write!(f, "{}", self.val)
     }
 }

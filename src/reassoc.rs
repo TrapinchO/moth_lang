@@ -57,20 +57,18 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
 
-    fn if_else(&mut self, cond: &Expr, if_block: &Vec<Stmt>, else_block: &Option<Vec<Stmt>>) -> Result<Stmt, Error> {
-        let cond = self.visit_expr(cond)?;
-        let mut if_block2: Vec<Stmt> = vec![];
-        for s in if_block {
-            if_block2.push(self.visit_stmt(s)?)
-        }
-        let mut else_block2: Vec<Stmt> = vec![];
-        if let Some(else_block) = else_block {
-            for s in else_block {
-                else_block2.push(self.visit_stmt(s)?)
+    fn if_else(&mut self, blocks: &Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
+        let mut blocks_result: Vec<(Expr, Vec<Stmt>)> = vec![];
+        for (cond, stmts) in blocks {
+            let mut block: Vec<Stmt> = vec![];
+            for s in stmts {
+                block.push(self.visit_stmt(s)?)
             }
+            blocks_result.push((self.visit_expr(cond)?, block))
         }
+
         Ok(Stmt {
-            val: StmtType::IfStmt(cond, if_block2, Some(else_block2)),
+            val: StmtType::IfStmt(blocks_result),
             start: 0,
             end: 0,
         })

@@ -50,6 +50,11 @@ impl Parser {
         }
     }
 
+    /// if the current token has said type
+    fn is_typ(&self, typ: &TokenType) -> bool {
+        self.get_current().val.compare_variant(typ)
+    }
+
     fn advance(&mut self) {
         self.idx += 1;
     }
@@ -118,34 +123,54 @@ impl Parser {
         Ok(if self.get_current().val.compare_variant(&TokenType::Equals) {
             self.advance();
             let expr = self.parse_expression()?;
-            Stmt { start: ident.start, end: expr.end, val: StmtType::AssignStmt(ident, expr) }
+            Stmt {
+                start: ident.start,
+                end: expr.end,
+                val: StmtType::AssignStmt(ident, expr)
+            }
         } else {
             // since the identifier can be a part of an expression, it has to backtrack a little
             // bit; and since we already moved at least once, it is safe
             self.idx -= 1;
             let expr = self.parse_expression()?;
-            Stmt { start: expr.start, end: expr.end, val: StmtType::ExprStmt(expr) }
+            Stmt {
+                start: expr.start,
+                end: expr.end,
+                val: StmtType::ExprStmt(expr)
+            }
         })
     }
 
     fn parse_if_else(&mut self) -> Result<Stmt, Error> {
+        let mut blocks: Vec<(Expr, Vec<Stmt>)> = vec![];
         let start = self.get_current().start;
         self.advance();
         let cond = self.parse_expression()?;
         self.expect(&TokenType::LBrace, "Expeted { after condition")?;
         let if_block = self.parse_block()?;
         self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
-        let else_block = if self.expect(&TokenType::Else, "").is_ok() {
-            self.expect(&TokenType::LBrace, "Expeted { after else")?;
-            let else_block = self.parse_block()?;
-            self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
-            Some(else_block)
-        } else {
-            None
-        };
+        blocks.push((cond, if_block));
+        while self.is_typ(&TokenType::Else) {
+            let else_kw = self.get_current().clone();
+            self.advance();
+            if self.is_typ(&TokenType::If) {
+                self.advance();
+                let cond = self.parse_expression()?;
+                self.expect(&TokenType::LBrace, "Expeted { after condition")?;
+                let if_block = self.parse_block()?;
+                self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
+                blocks.push((cond, if_block));
+            } else {
+                self.expect(&TokenType::LBrace, "Expeted { after else")?;
+                let else_block = self.parse_block()?;
+                self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
+                blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, else_block));
+                break;
+            }
+        }
 
         Ok(Stmt {
-            val: StmtType::IfStmt(cond, if_block, else_block),
+            val: StmtType::IfStmt(blocks),
             start,
             end: 0,
         })

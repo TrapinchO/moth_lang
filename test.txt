@@ -52,12 +52,12 @@ false && false; true && false; true && false; true && true;
 //1 == 1.1;
 //1.2 == "hi I am a test";
 */
-
+/*
 "reassociation";
 1-1-1-1;
 2*3-5;
 2+2*3-5;
-
+*/
 
 //"comments";
 //this is a comment
@@ -72,14 +72,26 @@ has several lines
 // /*- this is in fact an operator */
 // /* and this one is an operator too, but at the end *//
 
-/*
+// /*
 "if/else";
 if true { true; }
 if false { false; }  // does nothing
 if true { true; } else { false; }
 if false { true; } else { false; }
+if 1+1 < 20/5 {
+    "Hello" + " world!";
+} else {
+    "How did we get here?";
+}
+if 1+1 > 20/5 {
+    "Hello" + " world!";
+} else if 2 != 2 {
+    "How did we get here?";
+} else {
+    "The end.";
+}
 // errors
 //if { true; }
 //if true true;
-if true { true;
-*/
+//if true { true;
+// */

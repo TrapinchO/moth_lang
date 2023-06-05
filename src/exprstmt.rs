@@ -45,7 +45,7 @@ pub enum StmtType {
     // identifier, expression
     VarDeclStmt(Token, Expr),
     AssignStmt(Token, Expr),
-    IfStmt(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
+    IfStmt(Vec<(Expr, Vec<Stmt>)>),
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -53,24 +53,19 @@ impl StmtType {
             Self::ExprStmt(expr) => expr.to_string(),
             Self::VarDeclStmt(ident, expr) => format!("let {} = {}", ident, expr),
             Self::AssignStmt(name, expr) => format!("{} = {}", name, expr),
-            StmtType::IfStmt(cond, if_block, else_block) => {
-                let if_block = if_block
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                let else_block = match else_block {
-                    Some(stmts) => {
-                        let stmts = stmts
-                            .iter()
-                            .map(|s| s.to_string())
-                            .collect::<Vec<_>>()
-                            .join("\n");
-                        format!(" else {{{}}}", stmts)
-                    }
-                    None => "".to_string(),
-                };
-                format!("if {} {{{}}}{}", cond, if_block, else_block)
+            StmtType::IfStmt(blocks) => {
+                let first = blocks.first().unwrap();  // always present
+                let rest = &blocks[1..].iter().map(|(cond, stmts)| {
+                    format!("else if {} {{\n{}\n}}",
+                            cond.val,
+                            stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"))
+                }).collect::<Vec<_>>();
+                format!(
+                    "if {} {{\n{}\n}} {}",
+                    first.0,
+                    first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
+                    rest.join("")
+                    )
             }
         }
     }

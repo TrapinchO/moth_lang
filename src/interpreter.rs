@@ -85,20 +85,20 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn if_else(&mut self, cond: &Expr, if_block: &Vec<Stmt>, else_block: &Option<Vec<Stmt>>) -> Result<(), Error> {
-        let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {
-            return Err(Error {
-                msg: format!("Expected bool, got {}", cond.val),
-                lines: vec![(cond.start, cond.end)]
-            })
-        };
-        if cond2 {
-            for s in if_block {
-                self.visit_stmt(s)?;
-            }
-        } else if let Some(stmts) = else_block {
-            for s in stmts {
-                self.visit_stmt(s)?;
+    fn if_else(&mut self, blocks: &Vec<(Expr, Vec<Stmt>)>) -> Result<(), Error> {
+        for (cond, block) in blocks {
+            let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {
+                return Err(Error {
+                    msg: format!("Expected bool, got {}", cond.val),
+                    lines: vec![(cond.start, cond.end)]
+                });
+            };
+            // do not continue
+            if cond2 {
+                for s in block {
+                    self.visit_stmt(s)?;
+                }
+                break;
             }
         }
 

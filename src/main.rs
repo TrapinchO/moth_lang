@@ -86,12 +86,12 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
             .into(),
         &ast,
     )?;
-    /*
+    // /*
     println!("===== reassociating =====");
     for s in &resassoc {
         println!("{}", s);
     }
-    */
+    // */
 
     //println!("===== evaluating =====");
     interp.interpret(&resassoc)?;
