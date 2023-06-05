@@ -14,7 +14,7 @@ fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     // provides a backtace in case of error
     env::set_var("RUST_BACKTRACE", "1");
-    
+
     let args = env::args().collect::<Vec<_>>();
     if args.len() == 1 {
         repl();
@@ -24,8 +24,7 @@ fn main() {
             println!("File \"{}\" not found.", file_name);
             return;
         };
-        let src = src.trim_end()
-            .replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
+        let src = src.trim_end().replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
 
         let mut interp = Interpreter::new(HashMap::from(
             BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))),

@@ -126,20 +126,10 @@ impl Lexer {
                 '\"' => TokenType::String(self.lex_string()?),
                 unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
-            tokens.push(Located::new(typ, self.start_idx, self.idx-1));
-//            tokens.push(Token {
-//                start: self.start_idx,
-//                end: self.idx - 1, // the lexer is already moved
-//                typ,
-//            });
+            tokens.push(Located::new(typ, self.start_idx, self.idx - 1));
         }
 
         tokens.push(Located::new(TokenType::Eof, self.idx, self.idx));
-//        tokens.push(Token {
-//            start: self.idx,
-//            end: self.idx,
-//            typ: TokenType::Eof,
-//        });
         Ok(tokens)
     }
 
@@ -176,11 +166,13 @@ impl Lexer {
         }
         Ok(if is_float {
             TokenType::Float(
-                num.parse::<f32>().map_err(|_| self.error("Integer overflow".to_string()))?
+                num.parse::<f32>()
+                    .map_err(|_| self.error("Integer overflow".to_string()))?,
             )
         } else {
             TokenType::Int(
-                num.parse::<i32>().map_err(|_| self.error("Integer overflow".to_string()))?
+                num.parse::<i32>()
+                    .map_err(|_| self.error("Integer overflow".to_string()))?,
             )
         })
     }

@@ -229,7 +229,7 @@ impl Parser {
                     val: ExprType::Parens(expr.into()),
                     start: tok.start,
                     end: paren.end,
-                })
+                });
             }
             TokenType::Eof => {
                 return Err(Error {

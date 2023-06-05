@@ -1,7 +1,8 @@
 use std::fmt::Display;
 
 // TODO: kinda circular import, but it should be fine
-use crate::{reassoc::{Associativity, Precedence}, located::Located};
+use crate::located::Located;
+use crate::reassoc::{Associativity, Precedence};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueType {
@@ -119,7 +120,7 @@ pub const BUILTINS: [(
                         return Err("Attempted division by zero".to_string());
                     }
                     ValueType::Int(a / b)
-                },
+                }
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
                 _ => {
                     return Err(format!(
@@ -288,7 +289,7 @@ pub const BUILTINS: [(
             let [expr] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())); };
             Ok(match &expr.val {
                 ValueType::Bool(val) => ValueType::Bool(! *val),
-                _ => return Err(format!("Invalid value: \"{}\"", expr.val))
+                _ => return Err(format!("Invalid value: \"{}\"", expr.val)),
             })
         },
     ),
