@@ -65,11 +65,10 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
-
     /*
     println!("===== lexing =====");
     for t in &tokens {
-        println!("{:?}", t);
+        println!("{}", t);
     }
     */
 

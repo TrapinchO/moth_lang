@@ -3,7 +3,7 @@ use crate::exprstmt::*;
 use crate::token::*;
 
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
-    if tokens.is_empty() || tokens.len() == 1 && tokens[0].typ == TokenType::Eof {
+    if tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof {
         return Ok(vec![]);
     }
     Parser::new(tokens).parse()
@@ -16,7 +16,7 @@ struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        if tokens.is_empty() || tokens.len() == 1 && tokens[0].typ == TokenType::Eof {
+        if tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof {
             panic!("Expected code to parse");
         }
         Parser { tokens, idx: 0 }
@@ -39,7 +39,7 @@ impl Parser {
 
     fn expect(&mut self, typ: &TokenType, msg: &str) -> Result<Token, Error> {
         let tok = self.get_current().clone();
-        if !tok.typ.compare_variant(typ) {
+        if !tok.val.compare_variant(typ) {
             Err(Error {
                 msg: msg.to_string(),
                 lines: vec![(tok.start, tok.end)],
@@ -61,8 +61,8 @@ impl Parser {
     fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
         while !self.is_at_end()
-            && !self.get_current().typ.compare_variant(&TokenType::Eof)  // TODO: apparently needed
-            && !self.get_current().typ.compare_variant(&TokenType::RBrace) {
+            && !self.get_current().val.compare_variant(&TokenType::Eof)  // TODO: apparently needed
+            && !self.get_current().val.compare_variant(&TokenType::RBrace) {
             ls.push(self.parse_statement()?);
         }
 
@@ -71,7 +71,7 @@ impl Parser {
 
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
         let tok = self.get_current().clone();
-        match tok.typ {
+        match tok.val {
             TokenType::Let => {
                 self.advance();
                 let stmt = self.parse_var_decl()?;
@@ -89,7 +89,7 @@ impl Parser {
                 let stmt = Stmt {
                     start: expr.start,
                     end: expr.end,
-                    typ: StmtType::ExprStmt(expr),
+                    val: StmtType::ExprStmt(expr),
                 };
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
@@ -107,7 +107,7 @@ impl Parser {
         Ok(Stmt {
             start: ident.start,
             end: expr.end,
-            typ: StmtType::VarDeclStmt(ident, expr),
+            val: StmtType::VarDeclStmt(ident, expr),
         })
     }
 
@@ -115,16 +115,16 @@ impl Parser {
         let ident = self.get_current().clone();
         self.advance();
 
-        Ok(if self.get_current().typ.compare_variant(&TokenType::Equals) {
+        Ok(if self.get_current().val.compare_variant(&TokenType::Equals) {
             self.advance();
             let expr = self.parse_expression()?;
-            Stmt { start: ident.start, end: expr.end, typ: StmtType::AssignStmt(ident, expr) }
+            Stmt { start: ident.start, end: expr.end, val: StmtType::AssignStmt(ident, expr) }
         } else {
             // since the identifier can be a part of an expression, it has to backtrack a little
             // bit; and since we already moved at least once, it is safe
             self.idx -= 1;
             let expr = self.parse_expression()?;
-            Stmt { start: expr.start, end: expr.end, typ: StmtType::ExprStmt(expr) }
+            Stmt { start: expr.start, end: expr.end, val: StmtType::ExprStmt(expr) }
         })
     }
 
@@ -145,7 +145,7 @@ impl Parser {
         };
 
         Ok(Stmt {
-            typ: StmtType::IfStmt(cond, if_block, else_block),
+            val: StmtType::IfStmt(cond, if_block, else_block),
             start,
             end: 0,
         })
@@ -158,14 +158,14 @@ impl Parser {
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_unary()?;
         // if it is a symbol, look for nested binary operator
-        if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
+        if let tok @ Token {val: TokenType::Symbol(_), .. } = self.get_current().clone() {
             self.advance();
 
             let right = self.parse_binary()?;
             Ok(Expr {
                 start: left.start,
                 end: right.end,
-                typ: ExprType::BinaryOperation(left.into(), tok, right.into()),
+                val: ExprType::BinaryOperation(left.into(), tok, right.into()),
             })
         } else {
             Ok(left)
@@ -174,14 +174,14 @@ impl Parser {
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
         // if it is a symbol, look for nested unary operator
-        if let tok @ Token {typ: TokenType::Symbol(_), .. } = self.get_current().clone() {
+        if let tok @ Token {val: TokenType::Symbol(_), .. } = self.get_current().clone() {
             self.advance();
 
             let expr = self.parse_unary()?;
             Ok(Expr {
                 start: tok.start,
                 end: expr.end,
-                typ: ExprType::UnaryOperation(tok, expr.into()),
+                val: ExprType::UnaryOperation(tok, expr.into()),
             })
         } else {
             Ok(self.parse_primary()?)
@@ -190,7 +190,7 @@ impl Parser {
 
     fn parse_primary(&mut self) -> Result<Expr, Error> {
         let tok = self.get_current().clone();
-        let expr = match &tok.typ {
+        let expr = match &tok.val {
             TokenType::String(s) => {
                 let expr = ExprType::String(s.to_string());
                 self.advance();
@@ -226,7 +226,7 @@ impl Parser {
                 let expr = self.parse_expression()?;
                 let paren = self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
                 return Ok(Expr {
-                    typ: ExprType::Parens(expr.into()),
+                    val: ExprType::Parens(expr.into()),
                     start: tok.start,
                     end: paren.end,
                 })
@@ -239,7 +239,7 @@ impl Parser {
             }
             _ => {
                 return Err(Error {
-                    msg: format!("Unknown element: {}", tok),
+                    msg: format!("Unknown element: {}", tok.val),
                     lines: vec![(tok.start, tok.end)],
                 })
             }
@@ -247,7 +247,7 @@ impl Parser {
         Ok(Expr {
             start: tok.start,
             end: tok.end,
-            typ: expr,
+            val: expr,
         })
     }
 }

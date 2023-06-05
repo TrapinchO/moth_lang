@@ -4,17 +4,17 @@ macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
         ExprType::BinaryOperation(
             Expr {
-                typ: $left.into(),
+                val: $left.into(),
                 start: 0,
                 end: 0,
             }.into(),
             Token {
-                typ: TokenType::Symbol($op.to_string()),
+                val: TokenType::Symbol($op.to_string()),
                 start: 0,
                 end: 0,
             },
             Expr {
-                typ: $right.into(),
+                val: $right.into(),
                 start: 0,
                 end: 0,
             }.into(),
@@ -26,12 +26,12 @@ macro_rules! unop {
     ($op:tt, $expr:expr) => {
             ExprType::UnaryOperation(
             Token {
-                typ: TokenType::Symbol($op.to_string()),
+                val: TokenType::Symbol($op.to_string()),
                 start: 0,
                 end: 0,
             },
             Expr {
-                typ: $expr.into(),
+                val: $expr.into(),
                 start: 0,
                 end: 0,
             }.into()
@@ -43,7 +43,7 @@ macro_rules! parenop {
     ($e:expr) => {
         ExprType::Parens(
             Expr {
-                typ: $e.into(),
+                val: $e.into(),
                 start: 0,
                 end: 0,
             }.into()
@@ -54,7 +54,7 @@ macro_rules! parenop {
 macro_rules! expr {
     ($e:expr) => {
         Expr {
-            typ: $e,
+            val: $e,
             start: 0,
             end: 0,
         }
@@ -64,7 +64,7 @@ macro_rules! expr {
 macro_rules! stmt {
     ($e:expr) => {
         Stmt {
-            typ: $e,
+            val: $e,
             start: 0,
             end: 0,
         }
@@ -72,7 +72,7 @@ macro_rules! stmt {
 }
 
 fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
-    match (&left.typ, &right.typ) {
+    match (&left.val, &right.val) {
         (StmtType::ExprStmt(expr1), StmtType::ExprStmt(expr2)) => {
             compare_elements_expr(&expr1, &expr2)
         },
@@ -87,12 +87,12 @@ fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
 }
 
 fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
-    match (&left.typ, &right.typ) {
+    match (&left.val, &right.val) {
         (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => {
-            compare_elements_expr(&l1, &l2) && o1.typ == o2.typ && compare_elements_expr(&r1, &r2)
+            compare_elements_expr(&l1, &l2) && o1.val == o2.val && compare_elements_expr(&r1, &r2)
         }
         (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => {
-            o1.typ == o2.typ && compare_elements_expr(&e1, &e2)
+            o1.val == o2.val && compare_elements_expr(&e1, &e2)
         }
         (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements_expr(&e1, &e2),
         (e1, e2) => e1 == e2,
@@ -114,7 +114,7 @@ mod tests {
     #[test]
     fn empty() {
         assert_eq!(
-            parse(vec![Token { start: 0, end: 0, typ: TokenType::Eof }]),
+            parse(vec![Token { start: 0, end: 0, val: TokenType::Eof }]),
             Ok(vec![])
         );
         assert_eq!(

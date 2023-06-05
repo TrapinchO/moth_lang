@@ -1,3 +1,4 @@
+use crate::located::Located;
 use crate::token::Token;
 
 use std::fmt::Display;
@@ -23,9 +24,9 @@ impl ExprType {
             Self::String(s) => format!("\"{}\"", s),
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
-            Self::Parens(expr) => format!("({})", expr.typ.format()),
-            Self::UnaryOperation(op, expr) => format!("({} {})", op.typ, expr),
-            Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.typ, right),
+            Self::Parens(expr) => format!("({})", expr.val.format()),
+            Self::UnaryOperation(op, expr) => format!("({} {})", op.val, expr),
+            Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.val, right),
         }
     }
 }
@@ -36,20 +37,7 @@ impl Display for ExprType {
     }
 }
 
-// TODO: consider moving this to the bottom again, as rust seems to be
-// affected by position of the arguments, at least regarding the borrow checker
-#[derive(Debug, PartialEq, Clone)]
-pub struct Expr {
-    pub typ: ExprType,
-    pub start: usize,
-    pub end: usize,
-}
-
-impl Display for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.typ.format())
-    }
-}
+pub type Expr = Located<ExprType>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
@@ -87,20 +75,11 @@ impl StmtType {
         }
     }
 }
+
 impl Display for StmtType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.format())
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Stmt {
-    pub typ: StmtType,
-    pub start: usize,
-    pub end: usize,
-}
-impl Display for Stmt {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.typ)
-    }
-}
+pub type Stmt = Located<StmtType>;

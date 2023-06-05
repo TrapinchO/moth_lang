@@ -4,7 +4,7 @@ use crate::token::Token;
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
-        match &stmt.typ {
+        match &stmt.val {
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(ident, expr),
             StmtType::AssignStmt(name, expr) => self.assignment(name, expr),
             StmtType::ExprStmt(expr) => self.expr(expr),
@@ -20,7 +20,7 @@ pub trait StmtVisitor<T> {
 
 pub trait ExprVisitor<T> {
     fn visit_expr(&mut self, expr: &Expr) -> Result<T, Error> {
-        match &expr.typ {
+        match &expr.val {
             ExprType::Int(_) => self.int(expr),
             ExprType::Float(_) => self.float(expr),
             ExprType::String(_) => self.string(expr),

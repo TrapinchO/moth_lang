@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::located::Located;
+
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenType {
     Int(i32),
@@ -44,20 +46,11 @@ impl TokenType {
         std::mem::discriminant(self) == std::mem::discriminant(other)
     }
 }
+
 impl Display for TokenType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.format())
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Token {
-    pub typ: TokenType,
-    pub start: usize,
-    pub end: usize,
-}
-impl Display for Token {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.typ)
-    }
-}
+pub type Token = Located<TokenType>;

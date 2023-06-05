@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::located::Located;
 use crate::token::*;
 use std::collections::HashMap;
 
@@ -125,18 +126,20 @@ impl Lexer {
                 '\"' => TokenType::String(self.lex_string()?),
                 unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
             };
-            tokens.push(Token {
-                start: self.start_idx,
-                end: self.idx - 1, // the lexer is already moved
-                typ,
-            });
+            tokens.push(Located::new(typ, self.start_idx, self.idx-1));
+//            tokens.push(Token {
+//                start: self.start_idx,
+//                end: self.idx - 1, // the lexer is already moved
+//                typ,
+//            });
         }
 
-        tokens.push(Token {
-            start: self.idx,
-            end: self.idx,
-            typ: TokenType::Eof,
-        });
+        tokens.push(Located::new(TokenType::Eof, self.idx, self.idx));
+//        tokens.push(Token {
+//            start: self.idx,
+//            end: self.idx,
+//            typ: TokenType::Eof,
+//        });
         Ok(tokens)
     }
 

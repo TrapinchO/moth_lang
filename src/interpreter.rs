@@ -13,14 +13,14 @@ struct Environment {
 
 impl Environment {
     pub fn insert(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.typ else { unreachable!() };
+        let TokenType::Identifier(name) = &ident.val else { unreachable!() };
         if self.env.contains_key(name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
                 lines: vec![(ident.start, ident.end)],
             });
         }
-        self.env.insert(name.clone(), val.typ);
+        self.env.insert(name.clone(), val.val);
         Ok(())
     }
 
@@ -32,14 +32,14 @@ impl Environment {
     }
 
     pub fn update(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.typ else { unreachable!() };
+        let TokenType::Identifier(name) = &ident.val else { unreachable!() };
         if !self.env.contains_key(&name.to_string()) {
             return Err(Error {
                 msg: format!("Name \"{}\" does not exists", name),
                 lines: vec![(ident.start, ident.end)],
             });
         }
-        *self.env.get_mut(name).unwrap() = val.typ;
+        *self.env.get_mut(name).unwrap() = val.val;
         Ok(())
     }
 }
@@ -86,9 +86,9 @@ impl StmtVisitor<()> for Interpreter {
     }
 
     fn if_else(&mut self, cond: &Expr, if_block: &Vec<Stmt>, else_block: &Option<Vec<Stmt>>) -> Result<(), Error> {
-        let ValueType::Bool(cond2) = self.visit_expr(cond)?.typ else {
+        let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {
             return Err(Error {
-                msg: format!("Expected bool, got {}", cond.typ),
+                msg: format!("Expected bool, got {}", cond.val),
                 lines: vec![(cond.start, cond.end)]
             })
         };
@@ -107,48 +107,48 @@ impl StmtVisitor<()> for Interpreter {
 
     fn expr(&mut self, expr: &Expr) -> Result<(), Error> {
         let val = self.visit_expr(expr)?;
-        println!("{:?}", val.typ);
+        println!("{:?}", val.val);
         Ok(())
     }
 }
 
 impl ExprVisitor<Value> for Interpreter {
     fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Int(n) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Int(n) = &expr.val.clone() else { unreachable!() };
         Ok(Value {
-            typ: ValueType::Int(*n),
+            val: ValueType::Int(*n),
             start: expr.start,
             end: expr.end,
         })
     }
     fn float(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Float(f) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Float(f) = &expr.val.clone() else { unreachable!() };
         Ok(Value {
-            typ: ValueType::Float(*f),
+            val: ValueType::Float(*f),
             start: expr.start,
             end: expr.end,
         })
     }
     fn string(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::String(s) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::String(s) = &expr.val.clone() else { unreachable!() };
         Ok(Value {
-            typ: ValueType::String(s.clone()),
+            val: ValueType::String(s.clone()),
             start: expr.start,
             end: expr.end,
         })
     }
     fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Identifier(name) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Identifier(name) = &expr.val.clone() else { unreachable!() };
         Ok(Value {
-            typ: self.environment.get(name, (expr.start, expr.end))?,
+            val: self.environment.get(name, (expr.start, expr.end))?,
             start: expr.start,
             end: expr.end,
         })
     }
     fn bool(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Bool(b) = &expr.typ.clone() else { unreachable!() };
+        let ExprType::Bool(b) = &expr.val.clone() else { unreachable!() };
         Ok(Value {
-            typ: ValueType::Bool(*b),
+            val: ValueType::Bool(*b),
             start: expr.start,
             end: expr.end,
         })
@@ -158,8 +158,8 @@ impl ExprVisitor<Value> for Interpreter {
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
         let val = self.visit_expr(expr)?;
-        let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {}", op.typ);
+        let TokenType::Symbol(op_name) = &op.val else {
+            panic!("Expected a symbol, found {}", op.val);
         };
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
@@ -168,7 +168,7 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         Ok(Value {
-            typ: func(vec![val]).map_err(|msg| Error {
+            val: func(vec![val]).map_err(|msg| Error {
                 msg,
                 lines: vec![(op.start, expr.end)],
             })?,
@@ -179,8 +179,8 @@ impl ExprVisitor<Value> for Interpreter {
     fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
-        let TokenType::Symbol(op_name) = &op.typ else {
-            panic!("Expected a symbol, found {}", op.typ)
+        let TokenType::Symbol(op_name) = &op.val else {
+            panic!("Expected a symbol, found {}", op.val)
         };
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
@@ -189,7 +189,7 @@ impl ExprVisitor<Value> for Interpreter {
             })
         };
         Ok(Value {
-            typ: func(vec![left2, right2]).map_err(|msg| Error {
+            val: func(vec![left2, right2]).map_err(|msg| Error {
                 msg,
                 lines: vec![(left.start, right.end)],
             })?,

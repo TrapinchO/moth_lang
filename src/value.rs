@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 // TODO: kinda circular import, but it should be fine
-use crate::reassoc::{Associativity, Precedence};
+use crate::{reassoc::{Associativity, Precedence}, located::Located};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ValueType {
@@ -28,12 +28,7 @@ impl Display for ValueType {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Value {
-    pub typ: ValueType,
-    pub start: usize,
-    pub end: usize,
-}
+pub type Value = Located<ValueType>;
 
 // TODO: this is very smart, as it can currently hold only Functions
 // PIE anyone?
@@ -50,14 +45,14 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -71,18 +66,18 @@ pub const BUILTINS: [(
         },
         |args| {
             Ok(match &args[..] {
-                [expr] => match &expr.typ {
+                [expr] => match &expr.val {
                     ValueType::Int(n) => ValueType::Int(-n),
                     ValueType::Float(n) => ValueType::Float(-n),
-                    _ => return Err(format!("Invalid value: \"{}\"", expr.typ)),
+                    _ => return Err(format!("Invalid value: \"{}\"", expr.val)),
                 },
-                [left, right] => match (&left.typ, &right.typ) {
+                [left, right] => match (&left.val, &right.val) {
                     (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
                     (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
                     _ => {
                         return Err(format!(
                             "Invalid values: \"{}\" and \"{}\"",
-                            left.typ, right.typ
+                            left.val, right.val
                         ))
                     }
                 },
@@ -98,13 +93,13 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a * b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a * b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -118,7 +113,7 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => {
                     if *b == 0 {
                         return Err("Attempted division by zero".to_string());
@@ -129,7 +124,7 @@ pub const BUILTINS: [(
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -143,13 +138,13 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a % b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a % b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -163,7 +158,7 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a == b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a == b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a == b),
@@ -171,7 +166,7 @@ pub const BUILTINS: [(
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -185,7 +180,7 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a != b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a != b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a != b),
@@ -193,7 +188,7 @@ pub const BUILTINS: [(
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -207,14 +202,14 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a >= b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a >= b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a >= b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -228,14 +223,14 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a <= b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a <= b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a <= b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -249,14 +244,14 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a > b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a > b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a > b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -270,14 +265,14 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a < b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a < b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a < b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -291,9 +286,9 @@ pub const BUILTINS: [(
         },
         |args| {
             let [expr] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())); };
-            Ok(match &expr.typ {
+            Ok(match &expr.val {
                 ValueType::Bool(val) => ValueType::Bool(! *val),
-                _ => return Err(format!("Invalid value: \"{}\"", expr.typ))
+                _ => return Err(format!("Invalid value: \"{}\"", expr.val))
             })
         },
     ),
@@ -305,12 +300,12 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a || *b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
@@ -324,12 +319,12 @@ pub const BUILTINS: [(
         },
         |args| {
             let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
-            Ok(match (&left.typ, &right.typ) {
+            Ok(match (&left.val, &right.val) {
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a && *b),
                 _ => {
                     return Err(format!(
                         "Invalid values: \"{}\" and \"{}\"",
-                        left.typ, right.typ
+                        left.val, right.val
                     ))
                 }
             })
