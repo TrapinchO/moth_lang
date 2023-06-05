@@ -60,16 +60,25 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
-        self.parse_block()
+        let mut ls = vec![];
+        while !self.is_at_end()
+            && !self.is_typ(&TokenType::Eof)  // apparently needed
+            && !self.is_typ(&TokenType::RBrace) {
+            ls.push(self.parse_statement()?);
+        }
+
+        Ok(ls)
     }
 
     fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
+        self.expect(&TokenType::LBrace, "Expected { after condition")?;
         while !self.is_at_end()
-            && !self.get_current().val.compare_variant(&TokenType::Eof)  // TODO: apparently needed
-            && !self.get_current().val.compare_variant(&TokenType::RBrace) {
+            && !self.is_typ(&TokenType::Eof)  // apparently needed
+            && !self.is_typ(&TokenType::RBrace) {
             ls.push(self.parse_statement()?);
         }
+        self.expect(&TokenType::RBrace, "Expected } at the end of the block")?;
 
         Ok(ls)
     }
@@ -120,7 +129,7 @@ impl Parser {
         let ident = self.get_current().clone();
         self.advance();
 
-        Ok(if self.get_current().val.compare_variant(&TokenType::Equals) {
+        Ok(if self.is_typ(&TokenType::Equals) {
             self.advance();
             let expr = self.parse_expression()?;
             Stmt {
@@ -146,9 +155,7 @@ impl Parser {
         let start = self.get_current().start;
         self.advance();
         let cond = self.parse_expression()?;
-        self.expect(&TokenType::LBrace, "Expeted { after condition")?;
         let if_block = self.parse_block()?;
-        self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
         blocks.push((cond, if_block));
         while self.is_typ(&TokenType::Else) {
             let else_kw = self.get_current().clone();
@@ -156,14 +163,10 @@ impl Parser {
             if self.is_typ(&TokenType::If) {
                 self.advance();
                 let cond = self.parse_expression()?;
-                self.expect(&TokenType::LBrace, "Expeted { after condition")?;
                 let if_block = self.parse_block()?;
-                self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
                 blocks.push((cond, if_block));
             } else {
-                self.expect(&TokenType::LBrace, "Expeted { after else")?;
                 let else_block = self.parse_block()?;
-                self.expect(&TokenType::RBrace, "Expeted } at the end of the block")?;
                 blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, else_block));
                 break;
             }

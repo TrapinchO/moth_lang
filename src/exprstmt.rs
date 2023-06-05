@@ -50,9 +50,9 @@ pub enum StmtType {
 impl StmtType {
     fn format(&self) -> String {
         match self {
-            Self::ExprStmt(expr) => expr.to_string(),
-            Self::VarDeclStmt(ident, expr) => format!("let {} = {}", ident, expr),
-            Self::AssignStmt(name, expr) => format!("{} = {}", name, expr),
+            Self::ExprStmt(expr) => expr.to_string() + ";",
+            Self::VarDeclStmt(ident, expr) => format!("let {} = {};", ident, expr),
+            Self::AssignStmt(name, expr) => format!("{} = {};", name, expr),
             StmtType::IfStmt(blocks) => {
                 let first = blocks.first().unwrap();  // always present
                 let rest = &blocks[1..].iter().map(|(cond, stmts)| {
