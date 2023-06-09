@@ -101,13 +101,13 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<Stmt, Error> {
         let mut ls = vec![];
-        let start = self.expect(&TokenType::LBrace, "Expected { after condition")?.val;
+        let start = self.expect(&TokenType::LBrace, "Expected { after condition")?.start;
         while !self.is_at_end()
             && !self.is_typ(&TokenType::Eof)  // apparently needed
             && !self.is_typ(&TokenType::RBrace) {
             ls.push(self.parse_statement()?);
         }
-        let end = self.expect(&TokenType::RBrace, "Expected } at the end of the block")?.val;
+        let end = self.expect(&TokenType::RBrace, "Expected } at the end of the block")?.start;
 
         Ok(Stmt {
             val: StmtType::BlockStmt(ls),
@@ -164,7 +164,8 @@ impl Parser {
 
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
-        blocks.push((cond, if_block.val));
+        let StmtType::BlockStmt(bl) = if_block else { unreachable!(); };
+        blocks.push((cond, bl));
         end = if_block.end;
 
         while self.is_typ(&TokenType::Else) {
@@ -174,11 +175,13 @@ impl Parser {
                 self.advance();
                 let cond = self.parse_expression()?;
                 let if_block = self.parse_block()?;
-                blocks.push((cond, if_block.val));
+                let StmtType::BlockStmt(bl) = if_block else { unreachable!(); };
+                blocks.push((cond, bl));
                 end = if_block.end;
             } else {
                 let else_block = self.parse_block()?;
-                blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, else_block.val));
+                let StmtType::BlockStmt(bl) = else_block else { unreachable!(); };
+                blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, bl));
                 end = else_block.end;
                 break;
             }
@@ -196,10 +199,11 @@ impl Parser {
         self.advance();  // move past while
         let cond = self.parse_expression()?;
         let block = self.parse_block()?;
+        let StmtType::BlockStmt(bl) = block else { unreachable!(); };
         Ok(Stmt {
             start,
             end: block.end,
-            val: StmtType::WhileStmt(cond, block.val),
+            val: StmtType::WhileStmt(cond, bl),
         })
 
     }
