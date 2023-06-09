@@ -4,6 +4,20 @@ struct Pos {
     col: usize,
 }
 
+#[derive(Debug, PartialEq)]
+enum ErrorType {
+    // lexer
+    UnknownCharacter,
+    StringEol,
+    StringEoF,
+    TwoDecimalPoints,
+    InvalidDigit(char),
+    IntegerOverflow,
+    CommentEof,
+    // parser
+
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {
     pub msg: String,
