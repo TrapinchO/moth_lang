@@ -57,7 +57,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
 
-    fn block(&mut self, block: &Vec<Stmt>) -> Result<Stmt, Error> {
+    fn block(&mut self, block: &Block) -> Result<Stmt, Error> {
         let mut block2: Vec<Stmt> = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -69,10 +69,10 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
 
-    fn if_else(&mut self, blocks: &Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
-        let mut blocks_result: Vec<(Expr, Vec<Stmt>)> = vec![];
+    fn if_else(&mut self, blocks: &Vec<(Expr, Block)>) -> Result<Stmt, Error> {
+        let mut blocks_result: Vec<(Expr, Block)> = vec![];
         for (cond, stmts) in blocks {
-            let mut block: Vec<Stmt> = vec![];
+            let mut block: Block = vec![];
             for s in stmts {
                 block.push(self.visit_stmt(s)?)
             }
@@ -85,9 +85,9 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: 0,
         })
     }
-    fn whiles(&mut self, cond: &Expr, block: &Vec<Stmt>) -> Result<Stmt, Error> {
+    fn whiles(&mut self, cond: &Expr, block: &Block) -> Result<Stmt, Error> {
         let cond = self.visit_expr(cond)?;
-        let mut block2: Vec<Stmt> = vec![];
+        let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
         }

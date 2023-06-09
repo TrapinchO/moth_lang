@@ -17,9 +17,9 @@ pub trait StmtVisitor<T> {
     fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
     fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
     fn expr(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn block(&mut self, block: &Vec<Stmt>) -> Result<T, Error>;
-    fn if_else(&mut self, blocks: &Vec<(Expr, Vec<Stmt>)>) -> Result<T, Error>;
-    fn whiles(&mut self, cond: &Expr, block: &Vec<Stmt>) -> Result<T, Error>;
+    fn block(&mut self, block: &Block) -> Result<T, Error>;
+    fn if_else(&mut self, blocks: &Vec<(Expr, Block)>) -> Result<T, Error>;
+    fn whiles(&mut self, cond: &Expr, block: &Block) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {
