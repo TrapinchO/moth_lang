@@ -70,19 +70,6 @@ impl Parser {
         Ok(ls)
     }
 
-    fn parse_block(&mut self) -> Result<Vec<Stmt>, Error> {
-        let mut ls = vec![];
-        self.expect(&TokenType::LBrace, "Expected { after condition")?;
-        while !self.is_at_end()
-            && !self.is_typ(&TokenType::Eof)  // apparently needed
-            && !self.is_typ(&TokenType::RBrace) {
-            ls.push(self.parse_statement()?);
-        }
-        self.expect(&TokenType::RBrace, "Expected } at the end of the block")?;
-
-        Ok(ls)
-    }
-
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
         let tok = self.get_current().clone();
         match tok.val {
@@ -110,6 +97,23 @@ impl Parser {
                 Ok(stmt)
             }
         }
+    }
+
+    fn parse_block(&mut self) -> Result<Stmt, Error> {
+        let mut ls = vec![];
+        let start = self.expect(&TokenType::LBrace, "Expected { after condition")?.val;
+        while !self.is_at_end()
+            && !self.is_typ(&TokenType::Eof)  // apparently needed
+            && !self.is_typ(&TokenType::RBrace) {
+            ls.push(self.parse_statement()?);
+        }
+        let end = self.expect(&TokenType::RBrace, "Expected } at the end of the block")?.val;
+
+        Ok(Stmt {
+            val: StmtType::BlockStmt(ls),
+            start,
+            end
+        })
     }
 
     fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
@@ -152,12 +156,17 @@ impl Parser {
     }
 
     fn parse_if_else(&mut self) -> Result<Stmt, Error> {
-        let mut blocks: Vec<(Expr, Vec<Stmt>)> = vec![];
+        let mut blocks: Vec<(Expr, Block)> = vec![];
+
         let start = self.get_current().start;
-        self.advance();
+        let mut end = 0;
+        self.advance();  // move past if
+
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
-        blocks.push((cond, if_block));
+        blocks.push((cond, if_block.val));
+        end = if_block.end;
+
         while self.is_typ(&TokenType::Else) {
             let else_kw = self.get_current().clone();
             self.advance();
@@ -165,18 +174,20 @@ impl Parser {
                 self.advance();
                 let cond = self.parse_expression()?;
                 let if_block = self.parse_block()?;
-                blocks.push((cond, if_block));
+                blocks.push((cond, if_block.val));
+                end = if_block.end;
             } else {
                 let else_block = self.parse_block()?;
-                blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, else_block));
+                blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, else_block.val));
+                end = else_block.end;
                 break;
             }
         }
 
         Ok(Stmt {
-            val: StmtType::IfStmt(blocks),
             start,
-            end: 0,
+            end,
+            val: StmtType::IfStmt(blocks),
         })
     }
 
@@ -186,9 +197,9 @@ impl Parser {
         let cond = self.parse_expression()?;
         let block = self.parse_block()?;
         Ok(Stmt {
-            val: StmtType::WhileStmt(cond, block),
             start,
-            end: 0,
+            end: block.end,
+            val: StmtType::WhileStmt(cond, block.val),
         })
 
     }
