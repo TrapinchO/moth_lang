@@ -73,6 +73,18 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: 0,
         })
     }
+    fn whiles(&mut self, cond: &Expr, block: &Vec<Stmt>) -> Result<Stmt, Error> {
+        let cond = self.visit_expr(cond)?;
+        let mut block2: Vec<Stmt> = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?)
+        }
+        Ok(Stmt {
+            val: StmtType::WhileStmt(cond, block2),
+            start: 0,
+            end: 0,
+        })
+    }
 }
 impl ExprVisitor<Expr> for Reassociate {
     fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {

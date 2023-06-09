@@ -84,7 +84,7 @@ if 1+1 < 20/5 {
     "How did we get here?";
 }
 */
-// /*
+/*
 let x = 10;
 if x > 20 {
     "Hello" + " world!";
@@ -101,4 +101,6 @@ x;
 //if { true; }
 //if true true;
 //if true { true;
-// */
+*/
+
+while false { 1; }

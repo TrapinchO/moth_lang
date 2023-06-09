@@ -105,6 +105,15 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
+    fn whiles(&mut self, cond: &Expr, block: &Vec<Stmt>) -> Result<(), Error> {
+        while let ValueType::Bool(true) = self.visit_expr(cond)?.val {
+            for s in block {
+                self.visit_stmt(s)?;
+            }
+        }
+        Ok(())
+    }
+
     fn expr(&mut self, expr: &Expr) -> Result<(), Error> {
         let val = self.visit_expr(expr)?;
         println!("{:?}", val.val);

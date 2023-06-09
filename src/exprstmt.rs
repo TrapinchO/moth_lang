@@ -46,6 +46,7 @@ pub enum StmtType {
     VarDeclStmt(Token, Expr),
     AssignStmt(Token, Expr),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
+    WhileStmt(Expr, Vec<Stmt>),
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -53,7 +54,7 @@ impl StmtType {
             Self::ExprStmt(expr) => expr.to_string() + ";",
             Self::VarDeclStmt(ident, expr) => format!("let {} = {};", ident, expr),
             Self::AssignStmt(name, expr) => format!("{} = {};", name, expr),
-            StmtType::IfStmt(blocks) => {
+            Self::IfStmt(blocks) => {
                 let first = blocks.first().unwrap();  // always present
                 let rest = &blocks[1..].iter().map(|(cond, stmts)| {
                     format!("else if {} {{\n{}\n}}",
@@ -67,6 +68,7 @@ impl StmtType {
                     rest.join("")
                     )
             }
+            Self::WhileStmt(cond, block) => format!("while {} {{{}}}", cond, block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")),
         }
     }
 }

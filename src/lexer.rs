@@ -165,6 +165,7 @@ impl Lexer {
             self.advance();
         }
         Ok(if is_float {
+            // TODO: overflows behaving funny
             TokenType::Float(
                 num.parse::<f32>()
                     .map_err(|_| self.error("Integer overflow".to_string()))?,

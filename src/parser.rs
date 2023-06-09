@@ -98,6 +98,7 @@ impl Parser {
                 Ok(stmt)
             }
             TokenType::If => self.parse_if_else(),
+            TokenType::While => self.parse_while(),
             _ => {
                 let expr = self.parse_expression()?;
                 let stmt = Stmt {
@@ -177,6 +178,19 @@ impl Parser {
             start,
             end: 0,
         })
+    }
+
+    fn parse_while(&mut self) -> Result<Stmt, Error> {
+        let start = self.get_current().start;
+        self.advance();  // move past while
+        let cond = self.parse_expression()?;
+        let block = self.parse_block()?;
+        Ok(Stmt {
+            val: StmtType::WhileStmt(cond, block),
+            start,
+            end: 0,
+        })
+
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {
