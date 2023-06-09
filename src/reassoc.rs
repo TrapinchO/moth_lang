@@ -57,7 +57,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
 
-    fn block(&mut self, block: &Vec<Stmt>) -> Result<T, Error> {
+    fn block(&mut self, block: &Vec<Stmt>) -> Result<(), Error> {
         let mut block2: Vec<Stmt> = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)

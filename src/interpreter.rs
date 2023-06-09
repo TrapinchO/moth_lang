@@ -85,7 +85,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn block(&mut self, block: &Vec<Stmt>) -> Result<T, Error> {
+    fn block(&mut self, block: &Vec<Stmt>) -> Result<(), Error> {
         for s in block {
             self.visit_stmt(s)?;
         }
