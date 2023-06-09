@@ -239,14 +239,11 @@ impl Lexer {
             // fun fact: clippy hates this, but it is more readable imo
             if self.is_char('*') {
                 // at the end of the file
-                if self.idx == self.code.len() - 2 && self.code[self.idx + 1] == '/' {
-                    self.advance();
-                    self.advance();
-                    return Ok(());
-                // otherwise must check whether it is not an operator instead (e.g. */*)
-                } else if self.idx < self.code.len() - 2
+                if (self.idx == self.code.len() - 2 && self.code[self.idx + 1] == '/')
+                    // otherwise must check whether it is not an operator instead (e.g. */*)
+                    || (self.idx < self.code.len() - 2
                     && self.code[self.idx + 1] == '/'
-                    && !SYMBOLS.contains(self.code[self.idx + 2])
+                    && !SYMBOLS.contains(self.code[self.idx + 2]))
                 {
                     self.advance();
                     self.advance();
