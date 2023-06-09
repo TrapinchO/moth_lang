@@ -53,7 +53,9 @@ let x = 100;  // error! variable x is already declared
 Variables can be reassigned. (NOTE: this will be changed in the future)
 ```rs
 let x = 10;
-x = 10;
+x;  // returns 10
+x = 1000;
+x;  // returns 1000
 ```
 
 # Comments
@@ -99,3 +101,23 @@ if 2 == 1 {
 ```
 NOTE: a block must follow if/else, unlike languages like C or Java
 <br>NOTE: `else if` is not yet implemented
+
+## While
+While is made with `while` keyword (again, without parenthese) and a block of statements to repeat
+```rs
+while true {
+    "Hello!";
+}
+```
+
+
+# Blocks
+Code can be surrounded in braces `{}` to form a block. This can be useful to have only temporary variables.
+NOTE: not implemented yet
+```rs
+{
+    "this is a nice code block, isnt it?";
+    let x = 10;
+}
+x;  // error, this no longer exists
+```

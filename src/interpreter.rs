@@ -85,6 +85,13 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
+    fn block(&mut self, block: &Vec<Stmt>) -> Result<T, Error> {
+        for s in block {
+            self.visit_stmt(s)?;
+        }
+        Ok(())
+    }
+
     fn if_else(&mut self, blocks: &Vec<(Expr, Vec<Stmt>)>) -> Result<(), Error> {
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {

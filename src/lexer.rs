@@ -232,6 +232,7 @@ impl Lexer {
         }
     }
 
+    // TODO: stuff like "==*/" at the end
     fn lex_block_comment(&mut self) -> Result<(), Error> {
         while !self.is_at_end() {
             // could be the end of the comment

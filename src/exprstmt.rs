@@ -45,6 +45,7 @@ pub enum StmtType {
     // identifier, expression
     VarDeclStmt(Token, Expr),
     AssignStmt(Token, Expr),
+    BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
 }
@@ -54,6 +55,7 @@ impl StmtType {
             Self::ExprStmt(expr) => expr.to_string() + ";",
             Self::VarDeclStmt(ident, expr) => format!("let {} = {};", ident, expr),
             Self::AssignStmt(name, expr) => format!("{} = {};", name, expr),
+            Self::BlockStmt(block) => block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
             Self::IfStmt(blocks) => {
                 let first = blocks.first().unwrap();  // always present
                 let rest = &blocks[1..].iter().map(|(cond, stmts)| {
@@ -80,3 +82,4 @@ impl Display for StmtType {
 }
 
 pub type Stmt = Located<StmtType>;
+pub type Block = Vec<Stmt>;
