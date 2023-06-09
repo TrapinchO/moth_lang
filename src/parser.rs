@@ -164,7 +164,7 @@ impl Parser {
 
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
-        let StmtType::BlockStmt(bl) = if_block else { unreachable!(); };
+        let StmtType::BlockStmt(bl) = if_block.val else { unreachable!(); };
         blocks.push((cond, bl));
         end = if_block.end;
 
@@ -175,12 +175,12 @@ impl Parser {
                 self.advance();
                 let cond = self.parse_expression()?;
                 let if_block = self.parse_block()?;
-                let StmtType::BlockStmt(bl) = if_block else { unreachable!(); };
+                let StmtType::BlockStmt(bl) = if_block.val else { unreachable!(); };
                 blocks.push((cond, bl));
                 end = if_block.end;
             } else {
                 let else_block = self.parse_block()?;
-                let StmtType::BlockStmt(bl) = else_block else { unreachable!(); };
+                let StmtType::BlockStmt(bl) = else_block.val else { unreachable!(); };
                 blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, bl));
                 end = else_block.end;
                 break;
@@ -199,7 +199,7 @@ impl Parser {
         self.advance();  // move past while
         let cond = self.parse_expression()?;
         let block = self.parse_block()?;
-        let StmtType::BlockStmt(bl) = block else { unreachable!(); };
+        let StmtType::BlockStmt(bl) = block.val else { unreachable!(); };
         Ok(Stmt {
             start,
             end: block.end,
