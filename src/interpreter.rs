@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::error::Error;
-use crate::exprstmt::{Expr, ExprType, Stmt};
+use crate::exprstmt::{Expr, ExprType, Stmt, Block};
 use crate::token::*;
 use crate::value::*;
 use crate::visitor::{ExprVisitor, StmtVisitor};
