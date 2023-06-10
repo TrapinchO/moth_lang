@@ -137,8 +137,8 @@ impl StmtVisitor<Stmt> for Reassociate {
         let StmtType::AssignStmt(ident, expr) = &stmt.val else { unreachable!() };
         Ok(Stmt {
             val: StmtType::AssignStmt(ident.clone(), self.visit_expr(&expr)?),
-            start: 0,
-            end: 0,
+            start: stmt.start,
+            end: stmt.end,
         })
     }
 
@@ -150,8 +150,8 @@ impl StmtVisitor<Stmt> for Reassociate {
         }
         Ok(Stmt {
             val: StmtType::BlockStmt(block2),
-            start: 0,
-            end: 0,
+            start: stmt.start,
+            end: stmt.end,
         })
     }
 
@@ -168,8 +168,8 @@ impl StmtVisitor<Stmt> for Reassociate {
 
         Ok(Stmt {
             val: StmtType::IfStmt(blocks_result),
-            start: 0,
-            end: 0,
+            start: stmt.start,
+            end: stmt.end,
         })
     }
     fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
@@ -181,8 +181,8 @@ impl StmtVisitor<Stmt> for Reassociate {
         }
         Ok(Stmt {
             val: StmtType::WhileStmt(cond, block2),
-            start: 0,
-            end: 0,
+            start: stmt.start,
+            end: stmt.end,
         })
     }
 }

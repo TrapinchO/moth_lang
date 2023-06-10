@@ -116,6 +116,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
+    // TODO: make like if_else
     fn whiles(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
         while let ValueType::Bool(true) = self.visit_expr(cond)?.val {
