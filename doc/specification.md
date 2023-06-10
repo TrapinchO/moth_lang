@@ -100,7 +100,20 @@ if 2 == 1 {
 }
 ```
 NOTE: a block must follow if/else, unlike languages like C or Java
-<br>NOTE: `else if` is not yet implemented
+
+Multiple conditions can be chained with `else if`. When one of the conditions is true, the rest is not checked.
+```rs
+let x = 10;
+if x == 0 {
+    "x is zero";
+} else if x < 10 {
+    "x is smaller than ten";
+} else if x > 11 {
+    "x is greater than eleven";
+} else {
+    "x is either ten or eleven";
+}
+```
 
 ## While
 While is made with `while` keyword (again, without parenthese) and a block of statements to repeat
