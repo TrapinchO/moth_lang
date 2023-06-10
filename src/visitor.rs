@@ -30,7 +30,7 @@ pub trait ExprVisitor<T> {
             ExprType::String(_) => self.string(expr),
             ExprType::Bool(_) => self.bool(expr),
             ExprType::Identifier(_) => self.identifier(expr),
-            ExprType::Parens(new_expr) => self.parens(new_expr),
+            ExprType::Parens(_) => self.parens(expr),
             ExprType::UnaryOperation(op, new_expr) => self.unary(op, new_expr),
             ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
         }

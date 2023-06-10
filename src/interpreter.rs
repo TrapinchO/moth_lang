@@ -170,7 +170,12 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn parens(&mut self, expr: &Expr) -> Result<Value, Error> {
-        self.visit_expr(expr)
+        let ExprType::Parens(expr2) = &expr.val else { unreachable!() };
+        Ok(Value {
+            start: expr.start,
+            end: expr.end,
+            val: self.visit_expr(expr2)?.val,
+        })
     }
     fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
         let val = self.visit_expr(expr)?;

@@ -101,7 +101,7 @@ if 2 == 1 {
 ```
 NOTE: a block must follow if/else, unlike languages like C or Java
 
-Multiple conditions can be chained with `else if`. When one of the conditions is true, the rest is not checked.
+Multiple conditions can be chained with `else if`. When one of the conditions is true, the rest is not checked. `else` can go after the chain like usual.
 ```rs
 let x = 10;
 if x == 0 {

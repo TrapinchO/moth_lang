@@ -115,8 +115,9 @@ impl ExprVisitor<Expr> for Reassociate {
         Ok(expr.clone())
     }
     fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        let ExprType::Parens(expr2) = &expr.val else { unreachable!() };
         Ok(Expr {
-            val: ExprType::Parens(self.visit_expr(expr)?.into()),
+            val: ExprType::Parens(self.visit_expr(&expr2)?.into()),
             ..*expr
         })
     }

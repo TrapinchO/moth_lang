@@ -51,6 +51,7 @@ impl Error {
         let lines = lines
             .iter()
             .map(|(start, end)| {
+                if start.line == end.line {
                 format!(
                     "{:width$} | {}\n   {}{}",
                     start.line + 1,
@@ -58,7 +59,39 @@ impl Error {
                     " ".repeat(width + start.col), // align it properly
                     "^".repeat(end.col - start.col + 1),
                     width = width
-                )
+                )} else {
+                    let mut s: Vec<String> = vec![];
+                    let line = code_lines[start.line];
+                    s.push(format!(
+                        "{:width$} | {}\n   {}{}",
+                        start.line + 1,
+                        line,        // line of the code
+                        " ".repeat(width + start.col),
+                        "^".repeat(line.len() - start.col),
+                        width = width
+                    ));
+                    for i in start.line+1..end.line {
+                        let line = code_lines[i];
+                        s.push(format!(
+                            "{:width$} | {}\n   {}{}",
+                            i + 1,
+                            line,        // line of the code
+                            " ".repeat(width),
+                            "^".repeat(line.len()),
+                            width = width
+                        ));
+                    }
+                    let line = code_lines[end.line];
+                    s.push(format!(
+                        "{:width$} | {}\n   {}{}",
+                        end.line + 1,
+                        line,        // line of the code
+                        " ".repeat(width),
+                        "^".repeat(end.col + 1),
+                        width = width
+                    ));
+                    s.join("\n")
+                }
             })
             .collect::<Vec<_>>()
             .join("\n");

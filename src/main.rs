@@ -67,7 +67,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     /*
     println!("===== lexing =====");
     for t in &tokens {
-        println!("{}", t);
+        println!("{:?}", t);
     }
     */
 
@@ -76,7 +76,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     /*
     println!("===== parsing =====");
     for s in &ast {
-        println!("{}", s);
+        println!("{:?}", s);
     }
     */
 
@@ -93,7 +93,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    //println!("===== evaluating =====");
+//    println!("===== evaluating =====");
     interp.interpret(&resassoc)?;
 
     Ok(())

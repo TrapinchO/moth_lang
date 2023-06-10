@@ -104,7 +104,7 @@ x;
 */
 
 //while false { 1; }
-
+/*
 let x = 16;
 if x == 0 {
     "x is zero";
@@ -115,3 +115,10 @@ if x == 0 {
 } else {
     "x is either ten or eleven";
 }
+*/
+/*
+"multiline error";
+10 - 1456453453
+/
+(1 - 1);
+*/
