@@ -75,22 +75,22 @@ impl Interpreter {
 impl StmtVisitor<()> for Interpreter {
     fn var_decl(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::VarDeclStmt(ident, expr) = &stmt.val else { unreachable!() };
-        let val = self.visit_expr(&expr)?;
-        self.environment.insert(&ident, val)?;
+        let val = self.visit_expr(expr)?;
+        self.environment.insert(ident, val)?;
         Ok(())
     }
 
     fn assignment(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::AssignStmt(ident, expr) = &stmt.val else { unreachable!() };
-        let val = self.visit_expr(&expr)?;
-        self.environment.update(&ident, val)?;
+        let val = self.visit_expr(expr)?;
+        self.environment.update(ident, val)?;
         Ok(())
     }
 
     fn block(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
         for s in block {
-            self.visit_stmt(&s)?;
+            self.visit_stmt(s)?;
         }
         Ok(())
     }

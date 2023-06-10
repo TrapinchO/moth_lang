@@ -159,14 +159,13 @@ impl Parser {
         let mut blocks: Vec<(Expr, Block)> = vec![];
 
         let start = self.get_current().start;
-        let mut end = 0;
         self.advance();  // move past if
 
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
         let StmtType::BlockStmt(bl) = if_block.val else { unreachable!(); };
         blocks.push((cond, bl));
-        end = if_block.end;
+        let mut end = if_block.end;
 
         while self.is_typ(&TokenType::Else) {
             let else_kw = self.get_current().clone();

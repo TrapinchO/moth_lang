@@ -128,7 +128,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         let StmtType::VarDeclStmt(ident, expr) = &stmt.val else { unreachable!() };
         Ok(Stmt {
-            val: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(&expr)?),
+            val: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(expr)?),
             start: stmt.start,
             end: stmt.end,
         })
@@ -136,7 +136,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         let StmtType::AssignStmt(ident, expr) = &stmt.val else { unreachable!() };
         Ok(Stmt {
-            val: StmtType::AssignStmt(ident.clone(), self.visit_expr(&expr)?),
+            val: StmtType::AssignStmt(ident.clone(), self.visit_expr(expr)?),
             start: stmt.start,
             end: stmt.end,
         })
@@ -146,7 +146,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
         let mut block2: Vec<Stmt> = vec![];
         for s in block {
-            block2.push(self.visit_stmt(&s)?)
+            block2.push(self.visit_stmt(s)?)
         }
         Ok(Stmt {
             val: StmtType::BlockStmt(block2),
@@ -174,10 +174,10 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
     fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
-        let cond = self.visit_expr(&cond)?;
+        let cond = self.visit_expr(cond)?;
         let mut block2: Block = vec![];
         for s in block {
-            block2.push(self.visit_stmt(&s)?)
+            block2.push(self.visit_stmt(s)?)
         }
         Ok(Stmt {
             val: StmtType::WhileStmt(cond, block2),
@@ -205,7 +205,7 @@ impl ExprVisitor<Expr> for Reassociate {
     fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
         let ExprType::Parens(expr2) = &expr.val else { unreachable!() };
         Ok(Expr {
-            val: ExprType::Parens(self.visit_expr(&expr2)?.into()),
+            val: ExprType::Parens(self.visit_expr(expr2)?.into()),
             ..*expr
         })
     }
