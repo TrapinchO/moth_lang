@@ -101,7 +101,7 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<Stmt, Error> {
         let mut ls = vec![];
-        let start = self.expect(&TokenType::LBrace, "Expected { after condition")?.start;
+        let start = self.expect(&TokenType::LBrace, "Expected { at the beginning of the block")?.start;
         while !self.is_at_end()
             && !self.is_typ(&TokenType::Eof)  // apparently needed
             && !self.is_typ(&TokenType::RBrace) {

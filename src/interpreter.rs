@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::error::Error;
-use crate::exprstmt::{Expr, ExprType, Stmt, Block};
+use crate::exprstmt::{Expr, ExprType, Stmt, StmtType};
 use crate::token::*;
 use crate::value::*;
 use crate::visitor::{ExprVisitor, StmtVisitor};
@@ -73,26 +73,30 @@ impl Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<(), Error> {
-        let val = self.visit_expr(expr)?;
-        self.environment.insert(ident, val)?;
+    fn var_decl(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::VarDeclStmt(ident, expr) = &stmt.val else { unreachable!() };
+        let val = self.visit_expr(&expr)?;
+        self.environment.insert(&ident, val)?;
         Ok(())
     }
 
-    fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<(), Error> {
-        let val = self.visit_expr(expr)?;
-        self.environment.update(ident, val)?;
+    fn assignment(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::AssignStmt(ident, expr) = &stmt.val else { unreachable!() };
+        let val = self.visit_expr(&expr)?;
+        self.environment.update(&ident, val)?;
         Ok(())
     }
 
-    fn block(&mut self, block: &Block) -> Result<(), Error> {
+    fn block(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
         for s in block {
-            self.visit_stmt(s)?;
+            self.visit_stmt(&s)?;
         }
         Ok(())
     }
 
-    fn if_else(&mut self, blocks: &Vec<(Expr, Block)>) -> Result<(), Error> {
+    fn if_else(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::IfStmt(blocks) = &stmt.val else { unreachable!() };
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {
                 return Err(Error {
@@ -112,7 +116,8 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn whiles(&mut self, cond: &Expr, block: &Block) -> Result<(), Error> {
+    fn whiles(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
         while let ValueType::Bool(true) = self.visit_expr(cond)?.val {
             for s in block {
                 self.visit_stmt(s)?;
@@ -121,7 +126,8 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn expr(&mut self, expr: &Expr) -> Result<(), Error> {
+    fn expr(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::ExprStmt(expr) = &stmt.val else { unreachable!() };
         let val = self.visit_expr(expr)?;
         println!("{:?}", val.val);
         Ok(())
@@ -177,27 +183,29 @@ impl ExprVisitor<Value> for Interpreter {
             val: self.visit_expr(expr2)?.val,
         })
     }
-    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<Value, Error> {
-        let val = self.visit_expr(expr)?;
+    fn unary(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::UnaryOperation(op, expr2) = &expr.val else { unreachable!() };
+        let val = self.visit_expr(expr2)?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)]
             })
         };
         Ok(Value {
             val: func(vec![val]).map_err(|msg| Error {
                 msg,
-                lines: vec![(op.start, expr.end)],
+                lines: vec![(expr.start, expr.end)],
             })?,
-            start: op.start,
+            start: expr.start,
             end: expr.end,
         })
     }
-    fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<Value, Error> {
+    fn binary(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::BinaryOperation(left, op, right) = &expr.val else { unreachable!() };
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.val else {
@@ -205,7 +213,7 @@ impl ExprVisitor<Value> for Interpreter {
         };
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function!", op_name),
+                msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)]
             })
         };

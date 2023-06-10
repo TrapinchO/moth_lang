@@ -1,38 +1,37 @@
 use crate::error::Error;
 use crate::exprstmt::*;
-use crate::token::Token;
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
         match &stmt.val {
-            StmtType::VarDeclStmt(ident, expr) => self.var_decl(ident, expr),
-            StmtType::AssignStmt(name, expr) => self.assignment(name, expr),
-            StmtType::ExprStmt(expr) => self.expr(expr),
-            StmtType::BlockStmt(block) => self.block(block),
-            StmtType::IfStmt(blocks) => self.if_else(blocks),
-            StmtType::WhileStmt(cond, block) => self.whiles(cond, block),
+            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
+            StmtType::AssignStmt(..) => self.assignment(stmt),
+            StmtType::ExprStmt(..) => self.expr(stmt),
+            StmtType::BlockStmt(..) => self.block(stmt),
+            StmtType::IfStmt(..) => self.if_else(stmt),
+            StmtType::WhileStmt(..) => self.whiles(stmt),
         }
     }
 
-    fn var_decl(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
-    fn assignment(&mut self, ident: &Token, expr: &Expr) -> Result<T, Error>;
-    fn expr(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn block(&mut self, block: &Block) -> Result<T, Error>;
-    fn if_else(&mut self, blocks: &Vec<(Expr, Block)>) -> Result<T, Error>;
-    fn whiles(&mut self, cond: &Expr, block: &Block) -> Result<T, Error>;
+    fn var_decl(&mut self, stmt: &Stmt) -> Result<T, Error>;
+    fn assignment(&mut self, stmt: &Stmt) -> Result<T, Error>;
+    fn expr(&mut self, expr: &Stmt) -> Result<T, Error>;
+    fn block(&mut self, stmt: &Stmt) -> Result<T, Error>;
+    fn if_else(&mut self, stmt: &Stmt) -> Result<T, Error>;
+    fn whiles(&mut self, stmt: &Stmt) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {
     fn visit_expr(&mut self, expr: &Expr) -> Result<T, Error> {
         match &expr.val {
-            ExprType::Int(_) => self.int(expr),
-            ExprType::Float(_) => self.float(expr),
-            ExprType::String(_) => self.string(expr),
-            ExprType::Bool(_) => self.bool(expr),
-            ExprType::Identifier(_) => self.identifier(expr),
-            ExprType::Parens(_) => self.parens(expr),
-            ExprType::UnaryOperation(op, new_expr) => self.unary(op, new_expr),
-            ExprType::BinaryOperation(left, op, right) => self.binary(left, op, right),
+            ExprType::Int(..) => self.int(expr),
+            ExprType::Float(..) => self.float(expr),
+            ExprType::String(..) => self.string(expr),
+            ExprType::Bool(..) => self.bool(expr),
+            ExprType::Identifier(..) => self.identifier(expr),
+            ExprType::Parens(..) => self.parens(expr),
+            ExprType::UnaryOperation(..) => self.unary(expr),
+            ExprType::BinaryOperation(..) => self.binary(expr),
         }
     }
     fn int(&mut self, expr: &Expr) -> Result<T, Error>;
@@ -41,6 +40,6 @@ pub trait ExprVisitor<T> {
     fn bool(&mut self, expr: &Expr) -> Result<T, Error>;
     fn identifier(&mut self, expr: &Expr) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn unary(&mut self, op: &Token, expr: &Expr) -> Result<T, Error>;
-    fn binary(&mut self, left: &Expr, op: &Token, right: &Expr) -> Result<T, Error>;
+    fn unary(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn binary(&mut self, expr: &Expr) -> Result<T, Error>;
 }

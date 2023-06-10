@@ -73,11 +73,9 @@ impl Error {
                     for i in start.line+1..end.line {
                         let line = code_lines[i];
                         s.push(format!(
-                            "{:width$} | {}\n   {}{}",
+                            "{:width$} | {}",
                             i + 1,
                             line,        // line of the code
-                            " ".repeat(width),
-                            "^".repeat(line.len()),
                             width = width
                         ));
                     }
