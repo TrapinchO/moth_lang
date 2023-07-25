@@ -130,6 +130,13 @@ impl StmtVisitor<()> for Interpreter {
     fn expr(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::ExprStmt(expr) = &stmt.val else { unreachable!() };
         let val = self.visit_expr(expr)?;
+        //println!("{:?}", val.val);
+        Ok(())
+    }
+
+    fn print(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::PrintStmt(expr) = &stmt.val else { unreachable!() };
+        let val = self.visit_expr(expr)?;
         println!("{:?}", val.val);
         Ok(())
     }

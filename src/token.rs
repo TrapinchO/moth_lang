@@ -14,6 +14,7 @@ pub enum TokenType {
     If,
     Else,
     While,
+    Print,
     String(String),
     Eof,
     Symbol(String),

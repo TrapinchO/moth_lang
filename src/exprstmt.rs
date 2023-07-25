@@ -48,6 +48,7 @@ pub enum StmtType {
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
+    PrintStmt(Expr),
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -71,6 +72,7 @@ impl StmtType {
                     )
             }
             Self::WhileStmt(cond, block) => format!("while {} {{{}}}", cond, block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")),
+            Self::PrintStmt(expr) => format!("print {}", expr)
         }
     }
 }

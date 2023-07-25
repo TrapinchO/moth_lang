@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
-const KEYWORDS: [(&str, TokenType); 7] = [
+const KEYWORDS: [(&str, TokenType); 8] = [
     ("let", TokenType::Let),
     ("fun", TokenType::Fun),
     ("true", TokenType::True),
@@ -13,6 +13,7 @@ const KEYWORDS: [(&str, TokenType); 7] = [
     ("if", TokenType::If),
     ("else", TokenType::Else),
     ("while", TokenType::While),
+    ("print", TokenType::Print)
 ];
 
 const SPECIAL_SYMBOLS: [(char, TokenType); 7] = [

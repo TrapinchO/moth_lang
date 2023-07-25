@@ -72,8 +72,7 @@ impl Error {
                         "^".repeat(line.len() - start.col),
                         width = width
                     ));
-                    for i in start.line+1..end.line {
-                        let line = code_lines[i];
+                    for (i, line) in code_lines[start.line+1..end.line].iter().enumerate() {
                         s.push(format!(
                             "{:width$} | {}\n   {}{}",
                             i + 1,

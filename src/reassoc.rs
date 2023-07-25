@@ -185,6 +185,14 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: stmt.end,
         })
     }
+    fn print(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        let StmtType::PrintStmt(expr) = &stmt.val else { unreachable!() };
+        Ok(Stmt {
+            val: StmtType::PrintStmt(self.visit_expr(expr)?),
+            start: stmt.start,
+            end: stmt.end,
+        })
+    }
 }
 impl ExprVisitor<Expr> for Reassociate {
     fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {
