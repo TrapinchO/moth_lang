@@ -112,7 +112,7 @@ mod tests {
     use crate::compare_elements;
 
     #[test]
-    fn empty() {
+    fn parse_empty() {
         assert_eq!(
             parse(vec![Token { start: 0, end: 0, val: TokenType::Eof }]),
             Ok(vec![])
@@ -124,21 +124,99 @@ mod tests {
     }
 
     #[test]
-    fn parse_primary() {
-        let ops = [
-            ("1", expr!(ExprType::Int(1))),
-            ("1234", expr!(ExprType::Int(1234))),
-            ("\"\"", expr!(ExprType::String("".to_string()))),
-            ("\"test\"", expr!(ExprType::String("test".to_string()))),
-            ("(1)", expr!(ExprType::Parens(expr!(ExprType::Int(1)).into()))),
-            ("(1 + 1)", expr!(parenop!(binop!(ExprType::Int(1), "+", ExprType::Int(1))))),
-        ];
-        for (s, op) in ops {
-            assert!(compare_elements(
-                    &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                    &stmt!(StmtType::ExprStmt(op))
-            ));
-        }
+    fn parse_int() {
+        assert_eq!(
+            parse(lex("1;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Int(1), start: 0, end: 0 }), start: 0, end: 0 }]
+        );
+    }
+
+    #[test]
+    fn parse_float() {
+        assert_eq!(
+            parse(lex("1.1;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Float(1.1), start: 0, end: 2 }), start: 0, end: 2 }]
+        );
+    }
+
+    #[test]
+    fn parse_string() {
+        assert_eq!(
+            parse(lex("\"test\";").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::String("test".to_string()), start: 0, end: 5 }), start: 0, end: 5 }]
+        );
+    }
+
+    #[test]
+    fn parse_bool() {
+        assert_eq!(
+            parse(lex("true;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Bool(true), start: 0, end: 3 }), start: 0, end: 3 }]
+        );
+    }
+
+    #[test]
+    fn parse_identifier() {
+        assert_eq!(
+            parse(lex("test;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Identifier("test".to_string()), start: 0, end: 3 }), start: 0, end: 3 }]
+        );
+    }
+
+    #[test]
+    fn parse_parens() {
+        assert_eq!(
+            parse(lex("(1);").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Parens(
+                            Expr { val: ExprType::Int(1), start: 1, end: 1 }.into()
+                            ), start: 0, end: 2 }), start: 0, end: 2 }]
+        );
+    }
+
+    #[test]
+    fn parse_parens_unclosed() {
+        assert_eq!(
+            parse(lex("(1").unwrap()),
+            Err(Error { msg: "Expected closing parenthesis".to_string(), lines: vec![(2, 2)] })
+        );
+    }
+
+    #[test]
+    fn parse_unary() {
+        assert_eq!(
+            parse(lex("-1;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::UnaryOperation(
+                    Token { val: TokenType::Symbol("-".to_string()), start: 0, end: 0 },
+                    Expr { val: ExprType::Int(1), start: 1, end: 1 }.into()
+                ), start: 0, end: 1 }), start: 0, end: 1 }]
+        );
+    }
+
+    #[test]
+    fn parse_unary_nested() {
+        assert_eq!(
+            parse(lex("- -1;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::UnaryOperation(
+                Token { val: TokenType::Symbol("-".to_string()), start: 0, end: 0 },
+                Expr { val: ExprType::UnaryOperation(
+                    Token { val: TokenType::Symbol("-".to_string()), start: 2, end: 2 },
+                    Expr { val: ExprType::Int(1), start: 3, end: 3 }.into()), start: 2, end: 3 }.into()
+            ), start: 0, end: 3 }), start: 0, end: 3 }]
+        );
+    }
+
+    #[test]
+    fn parse_binary() {
+        assert_eq!(
+            parse(lex("1 + 1;").unwrap()).unwrap(),
+            vec![Stmt { val: StmtType::ExprStmt( Expr {
+                val: ExprType::BinaryOperation(
+                    Expr { val: ExprType::Int(1), start: 0, end: 0 }.into(),
+                    Token { val: TokenType::Symbol("+".to_string()), start: 2, end: 2 },
+                    Expr { val: ExprType::Int(1), start: 4, end: 4 }.into()),
+                start: 0, end: 4
+            }), start: 0, end: 4 }]
+        )
     }
 
     #[test]
@@ -151,28 +229,17 @@ mod tests {
         assert_eq!(err, op);
     }
 
-    #[test]
-    fn parens_missing() {
-        let err = Error {
-            msg: "Expected closing parenthesis".to_string(),
-            lines: vec![(2, 2)],
-        };
-        let op = parse(lex("(1").unwrap()).unwrap_err();
-        assert_eq!(err, op);
-    }
+
+
+
+
+
+
+
+
 
     #[test]
-    fn parens_empty() {
-        let err = Error {
-            msg: "Unknown element: RParen".to_string(),
-            lines: vec![(1, 1)],
-        };
-        let op = parse(lex("()").unwrap()).unwrap_err();
-        assert_eq!(err, op);
-    }
-
-    #[test]
-    fn parse_binary() {
+    fn parse_binary2() {
         let ops = [
             ("1+1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
             ("1 + 1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
@@ -190,7 +257,7 @@ mod tests {
         }
 
     #[test]
-    fn parse_unary() {
+    fn parse_unary2() {
         let ops = [
             ("+1", unop!("+", ExprType::Int(1))),
             ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Int(1))))),

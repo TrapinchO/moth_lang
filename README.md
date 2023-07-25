@@ -24,3 +24,7 @@ When running the program without arguments it enters a repl mode, where a line o
   - [ ] reassociation
   - [ ] interpreter
   - [ ] errors
+
+
+# Building and running
+Make sure you have rust (and cargo) installed and run `cargo r <filename>` or `cargo r` for file and repl modes respectively.

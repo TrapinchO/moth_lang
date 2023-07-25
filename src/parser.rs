@@ -23,6 +23,7 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
+        // must have -1 for EOF
         self.idx >= self.tokens.len() // last token should be EOF
     }
 
@@ -280,6 +281,13 @@ impl Parser {
             TokenType::LParen => {
                 self.advance();
                 let expr = self.parse_expression()?;
+                // TODO: consider improving
+                /*
+                return Err(Error {
+                    msg: "Expected closing parenthesis".to_string(),
+                    lines: vec![(tok.start, expr.end)]
+                });
+                */
                 let paren = self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
                 return Ok(Expr {
                     val: ExprType::Parens(expr.into()),

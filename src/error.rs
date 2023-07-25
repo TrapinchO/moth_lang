@@ -4,6 +4,7 @@ struct Pos {
     col: usize,
 }
 
+/*
 #[derive(Debug, PartialEq)]
 enum ErrorType {
     // lexer
@@ -17,6 +18,7 @@ enum ErrorType {
     // parser
 
 }
+*/
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {

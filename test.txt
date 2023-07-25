@@ -1,3 +1,6 @@
+
+
+
 /*
 "variable declaration";
 let a = 1; let _x = 1; let y_y = 1; let y_ = 1;
@@ -116,10 +119,10 @@ if x == 0 {
     "x is either ten or eleven";
 }
 */
-// /*
+/*
 // "multiline error";
 10 - (1456453453  // imagine this is not a binary operation but something more complex
 % 100 * 23) /
-/* this is a comment to make things less readable */
+/* this is a comment to make things less readable * /
 (1 - 1) + 1000;
-// */
+*/

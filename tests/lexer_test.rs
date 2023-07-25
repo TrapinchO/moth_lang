@@ -5,7 +5,7 @@ mod tests {
     use moth_lang::token::*;
 
     #[test]
-    fn empty() {
+    fn lex_empty() {
         assert_eq!(vec![Token{ start: 0, end: 0, val: TokenType::Eof }], lex("").unwrap());
     }
 
