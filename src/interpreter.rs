@@ -130,7 +130,7 @@ impl StmtVisitor<()> for Interpreter {
     fn expr(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::ExprStmt(expr) = &stmt.val else { unreachable!() };
         let val = self.visit_expr(expr)?;
-        //println!("{:?}", val.val);
+        println!("{:?}", val.val);
         Ok(())
     }
 
@@ -245,14 +245,16 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let binding = get_native_funcs();
+        let func = binding.iter().find(|fun| &fun.name == op_name).unwrap();
+        let ValueType::Function(_func2) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)]
             })
         };
         Ok(Value {
-            val: func(vec![left2, right2]).map_err(|msg| Error {
+            val: (func.body)(vec![left2, right2]).map_err(|msg| Error {
                 msg,
                 lines: vec![(left.start, right.end)],
             })?,

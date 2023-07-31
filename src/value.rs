@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use crate::exprstmt::Stmt;
 // TODO: kinda circular import, but it should be fine
 use crate::located::Located;
 use crate::reassoc::{Associativity, Precedence};
@@ -30,6 +31,58 @@ impl Display for ValueType {
 }
 
 pub type Value = Located<ValueType>;
+
+
+struct Function {
+    name: String,
+    arity: usize,
+    body: Vec<Stmt>,
+}
+pub struct NativeFunction {
+    pub name: String,
+    pub arity: usize,
+    pub body: fn(Vec<Value>) -> Result<ValueType, String>,
+}
+
+pub fn get_native_funcs() -> Vec<NativeFunction> {
+    vec![
+        NativeFunction {
+            name: "+".to_string(), arity: 2,
+            body: |args| {
+                let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+                Ok(match (&left.val, &right.val) {
+                    (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
+                    (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
+                    (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
+                    _ => {
+                        return Err(format!(
+                            "Invalid values: \"{}\" and \"{}\"",
+                            left.val, right.val
+                        ))
+                    }
+                })
+            }
+        },
+        NativeFunction {
+            name: "-".to_string(), arity: 2,
+            body: |args| {
+                let [left, right] = &args[..] else { return Err(format!("Wrong number of arguments: {}", args.len())) };
+                Ok(match (&left.val, &right.val) {
+                    (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
+                    (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
+                    _ => {
+                        return Err(format!(
+                            "Invalid values: \"{}\" and \"{}\"",
+                            left.val, right.val
+                        ))
+                    }
+                })
+            }
+        },
+    ]
+}
+
+
 
 // TODO: this is very smart, as it can currently hold only Functions
 // PIE anyone?
