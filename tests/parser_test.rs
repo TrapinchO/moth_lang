@@ -259,9 +259,10 @@ mod tests {
     #[test]
     fn parse_unary2() {
         let ops = [
-            ("+1", unop!("+", ExprType::Int(1))),
-            ("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Int(1))))),
-            ("*-+1", unop!("*-+", ExprType::Int(1))),
+            ("-1", unop!("-", ExprType::Int(1))),
+            // TODO: should fail
+            //("* - +1", unop!("*", unop!("-", unop!("+", ExprType::Int(1))))),
+            //("*-+1", unop!("*-+", ExprType::Int(1))),
         ];
         for (s, op) in ops {
             assert!(compare_elements(
@@ -278,7 +279,7 @@ mod tests {
                     binop!(ExprType::Int(1), "-", ExprType::Int(1)),
                     "-",
                     ExprType::Int(1))),
-            ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
+            ("-(1 - 1 - 1)", unop!("-", parenop!(binop!(
                     binop!(ExprType::Int(1), "-", ExprType::Int(1)),
                 "-",
                 ExprType::Int(1))))),

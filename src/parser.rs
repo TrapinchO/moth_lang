@@ -240,8 +240,13 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
+        // TODO: clean up some time
         // if it is a symbol, look for nested unary operator
-        if let tok @ Token {val: TokenType::Symbol(_), .. } = self.get_current().clone() {
+        let tok @ Token {val: TokenType::Symbol(_), .. } = self.get_current().clone() else {
+            return Ok(self.parse_primary()?)
+        };
+        let TokenType::Symbol(sym) = &tok.val else { unreachable!() };  // I am beginning to hate rust enums
+        if sym == "-" || sym == "!" {
             self.advance();
 
             let expr = self.parse_unary()?;
@@ -250,7 +255,8 @@ impl Parser {
                 end: expr.end,
                 val: ExprType::UnaryOperation(tok, expr.into()),
             })
-        } else {
+        }
+        else {
             Ok(self.parse_primary()?)
         }
     }
