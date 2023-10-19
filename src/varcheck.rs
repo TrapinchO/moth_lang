@@ -4,30 +4,8 @@ use std::collections::HashMap;
 
 struct VarCheck;
 
-impl StmtVisitor<Stmt> for VarCheck {
-    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
-        match &stmt.val {
-            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
-            StmtType::AssignStmt(..) => self.assignment(stmt),
-            StmtType::ExprStmt(..) => self.expr(stmt),
-            StmtType::BlockStmt(..) => self.block(stmt),
-            StmtType::IfStmt(..) => self.if_else(stmt),
-            StmtType::WhileStmt(..) => self.whiles(stmt),
-            StmtType::PrintStmt(..) => self.print(stmt),
-        }
-    }
-
-    fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        Ok(stmt)
-    }
-    fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        Ok(stmt)
-    }
-    fn expr(&mut self, expr: &Stmt) -> Result<Stmt, Error> {
-        Ok(stmt)
-    }
-    fn block(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
+impl VarCheck {
+    fn check_block(block: Vec<Stmt>) -> Result<(), Error> {
         let mut vars = HashMap::new();
         for s in block {
             match &s.val {
@@ -41,15 +19,54 @@ impl StmtVisitor<Stmt> for VarCheck {
                     }
                 },
                 s2 & StmtType::BlockStmt(..) => self.visit_stmt(s2),
+                s2 & StmtType::IfStmt(..) => self.visit_stmt(s2),
+                s2 & StmtType::WhileStmt(..) => self.visit_stmt(s2),
                 else => {}
             }
         }
+        Ok(())
+    }
+}
+
+impl StmtVisitor<Stmt> for VarCheck {
+    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
+        match &stmt.val {
+            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
+            StmtType::AssignStmt(..) => self.assignment(stmt),
+            StmtType::ExprStmt(..) => self.expr(stmt),
+            StmtType::BlockStmt(..) => self.block(stmt),
+            StmtType::IfStmt(..) => self.if_else(stmt),
+            StmtType::WhileStmt(..) => self.whiles(stmt),
+            StmtType::PrintStmt(..) => self.print(stmt),
+        }
+    }
+
+    // for these there is nothing to check (yet)
+    fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    fn expr(&mut self, expr: &Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    // go through
+    fn block(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
+        self.check_block(block)?;
         Ok(stmt)
     }
     fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        let StmtType::IfStmt(blocks) = &stmt.val else { unreachable!() };
+        for block in blocks {
+            self.check_block(block)?;
+        }
         Ok(stmt)
     }
     fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
+        self.check_block(block)?;
         Ok(stmt)
     }
     fn print(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
