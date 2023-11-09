@@ -18,7 +18,7 @@ struct VarCheck;
 
 impl VarCheck {
     fn check_block(&mut self, block: &Vec<Stmt>) -> Result<(), Error> {
-        let mut vars: HashSet<String> = HashSet::new();
+        let mut vars: HashSet<&String> = HashSet::new();
         for s in block {
             match &s.val {
                 StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name), .. }, ..) => {
@@ -32,9 +32,9 @@ impl VarCheck {
                         });
                     }
                 },
-                s2 @ StmtType::BlockStmt(..) => self.visit_stmt(s2)?,
-                s2 @ StmtType::IfStmt(..) => self.visit_stmt(s2)?,
-                s2 @ StmtType::WhileStmt(..) => self.visit_stmt(s2)?,
+                StmtType::BlockStmt(..) => self.visit_stmt(s)?,
+                StmtType::IfStmt(..) => self.visit_stmt(s)?,
+                StmtType::WhileStmt(..) => self.visit_stmt(s)?,
                 _ => {}
             }
         }
@@ -61,8 +61,8 @@ impl StmtVisitor<Stmt> for VarCheck {
     }
     fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         let StmtType::IfStmt(blocks) = &stmt.val else { unreachable!() };
-        for block in &blocks {
-            self.check_block(block.1)?;
+        for block in blocks {
+            self.check_block(&block.1)?;
         }
         Ok(stmt.clone())
     }
