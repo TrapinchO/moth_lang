@@ -113,6 +113,13 @@ mod tests {
 
     #[test]
     fn test_varcheck() -> Result<(), Error> {
+        let input = "let x = 10; x = 1;".to_string();
+        let tokens = lexer::lex(&input)?;
+        let ast = parser::parse(tokens)?;
+        let checked = varcheck::varcheck(&ast);
+        if let Ok(_) = checked {
+            panic("not ok");
+        }
     }
 
     #[test]
