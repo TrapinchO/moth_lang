@@ -32,9 +32,9 @@ impl VarCheck {
                         });
                     }
                 },
-                StmtType::BlockStmt(..) => self.visit_stmt(s)?,
-                StmtType::IfStmt(..) => self.visit_stmt(s)?,
-                StmtType::WhileStmt(..) => self.visit_stmt(s)?,
+                StmtType::BlockStmt(..) => { self.visit_stmt(s)?; },
+                StmtType::IfStmt(..) => { self.visit_stmt(s)?; },
+                StmtType::WhileStmt(..) => { self.visit_stmt(s)?; },
                 _ => {}
             }
         }
