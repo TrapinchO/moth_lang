@@ -108,17 +108,18 @@ mod tests {
     use moth_lang::exprstmt::*;
     use moth_lang::reassoc;
     use moth_lang::value::BUILTINS;
+    use moth_lang::varcheck;
 
     use crate::compare_elements;
 
     #[test]
     fn test_varcheck() -> Result<(), Error> {
         let input = "let x = 10; x = 1;".to_string();
-        let tokens = lexer::lex(&input)?;
-        let ast = parser::parse(tokens)?;
+        let tokens = lex(&input)?;
+        let ast = parse(tokens)?;
         let checked = varcheck::varcheck(&ast);
         if let Ok(_) = checked {
-            panic!("not ok");
+            panic!("not ok {:?}", checked);
         }
         Ok(())
     }
