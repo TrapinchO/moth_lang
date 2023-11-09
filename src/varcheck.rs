@@ -6,11 +6,8 @@ use crate::visitor::*;
 use std::collections::HashSet;
 
 pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
-    let mut ls = vec![];
-    for s in stmt {
-        ls.push(VarCheck{}.visit_stmt(s)?)
-    }
-    Ok(ls)
+    VarCheck{}.check_block(&stmt)?;
+    Ok(stmt.clone())
 }
 
 
@@ -27,8 +24,8 @@ impl VarCheck {
                 StmtType::AssignStmt(Token { val: TokenType::Identifier(name), .. }, ..) => {
                     if !vars.contains(name) {
                         return Err(Error {
-                            msg: "Unknown variable".to_string(),
-                            lines: vec![],
+                            msg: "Undeclared variable".to_string(),
+                            lines: vec![(s.start, s.end)],
                         });
                     }
                 },

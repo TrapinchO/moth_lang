@@ -4,6 +4,7 @@ use moth_lang::lexer;
 use moth_lang::parser;
 use moth_lang::reassoc;
 use moth_lang::value::{ValueType, BUILTINS};
+use moth_lang::varcheck;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -93,8 +94,9 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-//    println!("===== evaluating =====");
-    interp.interpret(&resassoc)?;
+    let var_check = varcheck::varcheck(&resassoc)?;
+    println!("===== evaluating =====");
+    interp.interpret(&var_check)?;
 
     Ok(())
 }

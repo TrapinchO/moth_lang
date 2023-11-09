@@ -1,5 +1,11 @@
-
-
+if 1 == 1 {
+    let x = 10;
+    x = 1;
+} else {
+    let y = 1;
+    y = 3;
+    if 1 == 2 { let y = 20; z = 3; }
+}
 
 /*
 "variable declaration";
