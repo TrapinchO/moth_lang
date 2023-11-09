@@ -53,14 +53,16 @@ pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
 
 // TODO: just for repl, consider redoing
 pub struct Interpreter {
-    environment: Environment,
+    environment: Vec<Environment>,
+    defaults: HashMap<String, ValueType>
 }
 
 // TODO: why do I even need Value and not just ValueType?
 impl Interpreter {
     pub fn new(defaults: HashMap<String, ValueType>) -> Self {
         Interpreter {
-            environment: Environment { env: defaults },
+            environment: vec![Environment { env: defaults.clone() }],
+            defaults,
         }
     }
 
@@ -70,28 +72,48 @@ impl Interpreter {
         }
         Ok(())
     }
+
+    fn insert_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
+        self.environment.last_mut().unwrap().insert(ident, val)
+    }
+    fn get_var(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
+        self.environment.last().unwrap().get(ident, pos)
+    }
+    fn update_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
+        self.environment.last_mut().unwrap().update(ident, val)
+    }
+    // TODO: add BUILTINS, secure removing
+    fn add_scope(&mut self) {
+        self.environment.push(Environment { env: self.defaults.clone() })
+    }
+    fn remove_scope(&mut self) -> Result<(), Error> {
+        self.environment.pop();
+        Ok(())
+    }
 }
 
 impl StmtVisitor<()> for Interpreter {
     fn var_decl(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::VarDeclStmt(ident, expr) = &stmt.val else { unreachable!() };
         let val = self.visit_expr(expr)?;
-        self.environment.insert(ident, val)?;
+        self.insert_var(ident, val)?;
         Ok(())
     }
 
     fn assignment(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::AssignStmt(ident, expr) = &stmt.val else { unreachable!() };
         let val = self.visit_expr(expr)?;
-        self.environment.update(ident, val)?;
+        self.update_var(ident, val)?;
         Ok(())
     }
 
     fn block(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
+        self.add_scope();
         for s in block {
             self.visit_stmt(s)?;
         }
+        self.remove_scope()?;
         Ok(())
     }
 
@@ -106,9 +128,11 @@ impl StmtVisitor<()> for Interpreter {
             };
             // do not continue
             if cond2 {
+                self.add_scope();
                 for s in block {
                     self.visit_stmt(s)?;
                 }
+                self.remove_scope()?;
                 break;
             }
         }
@@ -120,9 +144,11 @@ impl StmtVisitor<()> for Interpreter {
     fn whiles(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
         while let ValueType::Bool(true) = self.visit_expr(cond)?.val {
+            self.add_scope();
             for s in block {
                 self.visit_stmt(s)?;
             }
+            self.remove_scope()?;
         }
         Ok(())
     }
@@ -170,7 +196,7 @@ impl ExprVisitor<Value> for Interpreter {
     fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
         let ExprType::Identifier(name) = &expr.val.clone() else { unreachable!() };
         Ok(Value {
-            val: self.environment.get(name, (expr.start, expr.end))?,
+            val: self.get_var(name, (expr.start, expr.end))?,
             start: expr.start,
             end: expr.end,
         })
@@ -197,7 +223,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let ValueType::Function(func) = self.get_var(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)]
@@ -219,7 +245,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let ValueType::Function(func) = self.get_var(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)]
