@@ -57,7 +57,7 @@ impl Error {
                 format!(
                     "{:width$} | {}\n   {}{}",
                     start.line + 1,
-                    code_lines[start.line],        // line of the code
+                    code_lines[start.line],        // line of the code; doesnt work with tabs
                     " ".repeat(width + start.col), // align it properly
                     "^".repeat(end.col - start.col + 1),
                     width = width

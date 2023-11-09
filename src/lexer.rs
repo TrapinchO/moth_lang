@@ -82,7 +82,7 @@ impl Lexer {
         while !self.is_at_end() {
             self.start_idx = self.idx; // beginning to lex a new tokens
             let typ = match self.get_current() {
-                ' ' | '\n' => {
+                ' ' | '\t' | '\n' => {
                     self.advance();
                     continue;
                 }
