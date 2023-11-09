@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_varcheck() -> Result<(), Error> {
-        let input = "let x = 10; x = 1;".to_string();
+        let input = "let x = 10; y = 1;".to_string();
         let tokens = lex(&input)?;
         let ast = parse(tokens)?;
         let checked = varcheck::varcheck(&ast);
