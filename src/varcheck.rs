@@ -2,6 +2,15 @@ use crate::error::Error;
 use crate::exprstmt::*;
 use std::collections::HashMap;
 
+pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
+    let mut ls = vec![];
+    for s in stmt {
+        ls.push(VarCheck().visit_stmt(s)?)
+    }
+    Ok(ls)
+}
+
+
 struct VarCheck;
 
 impl VarCheck {
@@ -29,18 +38,6 @@ impl VarCheck {
 }
 
 impl StmtVisitor<Stmt> for VarCheck {
-    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
-        match &stmt.val {
-            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
-            StmtType::AssignStmt(..) => self.assignment(stmt),
-            StmtType::ExprStmt(..) => self.expr(stmt),
-            StmtType::BlockStmt(..) => self.block(stmt),
-            StmtType::IfStmt(..) => self.if_else(stmt),
-            StmtType::WhileStmt(..) => self.whiles(stmt),
-            StmtType::PrintStmt(..) => self.print(stmt),
-        }
-    }
-
     // for these there is nothing to check (yet)
     fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         Ok(stmt)
@@ -75,18 +72,6 @@ impl StmtVisitor<Stmt> for VarCheck {
 }
 
 impl ExprVisitor<Expr> for VarCheck {
-    fn visit_expr(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        match &expr.val {
-            ExprType::Int(..) => self.int(expr),
-            ExprType::Float(..) => self.float(expr),
-            ExprType::String(..) => self.string(expr),
-            ExprType::Bool(..) => self.bool(expr),
-            ExprType::Identifier(..) => self.identifier(expr),
-            ExprType::Parens(..) => self.parens(expr),
-            ExprType::UnaryOperation(..) => self.unary(expr),
-            ExprType::BinaryOperation(..) => self.binary(expr),
-        }
-    }
     fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {
         Ok(expr)
     }

@@ -7,4 +7,5 @@ pub mod parser;
 pub mod reassoc;
 pub mod token;
 pub mod value;
+pub mod varcheck;
 mod visitor;

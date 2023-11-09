@@ -112,6 +112,10 @@ mod tests {
     use crate::compare_elements;
 
     #[test]
+    fn test_varcheck() -> Result<(), Error> {
+    }
+
+    #[test]
     fn parse_empty() {
         assert_eq!(
             parse(vec![Token { start: 0, end: 0, val: TokenType::Eof }]),
