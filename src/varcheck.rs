@@ -1,5 +1,8 @@
 use crate::error::Error;
 use crate::exprstmt::*;
+use crate::token::*;
+use crate::visitor::*;
+
 use std::collections::HashMap;
 
 pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
@@ -27,9 +30,9 @@ impl VarCheck {
                         });
                     }
                 },
-                s2 & StmtType::BlockStmt(..) => self.visit_stmt(s2),
-                s2 & StmtType::IfStmt(..) => self.visit_stmt(s2),
-                s2 & StmtType::WhileStmt(..) => self.visit_stmt(s2),
+                s2 @ StmtType::BlockStmt(..) => self.visit_stmt(s2),
+                s2 @ StmtType::IfStmt(..) => self.visit_stmt(s2),
+                s2 @ StmtType::WhileStmt(..) => self.visit_stmt(s2),
                 else => {}
             }
         }
