@@ -21,7 +21,7 @@ impl VarCheck {
         let mut vars: HashSet<String> = HashSet::new();
         for s in block {
             match &s.val {
-                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name) }, start: _, end: ..) => vars.insert(name),
+                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name), .. }, ..) => vars.insert(name),
                 StmtType::AssignStmt(Token { val: TokenType::Identifier(name) }, start: _, end: ..) => {
                     if !vars.contains(name) {
                         return Err(Error {
@@ -60,7 +60,7 @@ impl StmtVisitor<Stmt> for VarCheck {
     fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         let StmtType::IfStmt(blocks) = &stmt.val else { unreachable!() };
         for block in blocks {
-            self.check_block(block)?;
+            self.check_block(block.1)?;
         }
         Ok(stmt.clone())
     }
