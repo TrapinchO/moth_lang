@@ -119,9 +119,9 @@ mod tests {
         let ast = parse(tokens)?;
         let checked = varcheck::varcheck(&ast);
         if let Ok(_) = checked {
-            panic!("not ok {:?}", checked);
+            return Ok(());
         }
-        Ok(())
+        panic!("not ok {:?}", checked);
     }
 
     #[test]
