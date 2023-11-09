@@ -118,8 +118,9 @@ mod tests {
         let ast = parser::parse(tokens)?;
         let checked = varcheck::varcheck(&ast);
         if let Ok(_) = checked {
-            panic("not ok");
+            panic!("not ok");
         }
+        Ok(())
     }
 
     #[test]
