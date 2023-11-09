@@ -3,7 +3,7 @@ use crate::exprstmt::*;
 use crate::token::*;
 use crate::visitor::*;
 
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut ls = vec![];
@@ -18,22 +18,22 @@ struct VarCheck;
 
 impl VarCheck {
     fn check_block(&mut self, block: Vec<Stmt>) -> Result<(), Error> {
-        let mut vars = HashMap::new();
+        let mut vars = HashSet::new();
         for s in block {
             match &s.val {
-                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name) }, ..) => vars.insert(name),
-                StmtType::AssignStmt(Token { val: TokenType::Identifier(name) }, ..) => {
-                    if !vars.contains_key(name) {
+                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name) }, start: _, end: ..) => vars.insert(name),
+                StmtType::AssignStmt(Token { val: TokenType::Identifier(name) }, start: _, end: ..) => {
+                    if !vars.contains(name) {
                         return Err(Error {
                             msg: "Unknown variable".to_string(),
                             lines: vec![],
                         });
                     }
                 },
-                s2 @ StmtType::BlockStmt(..) => self.visit_stmt(s2),
-                s2 @ StmtType::IfStmt(..) => self.visit_stmt(s2),
-                s2 @ StmtType::WhileStmt(..) => self.visit_stmt(s2),
-                else => {}
+                s2 @ StmtType::BlockStmt(..) => self.visit_stmt(s2)?,
+                s2 @ StmtType::IfStmt(..) => self.visit_stmt(s2)?,
+                s2 @ StmtType::WhileStmt(..) => self.visit_stmt(s2)?,
+                _ => {}
             }
         }
         Ok(())
@@ -48,7 +48,7 @@ impl StmtVisitor<Stmt> for VarCheck {
     fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         Ok(stmt)
     }
-    fn expr(&mut self, expr: &Stmt) -> Result<Stmt, Error> {
+    fn expr(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         Ok(stmt)
     }
     // go through
