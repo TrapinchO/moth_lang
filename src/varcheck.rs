@@ -8,7 +8,7 @@ use std::collections::HashMap;
 pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut ls = vec![];
     for s in stmt {
-        ls.push(VarCheck().visit_stmt(s)?)
+        ls.push(VarCheck{}.visit_stmt(s)?)
     }
     Ok(ls)
 }
@@ -17,12 +17,12 @@ pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
 struct VarCheck;
 
 impl VarCheck {
-    fn check_block(block: Vec<Stmt>) -> Result<(), Error> {
+    fn check_block(&mut self, block: Vec<Stmt>) -> Result<(), Error> {
         let mut vars = HashMap::new();
         for s in block {
             match &s.val {
-                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name) }, _) => vars.insert(name),
-                StmtType::AssignStmt(Token { val: TokenType::Identifier(name) }, _) => {
+                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name) }, ..) => vars.insert(name),
+                StmtType::AssignStmt(Token { val: TokenType::Identifier(name) }, ..) => {
                     if !vars.contains_key(name) {
                         return Err(Error {
                             msg: "Unknown variable".to_string(),
