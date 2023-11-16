@@ -1,9 +1,11 @@
 use std::collections::HashMap;
 
-use crate::error::Error;
-use crate::exprstmt::*;
-use crate::token::*;
-use crate::visitor::{ExprVisitor, StmtVisitor};
+use crate::{
+    error::Error,
+    exprstmt::*,
+    token::*,
+    visitor::{ExprVisitor, StmtVisitor},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Associativity {
@@ -43,13 +45,10 @@ impl Reassociate {
         // not a binary operation, no need to reassociate it
         let ExprType::BinaryOperation(left2, op2, right2) = &right.val else {
             return Ok(Expr {
-                val: ExprType::BinaryOperation(
-                    left.clone().into(),
-                    op1.clone(),
-                    right.clone().into()),
+                val: ExprType::BinaryOperation(left.clone().into(), op1.clone(), right.clone().into()),
                 start: left.start,
                 end: right.end,
-            })
+            });
         };
 
         let TokenType::Symbol(op1_sym) = &op1.val else {
@@ -79,10 +78,7 @@ impl Reassociate {
             }
 
             std::cmp::Ordering::Less => Ok(Expr {
-                val: ExprType::BinaryOperation(
-                    left.clone().into(),
-                    op1.clone(),
-                    right.clone().into()),
+                val: ExprType::BinaryOperation(left.clone().into(), op1.clone(), right.clone().into()),
                 start: left.start,
                 end: right.end,
             }),
@@ -97,11 +93,7 @@ impl Reassociate {
                     })
                 }
                 (Associativity::Right, Associativity::Right) => Ok(Expr {
-                    val: ExprType::BinaryOperation(
-                        left.clone().into(),
-                        op1.clone(),
-                        right.clone().into(),
-                    ),
+                    val: ExprType::BinaryOperation(left.clone().into(), op1.clone(), right.clone().into()),
                     start: left.start,
                     end: right.end,
                 }),
@@ -110,7 +102,7 @@ impl Reassociate {
                         "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
                         op1.val, prec1.assoc, op2.val, prec2.assoc, prec1.prec
                     ),
-                    lines: vec![(op1.start, op1.end), (op2.start, op2.end)]
+                    lines: vec![(op1.start, op1.end), (op2.start, op2.end)],
                 }),
             },
         }
@@ -118,7 +110,9 @@ impl Reassociate {
 }
 impl StmtVisitor<Stmt> for Reassociate {
     fn expr(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::ExprStmt(expr) = &stmt.val else { unreachable!() };
+        let StmtType::ExprStmt(expr) = &stmt.val else {
+            unreachable!()
+        };
         Ok(Stmt {
             val: StmtType::ExprStmt(self.visit_expr(expr)?),
             start: expr.start,
@@ -126,7 +120,9 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::VarDeclStmt(ident, expr) = &stmt.val else { unreachable!() };
+        let StmtType::VarDeclStmt(ident, expr) = &stmt.val else {
+            unreachable!()
+        };
         Ok(Stmt {
             val: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(expr)?),
             start: stmt.start,
@@ -134,7 +130,9 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::AssignStmt(ident, expr) = &stmt.val else { unreachable!() };
+        let StmtType::AssignStmt(ident, expr) = &stmt.val else {
+            unreachable!()
+        };
         Ok(Stmt {
             val: StmtType::AssignStmt(ident.clone(), self.visit_expr(expr)?),
             start: stmt.start,
@@ -143,7 +141,9 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
 
     fn block(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
+        let StmtType::BlockStmt(block) = &stmt.val else {
+            unreachable!()
+        };
         let mut block2: Vec<Stmt> = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -156,7 +156,9 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
 
     fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::IfStmt(blocks) = &stmt.val else { unreachable!() };
+        let StmtType::IfStmt(blocks) = &stmt.val else {
+            unreachable!()
+        };
         let mut blocks_result: Vec<(Expr, Block)> = vec![];
         for (cond, stmts) in blocks {
             let mut block: Block = vec![];
@@ -173,7 +175,9 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
+        let StmtType::WhileStmt(cond, block) = &stmt.val else {
+            unreachable!()
+        };
         let cond = self.visit_expr(cond)?;
         let mut block2: Block = vec![];
         for s in block {
@@ -186,7 +190,9 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn print(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::PrintStmt(expr) = &stmt.val else { unreachable!() };
+        let StmtType::PrintStmt(expr) = &stmt.val else {
+            unreachable!()
+        };
         Ok(Stmt {
             val: StmtType::PrintStmt(self.visit_expr(expr)?),
             start: stmt.start,
@@ -211,14 +217,18 @@ impl ExprVisitor<Expr> for Reassociate {
         Ok(expr.clone())
     }
     fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::Parens(expr2) = &expr.val else { unreachable!() };
+        let ExprType::Parens(expr2) = &expr.val else {
+            unreachable!()
+        };
         Ok(Expr {
             val: ExprType::Parens(self.visit_expr(expr2)?.into()),
             ..*expr
         })
     }
     fn unary(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::UnaryOperation(op, expr2) = &expr.val else { unreachable!() };
+        let ExprType::UnaryOperation(op, expr2) = &expr.val else {
+            unreachable!()
+        };
         let expr2 = self.visit_expr(expr2)?;
         Ok(Expr {
             start: op.start,
@@ -227,7 +237,9 @@ impl ExprVisitor<Expr> for Reassociate {
         })
     }
     fn binary(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::BinaryOperation(left, op, right) = &expr.val else { unreachable!() };
+        let ExprType::BinaryOperation(left, op, right) = &expr.val else {
+            unreachable!()
+        };
         self.reassoc(left, op, right)
     }
 }

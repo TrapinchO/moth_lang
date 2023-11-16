@@ -3,97 +3,61 @@ use moth_lang::exprstmt::*;
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
         ExprType::BinaryOperation(
-            Expr {
-                val: $left.into(),
-                start: 0,
-                end: 0,
-            }.into(),
+            Expr { val: $left.into(), start: 0, end: 0 }.into(),
             Token {
                 val: TokenType::Symbol($op.to_string()),
                 start: 0,
                 end: 0,
             },
-            Expr {
-                val: $right.into(),
-                start: 0,
-                end: 0,
-            }.into(),
+            Expr { val: $right.into(), start: 0, end: 0 }.into(),
         )
     };
 }
 
 macro_rules! unop {
     ($op:tt, $expr:expr) => {
-            ExprType::UnaryOperation(
+        ExprType::UnaryOperation(
             Token {
                 val: TokenType::Symbol($op.to_string()),
                 start: 0,
                 end: 0,
             },
-            Expr {
-                val: $expr.into(),
-                start: 0,
-                end: 0,
-            }.into()
+            Expr { val: $expr.into(), start: 0, end: 0 }.into(),
         )
     };
 }
 
 macro_rules! parenop {
     ($e:expr) => {
-        ExprType::Parens(
-            Expr {
-                val: $e.into(),
-                start: 0,
-                end: 0,
-            }.into()
-        )
+        ExprType::Parens(Expr { val: $e.into(), start: 0, end: 0 }.into())
     };
 }
 
 macro_rules! expr {
     ($e:expr) => {
-        Expr {
-            val: $e,
-            start: 0,
-            end: 0,
-        }
+        Expr { val: $e, start: 0, end: 0 }
     };
 }
 
 macro_rules! stmt {
     ($e:expr) => {
-        Stmt {
-            val: $e,
-            start: 0,
-            end: 0,
-        }
+        Stmt { val: $e, start: 0, end: 0 }
     };
 }
 
 fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
     match (&left.val, &right.val) {
-        (StmtType::ExprStmt(expr1), StmtType::ExprStmt(expr2)) => {
-            compare_elements_expr(&expr1, &expr2)
-        },
-        (StmtType::VarDeclStmt(ident1, expr1), StmtType::VarDeclStmt(ident2, expr2)) => {
-            ident1 == ident2 && compare_elements_expr(expr1, expr2)
-        },
-        (StmtType::AssignStmt(ident1, expr1), StmtType::AssignStmt(ident2, expr2)) => {
-            ident1 == ident2 && compare_elements_expr(expr1, expr2)
-        }
-        (s1, s2) => s1 == s2
+        (StmtType::ExprStmt(expr1), StmtType::ExprStmt(expr2)) => compare_elements_expr(&expr1, &expr2),
+        (StmtType::VarDeclStmt(ident1, expr1), StmtType::VarDeclStmt(ident2, expr2)) => ident1 == ident2 && compare_elements_expr(expr1, expr2),
+        (StmtType::AssignStmt(ident1, expr1), StmtType::AssignStmt(ident2, expr2)) => ident1 == ident2 && compare_elements_expr(expr1, expr2),
+        (s1, s2) => s1 == s2,
     }
 }
 
 fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
     match (&left.val, &right.val) {
-        (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => {
-            compare_elements_expr(&l1, &l2) && o1.val == o2.val && compare_elements_expr(&r1, &r2)
-        }
-        (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => {
-            o1.val == o2.val && compare_elements_expr(&e1, &e2)
-        }
+        (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => compare_elements_expr(&l1, &l2) && o1.val == o2.val && compare_elements_expr(&r1, &r2),
+        (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => o1.val == o2.val && compare_elements_expr(&e1, &e2),
         (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements_expr(&e1, &e2),
         (e1, e2) => e1 == e2,
     }
@@ -102,11 +66,11 @@ fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
 #[cfg(test)]
 mod tests {
     use moth_lang::error::Error;
-    use moth_lang::lexer::lex;
-    use moth_lang::token::{Token, TokenType};
-    use moth_lang::parser::parse;
     use moth_lang::exprstmt::*;
+    use moth_lang::lexer::lex;
+    use moth_lang::parser::parse;
     use moth_lang::reassoc;
+    use moth_lang::token::{Token, TokenType};
     use moth_lang::value::BUILTINS;
     use moth_lang::varcheck;
 
@@ -127,20 +91,29 @@ mod tests {
     #[test]
     fn parse_empty() {
         assert_eq!(
-            parse(vec![Token { start: 0, end: 0, val: TokenType::Eof }]),
+            parse(vec![Token {
+                start: 0,
+                end: 0,
+                val: TokenType::Eof
+            }]),
             Ok(vec![])
         );
-        assert_eq!(
-            parse(vec![]),
-            Ok(vec![])
-        );
+        assert_eq!(parse(vec![]), Ok(vec![]));
     }
 
     #[test]
     fn parse_int() {
         assert_eq!(
             parse(lex("1;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Int(1), start: 0, end: 0 }), start: 0, end: 0 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::Int(1),
+                    start: 0,
+                    end: 0
+                }),
+                start: 0,
+                end: 0
+            }]
         );
     }
 
@@ -148,7 +121,15 @@ mod tests {
     fn parse_float() {
         assert_eq!(
             parse(lex("1.1;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Float(1.1), start: 0, end: 2 }), start: 0, end: 2 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::Float(1.1),
+                    start: 0,
+                    end: 2
+                }),
+                start: 0,
+                end: 2
+            }]
         );
     }
 
@@ -156,7 +137,15 @@ mod tests {
     fn parse_string() {
         assert_eq!(
             parse(lex("\"test\";").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::String("test".to_string()), start: 0, end: 5 }), start: 0, end: 5 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::String("test".to_string()),
+                    start: 0,
+                    end: 5
+                }),
+                start: 0,
+                end: 5
+            }]
         );
     }
 
@@ -164,7 +153,15 @@ mod tests {
     fn parse_bool() {
         assert_eq!(
             parse(lex("true;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Bool(true), start: 0, end: 3 }), start: 0, end: 3 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::Bool(true),
+                    start: 0,
+                    end: 3
+                }),
+                start: 0,
+                end: 3
+            }]
         );
     }
 
@@ -172,7 +169,15 @@ mod tests {
     fn parse_identifier() {
         assert_eq!(
             parse(lex("test;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Identifier("test".to_string()), start: 0, end: 3 }), start: 0, end: 3 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::Identifier("test".to_string()),
+                    start: 0,
+                    end: 3
+                }),
+                start: 0,
+                end: 3
+            }]
         );
     }
 
@@ -180,9 +185,22 @@ mod tests {
     fn parse_parens() {
         assert_eq!(
             parse(lex("(1);").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::Parens(
-                            Expr { val: ExprType::Int(1), start: 1, end: 1 }.into()
-                            ), start: 0, end: 2 }), start: 0, end: 2 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::Parens(
+                        Expr {
+                            val: ExprType::Int(1),
+                            start: 1,
+                            end: 1
+                        }
+                        .into()
+                    ),
+                    start: 0,
+                    end: 2
+                }),
+                start: 0,
+                end: 2
+            }]
         );
     }
 
@@ -190,7 +208,10 @@ mod tests {
     fn parse_parens_unclosed() {
         assert_eq!(
             parse(lex("(1").unwrap()),
-            Err(Error { msg: "Expected closing parenthesis".to_string(), lines: vec![(2, 2)] })
+            Err(Error {
+                msg: "Expected closing parenthesis".to_string(),
+                lines: vec![(2, 2)]
+            })
         );
     }
 
@@ -198,10 +219,27 @@ mod tests {
     fn parse_unary() {
         assert_eq!(
             parse(lex("-1;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::UnaryOperation(
-                    Token { val: TokenType::Symbol("-".to_string()), start: 0, end: 0 },
-                    Expr { val: ExprType::Int(1), start: 1, end: 1 }.into()
-                ), start: 0, end: 1 }), start: 0, end: 1 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::UnaryOperation(
+                        Token {
+                            val: TokenType::Symbol("-".to_string()),
+                            start: 0,
+                            end: 0
+                        },
+                        Expr {
+                            val: ExprType::Int(1),
+                            start: 1,
+                            end: 1
+                        }
+                        .into()
+                    ),
+                    start: 0,
+                    end: 1
+                }),
+                start: 0,
+                end: 1
+            }]
         );
     }
 
@@ -209,12 +247,39 @@ mod tests {
     fn parse_unary_nested() {
         assert_eq!(
             parse(lex("- -1;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt(Expr { val: ExprType::UnaryOperation(
-                Token { val: TokenType::Symbol("-".to_string()), start: 0, end: 0 },
-                Expr { val: ExprType::UnaryOperation(
-                    Token { val: TokenType::Symbol("-".to_string()), start: 2, end: 2 },
-                    Expr { val: ExprType::Int(1), start: 3, end: 3 }.into()), start: 2, end: 3 }.into()
-            ), start: 0, end: 3 }), start: 0, end: 3 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::UnaryOperation(
+                        Token {
+                            val: TokenType::Symbol("-".to_string()),
+                            start: 0,
+                            end: 0
+                        },
+                        Expr {
+                            val: ExprType::UnaryOperation(
+                                Token {
+                                    val: TokenType::Symbol("-".to_string()),
+                                    start: 2,
+                                    end: 2
+                                },
+                                Expr {
+                                    val: ExprType::Int(1),
+                                    start: 3,
+                                    end: 3
+                                }
+                                .into()
+                            ),
+                            start: 2,
+                            end: 3
+                        }
+                        .into()
+                    ),
+                    start: 0,
+                    end: 3
+                }),
+                start: 0,
+                end: 3
+            }]
         );
     }
 
@@ -222,13 +287,33 @@ mod tests {
     fn parse_binary() {
         assert_eq!(
             parse(lex("1 + 1;").unwrap()).unwrap(),
-            vec![Stmt { val: StmtType::ExprStmt( Expr {
-                val: ExprType::BinaryOperation(
-                    Expr { val: ExprType::Int(1), start: 0, end: 0 }.into(),
-                    Token { val: TokenType::Symbol("+".to_string()), start: 2, end: 2 },
-                    Expr { val: ExprType::Int(1), start: 4, end: 4 }.into()),
-                start: 0, end: 4
-            }), start: 0, end: 4 }]
+            vec![Stmt {
+                val: StmtType::ExprStmt(Expr {
+                    val: ExprType::BinaryOperation(
+                        Expr {
+                            val: ExprType::Int(1),
+                            start: 0,
+                            end: 0
+                        }
+                        .into(),
+                        Token {
+                            val: TokenType::Symbol("+".to_string()),
+                            start: 2,
+                            end: 2
+                        },
+                        Expr {
+                            val: ExprType::Int(1),
+                            start: 4,
+                            end: 4
+                        }
+                        .into()
+                    ),
+                    start: 0,
+                    end: 4
+                }),
+                start: 0,
+                end: 4
+            }]
         )
     }
 
@@ -242,15 +327,6 @@ mod tests {
         assert_eq!(err, op);
     }
 
-
-
-
-
-
-
-
-
-
     #[test]
     fn parse_binary2() {
         let ops = [
@@ -258,16 +334,12 @@ mod tests {
             ("1 + 1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
             ("1-1", binop!(ExprType::Int(1), "-", ExprType::Int(1))),
             ("1**1", binop!(ExprType::Int(1), "**", ExprType::Int(1))),
-
-                ("1+1+1", binop!(ExprType::Int(1), "+", binop!(ExprType::Int(1), "+", ExprType::Int(1)))),
-            ];
-            for (s, op) in ops {
-                assert!(compare_elements(
-                    &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                    &stmt!(StmtType::ExprStmt(expr!(op)))
-                ));
-            }
+            ("1+1+1", binop!(ExprType::Int(1), "+", binop!(ExprType::Int(1), "+", ExprType::Int(1)))),
+        ];
+        for (s, op) in ops {
+            assert!(compare_elements(&parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0], &stmt!(StmtType::ExprStmt(expr!(op)))));
         }
+    }
 
     #[test]
     fn parse_unary2() {
@@ -277,29 +349,20 @@ mod tests {
             ("*-+1", unop!("*-+", ExprType::Int(1))),
         ];
         for (s, op) in ops {
-            assert!(compare_elements(
-                &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()[0],
-                &stmt!(StmtType::ExprStmt(expr!(op)))
-            ));
+            assert!(compare_elements(&parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0], &stmt!(StmtType::ExprStmt(expr!(op)))));
         }
     }
 
     #[test]
     fn test_reassoc() {
         let ops = [
-            ("1 - 1 - 1", binop!(
-                    binop!(ExprType::Int(1), "-", ExprType::Int(1)),
-                    "-",
-                    ExprType::Int(1))),
-            ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(
-                    binop!(ExprType::Int(1), "-", ExprType::Int(1)),
-                "-",
-                ExprType::Int(1))))),
+            ("1 - 1 - 1", binop!(binop!(ExprType::Int(1), "-", ExprType::Int(1)), "-", ExprType::Int(1))),
+            ("+(1 - 1 - 1)", unop!("+", parenop!(binop!(binop!(ExprType::Int(1), "-", ExprType::Int(1)), "-", ExprType::Int(1))))),
         ];
         let symbols: std::collections::HashMap<String, reassoc::Precedence> = BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into();
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc::reassociate(symbols.clone(), &parse(lex(&(s.to_owned()+";")).unwrap()).unwrap()).unwrap()[0],
+                &reassoc::reassociate(symbols.clone(), &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()[0],
                 &stmt!(StmtType::ExprStmt(expr!(op)))
             ));
         }

@@ -1,6 +1,4 @@
-use crate::error::Error;
-use crate::exprstmt::*;
-use crate::token::*;
+use crate::{error::Error, exprstmt::*, token::*};
 
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
     if tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof {
@@ -64,7 +62,8 @@ impl Parser {
         let mut ls = vec![];
         while !self.is_at_end()
             && !self.is_typ(&TokenType::Eof)  // apparently needed
-            && !self.is_typ(&TokenType::RBrace) {
+            && !self.is_typ(&TokenType::RBrace)
+        {
             ls.push(self.parse_statement()?);
         }
 
@@ -112,26 +111,28 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<Stmt, Error> {
         let mut ls = vec![];
-        let start = self.expect(&TokenType::LBrace, "Expected { at the beginning of the block")?.start;
+        let start = self
+            .expect(&TokenType::LBrace, "Expected { at the beginning of the block")?
+            .start;
         while !self.is_at_end()
             && !self.is_typ(&TokenType::Eof)  // apparently needed
-            && !self.is_typ(&TokenType::RBrace) {
+            && !self.is_typ(&TokenType::RBrace)
+        {
             ls.push(self.parse_statement()?);
         }
-        let end = self.expect(&TokenType::RBrace, "Expected } at the end of the block")?.start;
+        let end = self
+            .expect(&TokenType::RBrace, "Expected } at the end of the block")?
+            .start;
 
         Ok(Stmt {
             val: StmtType::BlockStmt(ls),
             start,
-            end
+            end,
         })
     }
 
     fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
-        let ident = self.expect(
-            &TokenType::Identifier("".to_string()),
-            "Expected an identifier",
-        )?;
+        let ident = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
         self.expect(&TokenType::Equals, "Expected an equals symbol")?;
         let expr = self.parse_expression()?;
         Ok(Stmt {
@@ -151,7 +152,7 @@ impl Parser {
             Stmt {
                 start: ident.start,
                 end: expr.end,
-                val: StmtType::AssignStmt(ident, expr)
+                val: StmtType::AssignStmt(ident, expr),
             }
         } else {
             // since the identifier can be a part of an expression, it has to backtrack a little
@@ -161,7 +162,7 @@ impl Parser {
             Stmt {
                 start: expr.start,
                 end: expr.end,
-                val: StmtType::ExprStmt(expr)
+                val: StmtType::ExprStmt(expr),
             }
         })
     }
@@ -170,11 +171,13 @@ impl Parser {
         let mut blocks: Vec<(Expr, Block)> = vec![];
 
         let start = self.get_current().start;
-        self.advance();  // move past if
+        self.advance(); // move past if
 
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
-        let StmtType::BlockStmt(bl) = if_block.val else { unreachable!(); };
+        let StmtType::BlockStmt(bl) = if_block.val else {
+            unreachable!();
+        };
         blocks.push((cond, bl));
         let mut end = if_block.end;
 
@@ -185,13 +188,24 @@ impl Parser {
                 self.advance();
                 let cond = self.parse_expression()?;
                 let if_block = self.parse_block()?;
-                let StmtType::BlockStmt(bl) = if_block.val else { unreachable!(); };
+                let StmtType::BlockStmt(bl) = if_block.val else {
+                    unreachable!();
+                };
                 blocks.push((cond, bl));
                 end = if_block.end;
             } else {
                 let else_block = self.parse_block()?;
-                let StmtType::BlockStmt(bl) = else_block.val else { unreachable!(); };
-                blocks.push((Expr { val: ExprType::Bool(true), start: else_kw.start, end: else_kw.end }, bl));
+                let StmtType::BlockStmt(bl) = else_block.val else {
+                    unreachable!();
+                };
+                blocks.push((
+                    Expr {
+                        val: ExprType::Bool(true),
+                        start: else_kw.start,
+                        end: else_kw.end,
+                    },
+                    bl,
+                ));
                 end = else_block.end;
                 break;
             }
@@ -206,16 +220,17 @@ impl Parser {
 
     fn parse_while(&mut self) -> Result<Stmt, Error> {
         let start = self.get_current().start;
-        self.advance();  // move past while
+        self.advance(); // move past while
         let cond = self.parse_expression()?;
         let block = self.parse_block()?;
-        let StmtType::BlockStmt(bl) = block.val else { unreachable!(); };
+        let StmtType::BlockStmt(bl) = block.val else {
+            unreachable!();
+        };
         Ok(Stmt {
             start,
             end: block.end,
             val: StmtType::WhileStmt(cond, bl),
         })
-
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {
@@ -225,7 +240,11 @@ impl Parser {
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_unary()?;
         // if it is a symbol, look for nested binary operator
-        if let tok @ Token {val: TokenType::Symbol(_), .. } = self.get_current().clone() {
+        if let tok @ Token {
+            val: TokenType::Symbol(_),
+            ..
+        } = self.get_current().clone()
+        {
             self.advance();
 
             let right = self.parse_binary()?;
@@ -241,7 +260,11 @@ impl Parser {
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
         // if it is a symbol, look for nested unary operator
-        if let tok @ Token {val: TokenType::Symbol(_), .. } = self.get_current().clone() {
+        if let tok @ Token {
+            val: TokenType::Symbol(_),
+            ..
+        } = self.get_current().clone()
+        {
             self.advance();
 
             let expr = self.parse_unary()?;

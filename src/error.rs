@@ -32,51 +32,41 @@ impl Error {
         let lines = self
             .lines
             .iter()
-            .map(|(start_idx, end_idx)| {
-                (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx))
-            })
+            .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
             .collect::<Vec<_>>();
-        let last_line = lines
-            .iter()
-            .map(|x| x.0.line)
-            .max()
-            .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
+        let last_line = lines.iter().map(|x| x.0.line).max().unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
         let width = last_line.to_string().len();
 
-        assert!(
-            last_line < code_lines.len(),
-            "Error's line ({}) is greater than that of the code ({})",
-            last_line,
-            code_lines.len()
-        );
+        assert!(last_line < code_lines.len(), "Error's line ({}) is greater than that of the code ({})", last_line, code_lines.len());
 
         let lines = lines
             .iter()
             .map(|(start, end)| {
                 if start.line == end.line {
-                format!(
-                    "{:width$} | {}\n   {}{}",
-                    start.line + 1,
-                    code_lines[start.line],        // line of the code; doesnt work with tabs
-                    " ".repeat(width + start.col), // align it properly
-                    "^".repeat(end.col - start.col + 1),
-                    width = width
-                )} else {
+                    format!(
+                        "{:width$} | {}\n   {}{}",
+                        start.line + 1,
+                        code_lines[start.line],        // line of the code; doesnt work with tabs
+                        " ".repeat(width + start.col), // align it properly
+                        "^".repeat(end.col - start.col + 1),
+                        width = width
+                    )
+                } else {
                     let mut s: Vec<String> = vec![];
                     let line = code_lines[start.line];
                     s.push(format!(
                         "{:width$} | {}\n   {}{}",
                         start.line + 1,
-                        line,        // line of the code
+                        line, // line of the code
                         " ".repeat(width + start.col),
                         "^".repeat(line.len() - start.col),
                         width = width
                     ));
-                    for (i, line) in code_lines[start.line+1..end.line].iter().enumerate() {
+                    for (i, line) in code_lines[start.line + 1..end.line].iter().enumerate() {
                         s.push(format!(
                             "{:width$} | {}\n   {}{}",
                             i + 1,
-                            line,        // line of the code
+                            line, // line of the code
                             " ".repeat(width),
                             "^".repeat(line.len()),
                             width = width
@@ -86,7 +76,7 @@ impl Error {
                     s.push(format!(
                         "{:width$} | {}\n   {}{}",
                         end.line + 1,
-                        line,        // line of the code
+                        line, // line of the code
                         " ".repeat(width),
                         "^".repeat(end.col + 1),
                         width = width
@@ -102,12 +92,7 @@ impl Error {
 
 fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let code = code.chars().collect::<Vec<_>>();
-    assert!(
-        idx <= code.len(),
-        "Index {} is higher than code length {}",
-        idx,
-        code.len()
-    );
+    assert!(idx <= code.len(), "Index {} is higher than code length {}", idx, code.len());
 
     let mut line = 0;
     let mut col = 0;

@@ -1,5 +1,4 @@
-use crate::error::Error;
-use crate::exprstmt::*;
+use crate::{error::Error, exprstmt::*};
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {

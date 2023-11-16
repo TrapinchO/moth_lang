@@ -1,15 +1,11 @@
-use crate::error::Error;
-use crate::exprstmt::*;
-use crate::token::*;
-use crate::visitor::*;
+use crate::{error::Error, exprstmt::*, token::*, visitor::*};
 
 use std::collections::HashSet;
 
 pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
-    VarCheck{}.check_block(&stmt)?;
+    VarCheck {}.check_block(&stmt)?;
     Ok(stmt.clone())
 }
-
 
 struct VarCheck;
 
@@ -18,20 +14,38 @@ impl VarCheck {
         let mut vars: HashSet<&String> = HashSet::new();
         for s in block {
             match &s.val {
-                StmtType::VarDeclStmt(Token { val: TokenType::Identifier(name), .. }, ..) => {
+                StmtType::VarDeclStmt(
+                    Token {
+                        val: TokenType::Identifier(name),
+                        ..
+                    },
+                    ..,
+                ) => {
                     vars.insert(name);
-                },
-                StmtType::AssignStmt(Token { val: TokenType::Identifier(name), .. }, ..) => {
+                }
+                StmtType::AssignStmt(
+                    Token {
+                        val: TokenType::Identifier(name),
+                        ..
+                    },
+                    ..,
+                ) => {
                     if !vars.contains(name) {
                         return Err(Error {
                             msg: "Undeclared variable".to_string(),
                             lines: vec![(s.start, s.end)],
                         });
                     }
-                },
-                StmtType::BlockStmt(..) => { self.visit_stmt(s)?; },
-                StmtType::IfStmt(..) => { self.visit_stmt(s)?; },
-                StmtType::WhileStmt(..) => { self.visit_stmt(s)?; },
+                }
+                StmtType::BlockStmt(..) => {
+                    self.visit_stmt(s)?;
+                }
+                StmtType::IfStmt(..) => {
+                    self.visit_stmt(s)?;
+                }
+                StmtType::WhileStmt(..) => {
+                    self.visit_stmt(s)?;
+                }
                 _ => {}
             }
         }
@@ -52,19 +66,25 @@ impl StmtVisitor<Stmt> for VarCheck {
     }
     // go through
     fn block(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::BlockStmt(block) = &stmt.val else { unreachable!() };
+        let StmtType::BlockStmt(block) = &stmt.val else {
+            unreachable!()
+        };
         self.check_block(block)?;
         Ok(stmt.clone())
     }
     fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::IfStmt(blocks) = &stmt.val else { unreachable!() };
+        let StmtType::IfStmt(blocks) = &stmt.val else {
+            unreachable!()
+        };
         for block in blocks {
             self.check_block(&block.1)?;
         }
         Ok(stmt.clone())
     }
     fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::WhileStmt(cond, block) = &stmt.val else { unreachable!() };
+        let StmtType::WhileStmt(cond, block) = &stmt.val else {
+            unreachable!()
+        };
         self.check_block(block)?;
         Ok(stmt.clone())
     }

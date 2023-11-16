@@ -1,15 +1,16 @@
-use moth_lang::error::Error;
-use moth_lang::interpreter::Interpreter;
-use moth_lang::lexer;
-use moth_lang::parser;
-use moth_lang::reassoc;
-use moth_lang::value::{ValueType, BUILTINS};
-use moth_lang::varcheck;
-use std::collections::HashMap;
-use std::env;
-use std::fs;
-use std::io;
-use std::io::Write;
+use moth_lang::{
+    error::Error,
+    interpreter::Interpreter,
+    lexer, parser, reassoc,
+    value::{ValueType, BUILTINS},
+    varcheck,
+};
+
+use std::{
+    collections::HashMap,
+    env, fs,
+    io::{self, Write},
+};
 
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
@@ -81,12 +82,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let resassoc = reassoc::reassociate(
-        BUILTINS
-            .map(|(name, assoc, _)| (name.to_string(), assoc))
-            .into(),
-        &ast,
-    )?;
+    let resassoc = reassoc::reassociate(BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(), &ast)?;
     /*
     println!("===== reassociating =====");
     for s in &resassoc {

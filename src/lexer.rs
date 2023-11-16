@@ -1,6 +1,5 @@
-use crate::error::Error;
-use crate::located::Located;
-use crate::token::*;
+use crate::{error::Error, located::Located, token::*};
+
 use std::collections::HashMap;
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
@@ -13,7 +12,7 @@ const KEYWORDS: [(&str, TokenType); 8] = [
     ("if", TokenType::If),
     ("else", TokenType::Else),
     ("while", TokenType::While),
-    ("print", TokenType::Print)
+    ("print", TokenType::Print),
 ];
 
 const SPECIAL_SYMBOLS: [(char, TokenType); 7] = [
@@ -151,9 +150,7 @@ impl Lexer {
                 if self.idx < self.code.len() - 1 && self.code[self.idx + 1].is_ascii_digit() {
                     if is_float {
                         self.advance(); // for prettier error message
-                        return Err(
-                            self.error("Found two floating point number delimiters".to_string())
-                        );
+                        return Err(self.error("Found two floating point number delimiters".to_string()));
                     }
                     is_float = true;
                     num.push('.');
