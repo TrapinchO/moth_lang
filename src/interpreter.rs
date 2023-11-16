@@ -85,15 +85,15 @@ impl Interpreter {
         self.environment.last().unwrap().get(ident, pos)
     }
     fn update_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        for env in self.environment.iter().rev() {
-            if env.env.contains_key(ident) {
-                env.update(val, val).unwrap();
-                return Ok(())
-            }
-        }
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
+        for env in self.environment.iter().rev() {
+            if env.env.contains_key(&name.to_string()) {
+                env.update(ident, val).unwrap();
+                return Ok(())
+            }
+        }
         Err(Error {
             msg: format!("Name \"{}\" does not exists", name),
             lines: vec![(ident.start, ident.end)],
