@@ -34,10 +34,19 @@ impl Error {
             .iter()
             .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
             .collect::<Vec<_>>();
-        let last_line = lines.iter().map(|x| x.0.line).max().unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
+        let last_line = lines
+            .iter()
+            .map(|x| x.0.line)
+            .max()
+            .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
         let width = last_line.to_string().len();
 
-        assert!(last_line < code_lines.len(), "Error's line ({}) is greater than that of the code ({})", last_line, code_lines.len());
+        assert!(
+            last_line < code_lines.len(),
+            "Error's line ({}) is greater than that of the code ({})",
+            last_line,
+            code_lines.len()
+        );
 
         let lines = lines
             .iter()
@@ -92,7 +101,12 @@ impl Error {
 
 fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let code = code.chars().collect::<Vec<_>>();
-    assert!(idx <= code.len(), "Index {} is higher than code length {}", idx, code.len());
+    assert!(
+        idx <= code.len(),
+        "Index {} is higher than code length {}",
+        idx,
+        code.len()
+    );
 
     let mut line = 0;
     let mut col = 0;

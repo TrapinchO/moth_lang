@@ -59,11 +59,26 @@ impl StmtType {
                 let first = blocks.first().unwrap(); // always present
                 let rest = &blocks[1..]
                     .iter()
-                    .map(|(cond, stmts)| format!("else if {} {{\n{}\n}}", cond.val, stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")))
+                    .map(|(cond, stmts)| {
+                        format!(
+                            "else if {} {{\n{}\n}}",
+                            cond.val,
+                            stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+                        )
+                    })
                     .collect::<Vec<_>>();
-                format!("if {} {{\n{}\n}} {}", first.0, first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"), rest.join(""))
+                format!(
+                    "if {} {{\n{}\n}} {}",
+                    first.0,
+                    first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
+                    rest.join("")
+                )
             }
-            Self::WhileStmt(cond, block) => format!("while {} {{{}}}", cond, block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")),
+            Self::WhileStmt(cond, block) => format!(
+                "while {} {{{}}}",
+                cond,
+                block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+            ),
             Self::PrintStmt(expr) => format!("print {}", expr),
         }
     }

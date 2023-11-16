@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use moth_lang::error::*;
-    use moth_lang::lexer::lex;
-    use moth_lang::token::*;
+    use moth_lang::{error::*, lexer::lex, token::*};
 
     #[test]
     fn lex_empty() {
@@ -75,7 +73,12 @@ mod tests {
 
     #[test]
     fn lex_keyword() {
-        let kw = [("let", TokenType::Let), ("fun", TokenType::Fun), ("true", TokenType::True), ("false", TokenType::False)];
+        let kw = [
+            ("let", TokenType::Let),
+            ("fun", TokenType::Fun),
+            ("true", TokenType::True),
+            ("false", TokenType::False),
+        ];
         for (k, r) in kw {
             let tok = lex(k).unwrap();
             assert_eq!(tok[0].val, r);
@@ -84,7 +87,12 @@ mod tests {
 
     #[test]
     fn lex_string() {
-        let strings = [("\"\"", ""), ("\"test\"", "test"), ("\"hello world\"", "hello world"), ("\"test\" test", "test")];
+        let strings = [
+            ("\"\"", ""),
+            ("\"test\"", "test"),
+            ("\"hello world\"", "hello world"),
+            ("\"test\" test", "test"),
+        ];
 
         for (s, r) in strings {
             let tok = lex(s).unwrap();
@@ -121,7 +129,9 @@ mod tests {
 
     #[test]
     fn lex_symbols() {
-        let symbols = ["+", "-", "*", "/", "==", "<", ">", "!", "|", "..", "$", "&", "@", "#", "??", "~", "^", ":", "%"];
+        let symbols = [
+            "+", "-", "*", "/", "==", "<", ">", "!", "|", "..", "$", "&", "@", "#", "??", "~", "^", ":", "%",
+        ];
 
         for s in symbols {
             let lexed = lex(s).unwrap();
@@ -185,12 +195,25 @@ mod tests {
             ("//", vec![TokenType::Eof]),
             ("//test", vec![TokenType::Eof]),
             ("///test", vec![TokenType::Eof]),
-            ("//-test", vec![TokenType::Symbol("//-".to_string()), TokenType::Identifier("test".to_string()), TokenType::Eof]),
+            (
+                "//-test",
+                vec![
+                    TokenType::Symbol("//-".to_string()),
+                    TokenType::Identifier("test".to_string()),
+                    TokenType::Eof,
+                ],
+            ),
             ("// test", vec![TokenType::Eof]),
             ("/// test", vec![TokenType::Eof]),
             ("// -test", vec![TokenType::Eof]),
-            ("// test \ntest", vec![TokenType::Identifier("test".to_string()), TokenType::Eof]),
-            ("/// test\ntest", vec![TokenType::Identifier("test".to_string()), TokenType::Eof]),
+            (
+                "// test \ntest",
+                vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+            ),
+            (
+                "/// test\ntest",
+                vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+            ),
         ];
 
         for (c, r) in coms {
@@ -206,11 +229,21 @@ mod tests {
             ("/* */", vec![TokenType::Eof]),
             ("/* \n */", vec![TokenType::Eof]),
             ("/* test */", vec![TokenType::Eof]),
-            ("test /* test */", vec![TokenType::Identifier("test".to_string()), TokenType::Eof]),
-            ("/* test */ test", vec![TokenType::Identifier("test".to_string()), TokenType::Eof]),
+            (
+                "test /* test */",
+                vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+            ),
+            (
+                "/* test */ test",
+                vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+            ),
             (
                 "test /* test */ test",
-                vec![TokenType::Identifier("test".to_string()), TokenType::Identifier("test".to_string()), TokenType::Eof],
+                vec![
+                    TokenType::Identifier("test".to_string()),
+                    TokenType::Identifier("test".to_string()),
+                    TokenType::Eof,
+                ],
             ),
         ];
 

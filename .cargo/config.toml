@@ -1,0 +1,2 @@
+[alias]
+rr = "run --package moth_lang-cli"
