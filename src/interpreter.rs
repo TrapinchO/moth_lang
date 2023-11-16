@@ -85,7 +85,17 @@ impl Interpreter {
         self.environment.last().unwrap().get(ident, pos)
     }
     fn update_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        self.environment.last_mut().unwrap().update(ident, val)
+        for env in self.environment.iter().rev() {
+            if env.contains_key(ident) {
+                env.update(val).unwrap();
+                return Ok(())
+            }
+        }
+        Err(Error {
+            msg: format!("Name \"{}\" does not exists", name),
+            lines: vec![(ident.start, ident.end)],
+        })
+        //self.environment.last_mut().unwrap().update(ident, val)
     }
     // TODO: add BUILTINS, secure removing
     fn add_scope(&mut self) {
