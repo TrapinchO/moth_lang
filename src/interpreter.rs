@@ -10,26 +10,36 @@ use crate::{
 
 #[derive(Debug, PartialEq, Clone)]
 struct Environment {
-    env: HashMap<String, ValueType>,
+    scopes: Vec<HashMap<String, ValueType>>,
 }
 
 impl Environment {
+    pub fn new(defaults: HashMap<String, ValueType>) -> Environment {
+        Environment { scopes: vec![defaults] }
+    }
+
     pub fn insert(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
-        if self.env.contains_key(name) {
+        let last_scope = self.scopes.last_mut().unwrap();
+        if last_scope.contains_key(name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
                 lines: vec![(ident.start, ident.end)],
             });
         }
-        self.env.insert(name.clone(), val.val);
+        last_scope.insert(name.clone(), val.val);
         Ok(())
     }
 
     pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
-        self.env.get(ident).cloned().ok_or(Error {
+        for scope in self.scopes.iter().rev() {
+            if scope.contains_key(ident) {
+                return Ok(scope.get(ident).unwrap().clone())
+            }
+        }
+        Err(Error {
             msg: format!("Name not found: \"{}\"", ident),
             lines: vec![pos],
         })
@@ -39,14 +49,17 @@ impl Environment {
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
-        if !self.env.contains_key(&name.to_string()) {
-            return Err(Error {
-                msg: format!("Name \"{}\" does not exists", name),
-                lines: vec![(ident.start, ident.end)],
-            });
-        }
-        *self.env.get_mut(name).unwrap() = val.val;
+        let last_scope = self.scopes.iter_mut().last().unwrap();
+        *last_scope.get_mut(name).unwrap() = val.val;
         Ok(())
+    }
+
+    fn add_scope(&mut self) {
+        self.scopes.push(HashMap::new())
+    }
+
+    fn remove_scope(&mut self) {
+        self.scopes.pop();
     }
 }
 
@@ -58,16 +71,14 @@ pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
 
 // TODO: just for repl, consider redoing
 pub struct Interpreter {
-    environment: Vec<Environment>,
-    defaults: HashMap<String, ValueType>,
+    environment: Environment,
 }
 
 // TODO: why do I even need Value and not just ValueType?
 impl Interpreter {
     pub fn new(defaults: HashMap<String, ValueType>) -> Self {
         Interpreter {
-            environment: vec![Environment { env: defaults.clone() }],
-            defaults,
+            environment: Environment::new(defaults),
         }
     }
 
@@ -77,48 +88,11 @@ impl Interpreter {
         }
         Ok(())
     }
-
-    fn insert_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        self.environment.last_mut().unwrap().insert(ident, val)
-    }
-    fn get_var(&mut self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
-        for env in self.environment.iter_mut().rev() {
-            if env.env.contains_key(&ident.to_string()) {
-                return env.get(ident, pos)
-            }
-        }
-        Err(Error {
-            msg: format!("Name not found: \"{}\"", ident),
-            lines: vec![pos],
-        })
-        //self.environment.last().unwrap().get(ident, pos)
-    }
-    fn update_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.val else {
-            unreachable!()
-        };
-        
-        for env in self.environment.iter_mut().rev() {
-            if env.env.contains_key(&name.to_string()) {
-                env.update(ident, val).unwrap();
-                return Ok(())
-            }
-        }
-        Err(Error {
-            msg: format!("Name \"{}\" does not exists", name),
-            lines: vec![(ident.start, ident.end)],
-        })
-        //self.environment.last_mut().unwrap().update(ident, val)
-    }
-    // TODO: add BUILTINS, secure removing
     fn add_scope(&mut self) {
-        self.environment.push(Environment {
-            env: self.defaults.clone(),
-        })
+        self.environment.add_scope()
     }
-    fn remove_scope(&mut self) -> Result<(), Error> {
-        self.environment.pop();
-        Ok(())
+    fn remove_scope(&mut self) {
+        self.environment.remove_scope();
     }
 }
 
@@ -128,7 +102,7 @@ impl StmtVisitor<()> for Interpreter {
             unreachable!()
         };
         let val = self.visit_expr(expr)?;
-        self.insert_var(ident, val)?;
+        self.environment.insert(ident, val)?;
         Ok(())
     }
 
@@ -137,7 +111,7 @@ impl StmtVisitor<()> for Interpreter {
             unreachable!()
         };
         let val = self.visit_expr(expr)?;
-        self.update_var(ident, val)?;
+        self.environment.update(ident, val)?;
         Ok(())
     }
 
@@ -149,7 +123,7 @@ impl StmtVisitor<()> for Interpreter {
         for s in block {
             self.visit_stmt(s)?;
         }
-        self.remove_scope()?;
+        self.remove_scope();
         Ok(())
     }
 
@@ -170,7 +144,7 @@ impl StmtVisitor<()> for Interpreter {
                 for s in block {
                     self.visit_stmt(s)?;
                 }
-                self.remove_scope()?;
+                self.remove_scope();
                 break;
             }
         }
@@ -188,7 +162,7 @@ impl StmtVisitor<()> for Interpreter {
             for s in block {
                 self.visit_stmt(s)?;
             }
-            self.remove_scope()?;
+            self.remove_scope();
         }
         Ok(())
     }
@@ -248,7 +222,7 @@ impl ExprVisitor<Value> for Interpreter {
             unreachable!()
         };
         Ok(Value {
-            val: self.get_var(name, (expr.start, expr.end))?,
+            val: self.environment.get(name, (expr.start, expr.end))?,
             start: expr.start,
             end: expr.end,
         })
@@ -281,7 +255,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
-        let ValueType::Function(func) = self.get_var(op_name, (op.start, op.end))? else {
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)],
@@ -305,7 +279,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::Function(func) = self.get_var(op_name, (op.start, op.end))? else {
+        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![(op.start, op.end)],
