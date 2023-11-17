@@ -81,14 +81,24 @@ impl Interpreter {
     fn insert_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
         self.environment.last_mut().unwrap().insert(ident, val)
     }
-    fn get_var(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
-        self.environment.last().unwrap().get(ident, pos)
+    fn get_var(&mut self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
+        for env in self.environment.iter_mut().rev() {
+            if env.env.contains_key(&ident.to_string()) {
+                return env.get(ident, pos)
+            }
+        }
+        Err(Error {
+            msg: format!("Name not found: \"{}\"", ident),
+            lines: vec![pos],
+        })
+        //self.environment.last().unwrap().get(ident, pos)
     }
     fn update_var(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
-        for env in self.environment.iter().rev() {
+        
+        for env in self.environment.iter_mut().rev() {
             if env.env.contains_key(&name.to_string()) {
                 env.update(ident, val).unwrap();
                 return Ok(())
