@@ -189,16 +189,6 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: stmt.end,
         })
     }
-    fn print(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::PrintStmt(expr) = &stmt.val else {
-            unreachable!()
-        };
-        Ok(Stmt {
-            val: StmtType::PrintStmt(self.visit_expr(expr)?),
-            start: stmt.start,
-            end: stmt.end,
-        })
-    }
 }
 impl ExprVisitor<Expr> for Reassociate {
     fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {
@@ -222,6 +212,19 @@ impl ExprVisitor<Expr> for Reassociate {
         };
         Ok(Expr {
             val: ExprType::Parens(self.visit_expr(expr2)?.into()),
+            ..*expr
+        })
+    }
+    fn call(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        let ExprType::Call(callee, args) = &expr.val else {
+            unreachable!()
+        };
+        let mut args2 = vec![];
+        for arg in args {
+            args2.push(self.visit_expr(arg)?);
+        }
+        Ok(Expr {
+            val: ExprType::Call(self.visit_expr(callee)?.into(), args2),
             ..*expr
         })
     }

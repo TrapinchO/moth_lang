@@ -11,6 +11,7 @@ pub enum ValueType {
     Int(i32),
     Float(f32),
     Function(fn(Vec<Value>) -> Result<ValueType, String>),
+    Unit,
 }
 impl ValueType {
     fn format(&self) -> String {
@@ -20,7 +21,13 @@ impl ValueType {
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::Function(_) => "<function>".to_string(), // TODO: improve
+            Self::Unit => "()".to_string(),
         }
+    }
+
+    pub fn compare_variant(&self, other: &ValueType) -> bool {
+        // probably courtesy of https://stackoverflow.com/a/32554326
+        std::mem::discriminant(self) == std::mem::discriminant(other)
     }
 }
 impl Display for ValueType {
@@ -33,7 +40,7 @@ pub type Value = Located<ValueType>;
 
 // TODO: this is very smart, as it can currently hold only Functions
 // PIE anyone?
-pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>) -> Result<ValueType, String>); 14] = [
+pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>) -> Result<ValueType, String>); 15] = [
     (
         "+",
         Precedence {
@@ -287,5 +294,16 @@ pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>) -> Result<ValueType, Stri
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
         },
+    ),
+    (
+        "print",
+        Precedence {
+            prec: 0,
+            assoc: Associativity::Left,
+        },
+        |args| {
+            println!("{}", args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" "));
+            Ok(ValueType::Unit)
+        }
     ),
 ];

@@ -171,17 +171,8 @@ impl StmtVisitor<()> for Interpreter {
         let StmtType::ExprStmt(expr) = &stmt.val else {
             unreachable!()
         };
-        let val = self.visit_expr(expr)?;
+        let _ = self.visit_expr(expr)?;
         //println!("{:?}", val.val);
-        Ok(())
-    }
-
-    fn print(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::PrintStmt(expr) = &stmt.val else {
-            unreachable!()
-        };
-        let val = self.visit_expr(expr)?;
-        println!("{:?}", val.val);
         Ok(())
     }
 }
@@ -245,6 +236,31 @@ impl ExprVisitor<Value> for Interpreter {
             start: expr.start,
             end: expr.end,
             val: self.visit_expr(expr2)?.val,
+        })
+    }
+    fn call(&mut self, expr: &Expr) -> Result<Value, Error> {
+        let ExprType::Call(callee, args) = &expr.val else {
+            unreachable!()
+        };
+        let callee = self.visit_expr(callee)?;
+        let ValueType::Function(func) = callee.val else {
+            return Err(Error {
+                msg: format!("\"{}\" is not calleable", callee.val),
+                lines: vec![(callee.start, callee.end)]
+            })
+        };
+        let mut args2 = vec![];
+        for arg in args {
+            args2.push(self.visit_expr(arg)?);
+        }
+        Ok(Value {
+            val: func(args2).map_err(|msg| Error {
+                msg,
+                lines: vec![(expr.start, expr.end)],
+            })?,
+            start: expr.start,
+            end: expr.end,
+
         })
     }
     fn unary(&mut self, expr: &Expr) -> Result<Value, Error> {

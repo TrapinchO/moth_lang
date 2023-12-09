@@ -28,6 +28,7 @@ pub enum TokenType {
     QuestionMark,
     Semicolon,
     Dot,
+    Comma,
 }
 
 impl TokenType {

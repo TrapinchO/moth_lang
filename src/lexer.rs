@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
-const KEYWORDS: [(&str, TokenType); 8] = [
+const KEYWORDS: [(&str, TokenType); 7] = [
     ("let", TokenType::Let),
     ("fun", TokenType::Fun),
     ("true", TokenType::True),
@@ -12,10 +12,9 @@ const KEYWORDS: [(&str, TokenType); 8] = [
     ("if", TokenType::If),
     ("else", TokenType::Else),
     ("while", TokenType::While),
-    ("print", TokenType::Print),
 ];
 
-const SPECIAL_SYMBOLS: [(char, TokenType); 7] = [
+const SPECIAL_SYMBOLS: [(char, TokenType); 8] = [
     ('(', TokenType::LParen),
     (')', TokenType::RParen),
     ('[', TokenType::LBracket),
@@ -23,6 +22,7 @@ const SPECIAL_SYMBOLS: [(char, TokenType); 7] = [
     ('{', TokenType::LBrace),
     ('}', TokenType::RBrace),
     (';', TokenType::Semicolon),
+    (',', TokenType::Comma),
 ];
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {

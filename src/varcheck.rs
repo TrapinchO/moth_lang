@@ -3,7 +3,7 @@ use crate::{error::Error, exprstmt::*, token::*, visitor::*};
 use std::collections::HashSet;
 
 pub fn varcheck(stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
-    VarCheck {}.check_block(&stmt)?;
+    VarCheck {}.check_block(stmt)?;
     Ok(stmt.clone())
 }
 
@@ -82,13 +82,10 @@ impl StmtVisitor<Stmt> for VarCheck {
         Ok(stmt.clone())
     }
     fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::WhileStmt(cond, block) = &stmt.val else {
+        let StmtType::WhileStmt(_, block) = &stmt.val else {
             unreachable!()
         };
         self.check_block(block)?;
-        Ok(stmt.clone())
-    }
-    fn print(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
         Ok(stmt.clone())
     }
 }
@@ -110,6 +107,9 @@ impl ExprVisitor<Expr> for VarCheck {
         Ok(expr.clone())
     }
     fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
+        Ok(expr.clone())
+    }
+    fn call(&mut self, expr: &Expr) -> Result<Expr, Error> {
         Ok(expr.clone())
     }
     fn unary(&mut self, expr: &Expr) -> Result<Expr, Error> {

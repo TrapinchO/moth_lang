@@ -91,7 +91,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     let var_check = varcheck::varcheck(&resassoc)?;
-    println!("===== evaluating =====");
+    //println!("===== evaluating =====");
     interp.interpret(&var_check)?;
 
     Ok(())

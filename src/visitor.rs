@@ -9,7 +9,6 @@ pub trait StmtVisitor<T> {
             StmtType::BlockStmt(..) => self.block(stmt),
             StmtType::IfStmt(..) => self.if_else(stmt),
             StmtType::WhileStmt(..) => self.whiles(stmt),
-            StmtType::PrintStmt(..) => self.print(stmt),
         }
     }
 
@@ -19,7 +18,6 @@ pub trait StmtVisitor<T> {
     fn block(&mut self, stmt: &Stmt) -> Result<T, Error>;
     fn if_else(&mut self, stmt: &Stmt) -> Result<T, Error>;
     fn whiles(&mut self, stmt: &Stmt) -> Result<T, Error>;
-    fn print(&mut self, stmt: &Stmt) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {
@@ -31,6 +29,7 @@ pub trait ExprVisitor<T> {
             ExprType::Bool(..) => self.bool(expr),
             ExprType::Identifier(..) => self.identifier(expr),
             ExprType::Parens(..) => self.parens(expr),
+            ExprType::Call(..) => self.call(expr),
             ExprType::UnaryOperation(..) => self.unary(expr),
             ExprType::BinaryOperation(..) => self.binary(expr),
         }
@@ -41,6 +40,7 @@ pub trait ExprVisitor<T> {
     fn bool(&mut self, expr: &Expr) -> Result<T, Error>;
     fn identifier(&mut self, expr: &Expr) -> Result<T, Error>;
     fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn call(&mut self, expr: &Expr) -> Result<T, Error>;
     fn unary(&mut self, expr: &Expr) -> Result<T, Error>;
     fn binary(&mut self, expr: &Expr) -> Result<T, Error>;
 }

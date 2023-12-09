@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{error::Error, exprstmt::*, token::*};
 
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
@@ -86,16 +88,6 @@ impl Parser {
             }
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
-            TokenType::Print => {
-                self.advance();
-                let expr = self.parse_expression()?;
-                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
-                Ok(Stmt {
-                    start: tok.start,
-                    end: expr.end,
-                    val: StmtType::PrintStmt(expr),
-                })
-            }
             _ => {
                 let expr = self.parse_expression()?;
                 let stmt = Stmt {
@@ -274,8 +266,42 @@ impl Parser {
                 val: ExprType::UnaryOperation(tok, expr.into()),
             })
         } else {
-            Ok(self.parse_primary()?)
+            Ok(self.parse_call()?)
         }
+    }
+
+    fn parse_call(&mut self) -> Result<Expr, Error> {
+        let expr = self.parse_primary()?;
+        if !self.is_typ(&TokenType::LParen) {
+            return Ok(expr)
+        }
+        let lparen = self.expect(&TokenType::LParen, "")?;
+        let mut args = vec![];
+        if self.is_typ(&TokenType::RParen) {
+            let rparen = self.expect(&TokenType::RParen, "")?;
+            return Ok(Expr {
+                val: ExprType::Call(expr.into(), args),
+                start: lparen.start,
+                end: rparen.end,
+            })
+        }
+        while !self.is_at_end() {
+            args.push(self.parse_expression()?);
+            if self.is_typ(&TokenType::RParen) {
+                let rparen = self.expect(&TokenType::RParen, "")?;
+                return Ok(Expr {
+                    val: ExprType::Call(expr.into(), args),
+                    start: lparen.start,
+                    end: rparen.end,
+                })
+            }
+            self.expect(&TokenType::Comma, "Expected a comma \",\" after an argument")?;
+        }
+        let eof = self.get_current();
+        Err(Error {
+            msg: "Unexpected EOF while parsing function call".to_string(),
+            lines: vec![(eof.start, eof.end)]
+        })
     }
 
     fn parse_primary(&mut self) -> Result<Expr, Error> {
