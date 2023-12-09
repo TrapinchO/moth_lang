@@ -8,7 +8,7 @@ use moth_lang::{
 
 use std::{
     env, fs,
-    io::{self, Write},
+    io::{self, Write}, time::Instant,
 };
 
 fn main() {
@@ -86,9 +86,13 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     let var_check = varcheck::varcheck(get_builtins(), &resassoc)?;
+
+    let start_time = Instant::now();
     //println!("===== evaluating =====");
     interp.interpret(&var_check)?;
     //interp.interpret(&resassoc)?;
+
+    println!("Finished in: {:?}", start_time.elapsed());
 
     Ok(())
 }

@@ -5,22 +5,19 @@ use crate::{
     exprstmt::{Expr, ExprType, Stmt, StmtType},
     token::*,
     value::*,
-    visitor::{ExprVisitor, StmtVisitor}, environment::Environment,
+    visitor::{ExprVisitor, StmtVisitor},
+    environment::Environment,
 };
 
 
-pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
-    // TODO: solve positions for builtin stuff
-    let defaults = HashMap::from(NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))));
-    Interpreter::new(defaults).interpret(stmts)
+pub fn interpret(builtins: HashMap<String, ValueType>, stmts: &Vec<Stmt>) -> Result<(), Error> {
+    Interpreter::new(builtins).interpret(stmts)
 }
 
-// TODO: just for repl, consider redoing
 pub struct Interpreter {
     environment: Environment,
 }
 
-// TODO: why do I even need Value and not just ValueType?
 impl Interpreter {
     pub fn new(defaults: HashMap<String, ValueType>) -> Self {
         Interpreter {
@@ -98,7 +95,6 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    // TODO: make like if_else
     fn whiles(&mut self, stmt: &Stmt) -> Result<(), Error> {
         let StmtType::WhileStmt(cond, block) = &stmt.val else {
             unreachable!()
@@ -117,8 +113,8 @@ impl StmtVisitor<()> for Interpreter {
         let StmtType::ExprStmt(expr) = &stmt.val else {
             unreachable!()
         };
+        // TODO: later check if it is not unit!
         let _ = self.visit_expr(expr)?;
-        //println!("{:?}", val.val);
         Ok(())
     }
 }
