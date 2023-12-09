@@ -313,7 +313,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
     (
         "time",
         |args| {
-            if args.len() > 0 {
+            if args.is_empty() {
                 return Err(format!("\"times\" function takes no arguments, got: {}", args.len()))
             }
             Ok(ValueType::Int(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs().try_into().unwrap()))

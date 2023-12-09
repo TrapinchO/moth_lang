@@ -85,9 +85,10 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let var_check = varcheck::varcheck(&resassoc)?;
+    let var_check = varcheck::varcheck(get_builtins(), &resassoc)?;
     //println!("===== evaluating =====");
     interp.interpret(&var_check)?;
+    //interp.interpret(&resassoc)?;
 
     Ok(())
 }
