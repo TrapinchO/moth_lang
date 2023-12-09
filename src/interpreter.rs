@@ -25,6 +25,8 @@ impl Interpreter {
     }
 
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
+        // not really needed, but might make a bit less mess when debugging
+        self.add_scope();
         for s in stmts {
             self.visit_stmt(s)?;
         }
@@ -35,6 +37,15 @@ impl Interpreter {
     }
     fn remove_scope(&mut self) {
         self.environment.remove_scope();
+    }
+
+    fn interpret_block(&mut self, block: &Vec<Stmt>) -> Result<(), Error> {
+        self.add_scope();
+        for s in block {
+            self.visit_stmt(s)?;
+        }
+        self.remove_scope();
+        Ok(())
     }
 }
 
@@ -61,11 +72,7 @@ impl StmtVisitor<()> for Interpreter {
         let StmtType::BlockStmt(block) = &stmt.val else {
             unreachable!()
         };
-        self.add_scope();
-        for s in block {
-            self.visit_stmt(s)?;
-        }
-        self.remove_scope();
+        self.interpret_block(block)?;
         Ok(())
     }
 
@@ -82,11 +89,7 @@ impl StmtVisitor<()> for Interpreter {
             };
             // do not continue
             if cond2 {
-                self.add_scope();
-                for s in block {
-                    self.visit_stmt(s)?;
-                }
-                self.remove_scope();
+                self.interpret_block(block)?;
                 break;
             }
         }
@@ -99,11 +102,7 @@ impl StmtVisitor<()> for Interpreter {
             unreachable!()
         };
         while let ValueType::Bool(true) = self.visit_expr(cond)?.val {
-            self.add_scope();
-            for s in block {
-                self.visit_stmt(s)?;
-            }
-            self.remove_scope();
+            self.interpret_block(block)?;
         }
         Ok(())
     }

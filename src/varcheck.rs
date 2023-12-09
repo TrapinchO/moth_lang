@@ -45,6 +45,7 @@ impl VarCheck {
                         val: TokenType::Identifier(name),
                         ..
                     },
+                    expr,
                 ) => {
                     self.visit_expr(expr)?;
                     if !self.env.contains(name) {
