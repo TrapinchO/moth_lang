@@ -2,7 +2,7 @@ use moth_lang::{
     error::Error,
     interpreter::Interpreter,
     lexer, parser, reassoc,
-    value::{ValueType, BUILTINS},
+    value::{get_builtins, NATIVE_OPERATORS},
     varcheck,
 };
 
@@ -28,9 +28,7 @@ fn main() {
         };
         let src = src.trim_end().replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
 
-        let mut interp = Interpreter::new(HashMap::from(
-            BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))),
-        ));
+        let mut interp = Interpreter::new(get_builtins());
         match run(&mut interp, src.to_string()) {
             Ok(_) => {}
             Err(err) => {
@@ -43,9 +41,7 @@ fn main() {
 }
 
 fn repl() {
-    let mut interp = Interpreter::new(HashMap::from(
-        BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))),
-    ));
+    let mut interp = Interpreter::new(get_builtins());
     loop {
         print!(">>> ");
         std::io::stdout().flush().unwrap(); // and  hope it never fails
@@ -82,7 +78,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let resassoc = reassoc::reassociate(BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(), &ast)?;
+    let resassoc = reassoc::reassociate(NATIVE_OPERATORS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(), &ast)?;
     /*
     println!("===== reassociating =====");
     for s in &resassoc {

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Display;
 
 // TODO: kinda circular import, but it should be fine
@@ -39,8 +40,10 @@ impl Display for ValueType {
 pub type Value = Located<ValueType>;
 
 // TODO: this is very smart, as it can currently hold only Functions
+// TODO: fix the precedence mess
 // PIE anyone?
-pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>) -> Result<ValueType, String>); 15] = [
+type NativeFunction = fn(Vec<Value>) -> Result<ValueType, String>;
+pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
     (
         "+",
         Precedence {
@@ -295,15 +298,27 @@ pub const BUILTINS: [(&str, Precedence, fn(Vec<Value>) -> Result<ValueType, Stri
             })
         },
     ),
+];
+
+
+pub const NATIVE_FUNCS: [(&str, NativeFunction); 1] = [
     (
         "print",
-        Precedence {
-            prec: 0,
-            assoc: Associativity::Left,
-        },
         |args| {
             println!("{}", args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" "));
             Ok(ValueType::Unit)
         }
     ),
 ];
+
+pub fn get_builtins() -> HashMap<String, ValueType> {
+    let ops = NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
+;
+    let fns = NATIVE_FUNCS.map(|(name, f)| (name.to_string(), ValueType::Function(f))).to_vec();
+    let mut builtins = ops.to_vec();
+    builtins.extend(fns);
+    builtins.into_iter().collect::<HashMap<_, _>>()
+}
+
+
+

@@ -65,7 +65,7 @@ impl Environment {
 
 pub fn interpret(stmts: &Vec<Stmt>) -> Result<(), Error> {
     // TODO: solve positions for builtin stuff
-    let defaults = HashMap::from(BUILTINS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))));
+    let defaults = HashMap::from(NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f))));
     Interpreter::new(defaults).interpret(stmts)
 }
 

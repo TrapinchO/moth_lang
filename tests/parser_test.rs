@@ -110,7 +110,7 @@ mod tests {
         parser::parse,
         reassoc,
         token::{Token, TokenType},
-        value::BUILTINS,
+        value::NATIVE_OPERATORS,
         varcheck,
     };
 
@@ -422,7 +422,7 @@ mod tests {
             ),
         ];
         let symbols: std::collections::HashMap<String, reassoc::Precedence> =
-            BUILTINS.map(|(name, assoc, _)| (name.to_string(), assoc)).into();
+            NATIVE_OPERATORS.map(|(name, assoc, _)| (name.to_string(), assoc)).into();
         for (s, op) in ops {
             assert!(compare_elements(
                 &reassoc::reassociate(symbols.clone(), &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()
