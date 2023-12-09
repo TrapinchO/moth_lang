@@ -1,3 +1,5 @@
+# COMPLETELY OUTDATED, NO GUARANTEES OF STUFF SHOWN HERE WORKING
+
 # Data types
 ## Integers
 Integers are numbers. Simple. Internally they are 32-bit signed ints (`i32`).
@@ -135,9 +137,3 @@ NOTE: not implemented yet
 x;  // error, this no longer exists
 ```
 
-# Print
-Print statement is used to, well, print things. It will automatically convert values to string.
-```rs
-print 1;  // "1"
-print "hello"  // "hello"
-```
