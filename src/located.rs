@@ -12,6 +12,10 @@ impl<T> Located<T> {
     pub fn new(val: T, start: usize, end: usize) -> Self {
         Located { val, start, end }
     }
+
+    pub fn loc(&self) -> (usize, usize) {
+        (self.start, self.end)
+    }
 }
 
 impl<T: std::fmt::Display> Display for Located<T> {

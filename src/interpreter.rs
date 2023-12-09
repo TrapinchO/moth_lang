@@ -26,7 +26,7 @@ impl Environment {
         if last_scope.contains_key(name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
-                lines: vec![(ident.start, ident.end)],
+                lines: vec![ident.loc()],
             });
         }
         last_scope.insert(name.clone(), val.val);
@@ -135,7 +135,7 @@ impl StmtVisitor<()> for Interpreter {
             let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {
                 return Err(Error {
                     msg: format!("Expected bool, got {}", cond.val),
-                    lines: vec![(cond.start, cond.end)],
+                    lines: vec![cond.loc()],
                 });
             };
             // do not continue
@@ -246,7 +246,7 @@ impl ExprVisitor<Value> for Interpreter {
         let ValueType::Function(func) = callee.val else {
             return Err(Error {
                 msg: format!("\"{}\" is not calleable", callee.val),
-                lines: vec![(callee.start, callee.end)]
+                lines: vec![callee.loc()]
             })
         };
         let mut args2 = vec![];
@@ -256,7 +256,7 @@ impl ExprVisitor<Value> for Interpreter {
         Ok(Value {
             val: func(args2).map_err(|msg| Error {
                 msg,
-                lines: vec![(expr.start, expr.end)],
+                lines: vec![expr.loc()],
             })?,
             start: expr.start,
             end: expr.end,
@@ -274,13 +274,13 @@ impl ExprVisitor<Value> for Interpreter {
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
-                lines: vec![(op.start, op.end)],
+                lines: vec![op.loc()],
             });
         };
         Ok(Value {
             val: func(vec![val]).map_err(|msg| Error {
                 msg,
-                lines: vec![(expr.start, expr.end)],
+                lines: vec![expr.loc()],
             })?,
             start: expr.start,
             end: expr.end,
@@ -298,13 +298,13 @@ impl ExprVisitor<Value> for Interpreter {
         let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
-                lines: vec![(op.start, op.end)],
+                lines: vec![op.loc()],
             });
         };
         Ok(Value {
             val: func(vec![left2, right2]).map_err(|msg| Error {
                 msg,
-                lines: vec![(left.start, right.end)],
+                lines: vec![right.loc()],
             })?,
             start: left.start,
             end: right.end,

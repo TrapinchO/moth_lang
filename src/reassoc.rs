@@ -52,19 +52,19 @@ impl Reassociate {
         };
 
         let TokenType::Symbol(op1_sym) = &op1.val else {
-            panic!("Operator token 1 is not a symbol");
+            unreachable!()
         };
         let prec1 = self.ops.get(op1_sym.as_str()).ok_or(Error {
             msg: format!("Operator not found: {}", op1_sym),
-            lines: vec![(op1.start, op1.end)],
+            lines: vec![op1.loc()],
         })?;
 
         let TokenType::Symbol(op2_sym) = &op2.val else {
-            panic!("Operator token 2 is not a symbol");
+            unreachable!()
         };
         let prec2 = self.ops.get(op2_sym.as_str()).ok_or(Error {
             msg: format!("Operator not found: {}", op2_sym),
-            lines: vec![(op2.start, op2.end)],
+            lines: vec![op2.loc()],
         })?;
         // TODO: make functions like in the SO answer?
         match prec1.prec.cmp(&prec2.prec) {
@@ -102,7 +102,7 @@ impl Reassociate {
                         "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
                         op1.val, prec1.assoc, op2.val, prec2.assoc, prec1.prec
                     ),
-                    lines: vec![(op1.start, op1.end), (op2.start, op2.end)],
+                    lines: vec![op1.loc(), op2.loc()],
                 }),
             },
         }

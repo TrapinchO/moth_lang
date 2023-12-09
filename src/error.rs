@@ -1,3 +1,5 @@
+//use crate::{token::{TokenType}, reassoc::Precedence};
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Pos {
     line: usize,
@@ -16,7 +18,15 @@ enum ErrorType {
     IntegerOverflow,
     CommentEof,
     // parser
-
+    ExpectedSemicolon,
+    ExpectedLBrace,
+    ExpectedRBrace,
+    ExpectedToken(TokenType),
+    // reassoc
+    NotASymbol,
+    IncompatiblePrecedence(Precedence, Precedence),
+    // varcheck
+    UndeclaredVariable(String),
 }
 */
 

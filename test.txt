@@ -1,7 +1,13 @@
 //print print(1 1);
 print();
 print(1);
-print(1, 2);
+print(1, true);
+print("Hello World!");
+//print(let x = 10;);
+if 1 == 1 {
+    let x = 10;
+    let x = 20;
+}
 /*
 if 1 != 1 {
     let x = 10;

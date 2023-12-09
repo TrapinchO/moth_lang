@@ -43,7 +43,7 @@ impl Parser {
         if !tok.val.compare_variant(typ) {
             Err(Error {
                 msg: msg.to_string(),
-                lines: vec![(tok.start, tok.end)],
+                lines: vec![tok.loc()],
             })
         } else {
             self.advance();
@@ -300,7 +300,7 @@ impl Parser {
         let eof = self.get_current();
         Err(Error {
             msg: "Unexpected EOF while parsing function call".to_string(),
-            lines: vec![(eof.start, eof.end)]
+            lines: vec![eof.loc()]
         })
     }
 
@@ -344,7 +344,7 @@ impl Parser {
                 /*
                 return Err(Error {
                     msg: "Expected closing parenthesis".to_string(),
-                    lines: vec![(tok.start, expr.end)]
+                    lines: vec![tok.loc()]
                 });
                 */
                 let paren = self.expect(&TokenType::RParen, "Expected closing parenthesis")?;
@@ -357,13 +357,13 @@ impl Parser {
             TokenType::Eof => {
                 return Err(Error {
                     msg: "Expected an element but reached EOF".to_string(),
-                    lines: vec![(tok.start, tok.end)],
+                    lines: vec![tok.loc()],
                 })
             }
             _ => {
                 return Err(Error {
                     msg: format!("Unknown element: {}", tok.val),
-                    lines: vec![(tok.start, tok.end)],
+                    lines: vec![tok.loc()],
                 })
             }
         };

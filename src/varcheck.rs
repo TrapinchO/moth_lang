@@ -21,6 +21,12 @@ impl VarCheck {
                     },
                     ..,
                 ) => {
+                    if vars.contains(name) {
+                        return Err(Error {
+                            msg: "Already declared variable".to_string(),
+                            lines: vec![s.loc()],
+                        });
+                    }
                     vars.insert(name);
                 }
                 StmtType::AssignStmt(
@@ -33,7 +39,7 @@ impl VarCheck {
                     if !vars.contains(name) {
                         return Err(Error {
                             msg: "Undeclared variable".to_string(),
-                            lines: vec![(s.start, s.end)],
+                            lines: vec![s.loc()],
                         });
                     }
                 }

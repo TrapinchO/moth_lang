@@ -7,7 +7,6 @@ use moth_lang::{
 };
 
 use std::{
-    collections::HashMap,
     env, fs,
     io::{self, Write},
 };
