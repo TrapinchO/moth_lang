@@ -10,7 +10,7 @@ pub enum ExprType {
     Bool(bool),
     Identifier(String),
     Parens(Rc<Expr>),
-    Call(Rc<Expr>, Vec<Expr>),  // calle, args (calle(arg1, arg2, arg3))
+    Call(Rc<Expr>, Vec<Expr>), // calle, args (calle(arg1, arg2, arg3))
     UnaryOperation(Token, Rc<Expr>),
     BinaryOperation(Rc<Expr>, Token, Rc<Expr>),
 }
@@ -24,7 +24,11 @@ impl ExprType {
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
             Self::Parens(expr) => format!("({})", expr.val.format()),
-            Self::Call(callee, args) => format!("{}({})", callee, args.iter().map(|e| {format!("{}", e)}).collect::<Vec<_>>().join(", ")),
+            Self::Call(callee, args) => format!(
+                "{}({})",
+                callee,
+                args.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
+            ),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.val, expr),
             Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.val, right),
         }

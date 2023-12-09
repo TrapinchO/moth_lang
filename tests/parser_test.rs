@@ -421,8 +421,9 @@ mod tests {
                 ),
             ),
         ];
-        let symbols: std::collections::HashMap<String, reassoc::Precedence> =
-            NATIVE_OPERATORS.map(|(name, assoc, _)| (name.to_string(), assoc)).into();
+        let symbols: std::collections::HashMap<String, reassoc::Precedence> = NATIVE_OPERATORS
+            .map(|(name, assoc, _)| (name.to_string(), assoc))
+            .into();
         for (s, op) in ops {
             assert!(compare_elements(
                 &reassoc::reassociate(symbols.clone(), &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()

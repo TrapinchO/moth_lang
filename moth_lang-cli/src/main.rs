@@ -8,7 +8,8 @@ use moth_lang::{
 
 use std::{
     env, fs,
-    io::{self, Write}, time::Instant,
+    io::{self, Write},
+    time::Instant,
 };
 
 fn main() {
@@ -77,7 +78,12 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let resassoc = reassoc::reassociate(NATIVE_OPERATORS.map(|(name, assoc, _)| (name.to_string(), assoc)).into(), &ast)?;
+    let resassoc = reassoc::reassociate(
+        NATIVE_OPERATORS
+            .map(|(name, assoc, _)| (name.to_string(), assoc))
+            .into(),
+        &ast,
+    )?;
     /*
     println!("===== reassociating =====");
     for s in &resassoc {

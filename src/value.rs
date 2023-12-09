@@ -301,34 +301,35 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
     ),
 ];
 
-
 pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
-    (
-        "print",
-        |args| {
-            println!("{}", args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" "));
-            Ok(ValueType::Unit)
+    ("print", |args| {
+        println!(
+            "{}",
+            args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" ")
+        );
+        Ok(ValueType::Unit)
+    }),
+    ("time", |args| {
+        if !args.is_empty() {
+            return Err(format!("\"times\" function takes no arguments, got: {}", args.len()));
         }
-    ),
-    (
-        "time",
-        |args| {
-            if !args.is_empty() {
-                return Err(format!("\"times\" function takes no arguments, got: {}", args.len()))
-            }
-            Ok(ValueType::Int(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs().try_into().unwrap()))
-        }
-    ),
+        Ok(ValueType::Int(
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+                .try_into()
+                .unwrap(),
+        ))
+    }),
 ];
 
 pub fn get_builtins() -> HashMap<String, ValueType> {
-    let ops = NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)))
-;
-    let fns = NATIVE_FUNCS.map(|(name, f)| (name.to_string(), ValueType::Function(f))).to_vec();
+    let ops = NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)));
+    let fns = NATIVE_FUNCS
+        .map(|(name, f)| (name.to_string(), ValueType::Function(f)))
+        .to_vec();
     let mut builtins = ops.to_vec();
     builtins.extend(fns);
     builtins.into_iter().collect::<HashMap<_, _>>()
 }
-
-
-

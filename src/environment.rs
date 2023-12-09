@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{value::{ValueType, Value}, token::{Token, TokenType}, error::Error};
-
-
+use crate::{
+    error::Error,
+    token::{Token, TokenType},
+    value::{Value, ValueType},
+};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Environment {
@@ -32,7 +34,7 @@ impl Environment {
     pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
         for scope in self.scopes.iter().rev() {
             if scope.contains_key(ident) {
-                return Ok(scope.get(ident).unwrap().clone())
+                return Ok(scope.get(ident).unwrap().clone());
             }
         }
         Err(Error {
@@ -49,12 +51,12 @@ impl Environment {
         for scope in self.scopes.iter_mut().rev() {
             if scope.contains_key(name) {
                 *scope.get_mut(name).unwrap() = val.val;
-                return Ok(())
+                return Ok(());
             }
         }
         Err(Error {
             msg: format!("Name not found: \"{}\"", name),
-            lines: vec![ident.loc()]
+            lines: vec![ident.loc()],
         })
     }
 

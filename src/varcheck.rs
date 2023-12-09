@@ -1,21 +1,17 @@
-use crate::{
-    error::Error,
-    exprstmt::*,
-    token::*,
-    visitor::*,
-    environment::Environment,
-    value::*
-};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*, visitor::*};
 
 use std::collections::HashMap;
 
 pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
-    VarCheck { env: Environment::new(builtins) }.check_block(stmt)?;
+    VarCheck {
+        env: Environment::new(builtins),
+    }
+    .check_block(stmt)?;
     Ok(stmt.clone())
 }
 
 struct VarCheck {
-    env: Environment
+    env: Environment,
 }
 
 impl VarCheck {
@@ -28,7 +24,7 @@ impl VarCheck {
                         val: TokenType::Identifier(name),
                         ..
                     },
-                    expr
+                    expr,
                 ) => {
                     self.visit_expr(expr)?;
                     if self.env.contains(name) {
@@ -49,7 +45,6 @@ impl VarCheck {
                         val: TokenType::Identifier(name),
                         ..
                     },
-                    expr
                 ) => {
                     self.visit_expr(expr)?;
                     if !self.env.contains(name) {
@@ -150,7 +145,7 @@ impl ExprVisitor<Expr> for VarCheck {
             return Err(Error {
                 msg: "Undeclared variable".to_string(),
                 lines: vec![expr.loc()],
-            })
+            });
         }
         Ok(expr.clone())
     }

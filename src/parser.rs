@@ -273,7 +273,7 @@ impl Parser {
     fn parse_call(&mut self) -> Result<Expr, Error> {
         let expr = self.parse_primary()?;
         if !self.is_typ(&TokenType::LParen) {
-            return Ok(expr)
+            return Ok(expr);
         }
         let lparen = self.expect(&TokenType::LParen, "")?;
         let mut args = vec![];
@@ -283,7 +283,7 @@ impl Parser {
                 val: ExprType::Call(expr.into(), args),
                 start: lparen.start,
                 end: rparen.end,
-            })
+            });
         }
         while !self.is_at_end() {
             args.push(self.parse_expression()?);
@@ -293,14 +293,14 @@ impl Parser {
                     val: ExprType::Call(expr.into(), args),
                     start: lparen.start,
                     end: rparen.end,
-                })
+                });
             }
             self.expect(&TokenType::Comma, "Expected a comma \",\" after an argument")?;
         }
         let eof = self.get_current();
         Err(Error {
             msg: "Unexpected EOF while parsing function call".to_string(),
-            lines: vec![eof.loc()]
+            lines: vec![eof.loc()],
         })
     }
 

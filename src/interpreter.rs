@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
+    environment::Environment,
     error::Error,
     exprstmt::{Expr, ExprType, Stmt, StmtType},
     token::*,
     value::*,
     visitor::{ExprVisitor, StmtVisitor},
-    environment::Environment,
 };
-
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: &Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new(builtins).interpret(stmts)
@@ -202,7 +201,6 @@ impl ExprVisitor<Value> for Interpreter {
             })?,
             start: expr.start,
             end: expr.end,
-
         })
     }
     fn unary(&mut self, expr: &Expr) -> Result<Value, Error> {
