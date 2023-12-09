@@ -27,6 +27,7 @@ impl VarCheck {
                     expr,
                 ) => {
                     self.visit_expr(expr)?;
+
                     if self.env.contains(name) {
                         return Err(Error {
                             msg: "Already declared variable".to_string(),
@@ -39,7 +40,29 @@ impl VarCheck {
                         &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
                         Value { val: ValueType::Unit, start: 0, end: 0 }
                     ).unwrap();
-                }
+                },
+                StmtType::FunDeclStmt(
+                    Token {
+                        val: TokenType::Identifier(name),
+                        ..
+                    },
+                    ..
+                ) => {
+                    self.visit_stmt(s)?;
+
+                    if self.env.contains(name) {
+                        return Err(Error {
+                            msg: "Already declared variable".to_string(),
+                            lines: vec![s.loc()],
+                        });
+                    }
+                    // give dummy values
+                    // it is always going to succeed (as I already check for the existence)
+                    self.env.insert(
+                        &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
+                        Value { val: ValueType::Unit, start: 0, end: 0 }
+                    ).unwrap();
+                },
                 StmtType::AssignStmt(
                     Token {
                         val: TokenType::Identifier(name),
@@ -121,6 +144,20 @@ impl StmtVisitor<Stmt> for VarCheck {
         };
         self.visit_expr(cond)?;
         self.check_block(block)?;
+        Ok(stmt.clone())
+    }
+    fn fun(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        let StmtType::FunDeclStmt(ident, params, block) = &stmt.val else {
+            unreachable!()
+        };
+        self.env.add_scope_vars(params.iter().map(|p| {
+            let TokenType::Identifier(name) = &p.val else {
+                unreachable!()
+            };
+            (name.clone(), ValueType::Unit)
+        }).collect::<HashMap<_, _>>());
+        self.check_block(block)?;
+        self.env.remove_scope();
         Ok(stmt.clone())
     }
 }

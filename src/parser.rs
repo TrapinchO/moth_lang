@@ -88,6 +88,7 @@ impl Parser {
             }
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
+            TokenType::Fun => self.parse_fun(),
             _ => {
                 let expr = self.parse_expression()?;
                 let stmt = Stmt {
@@ -222,6 +223,34 @@ impl Parser {
             start,
             end: block.end,
             val: StmtType::WhileStmt(cond, bl),
+        })
+    }
+
+    fn parse_fun(&mut self) -> Result<Stmt, Error> {
+        let fun = self.expect(&TokenType::Fun, "unreachable")?;
+        let name = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
+        self.expect(&TokenType::LParen, "Expected an opening parenthesis")?;
+        let mut params = vec![];
+        while !self.is_at_end() {
+            params.push(self.expect(&TokenType::Identifier("".to_string()), "Expected a parameter name")?);
+            if self.is_typ(&TokenType::RParen) {
+                let rparen = self.expect(&TokenType::RParen, "")?;
+                let block = self.parse_block()?;
+                // TODO: horrible cheating, but eh
+                let StmtType::BlockStmt(bl) = block.val else {
+                    unreachable!();
+                };
+                return Ok(Stmt {
+                    val: StmtType::FunDeclStmt(name, params, bl),
+                    start: fun.start,
+                    end: block.end,
+                })
+            }
+            self.expect(&TokenType::Comma, "Expected a comma \",\" after an argument")?;
+        }
+        Err(Error {
+            msg: "Reached EOF".to_string(), // TODO: idk yet how
+            lines: vec![self.get_current().loc()],
         })
     }
 

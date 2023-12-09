@@ -189,6 +189,19 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: stmt.end,
         })
     }
+    fn fun(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+        let StmtType::FunDeclStmt(ident, params, block) = &stmt.val else {
+            unreachable!()
+        };
+        let mut block2: Block = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?)
+        }
+        Ok(Stmt {
+            val: StmtType::FunDeclStmt(ident.clone(), params.clone(), block2),
+            ..*stmt
+        })
+    }
 }
 impl ExprVisitor<Expr> for Reassociate {
     fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {

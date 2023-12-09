@@ -9,6 +9,7 @@ pub trait StmtVisitor<T> {
             StmtType::BlockStmt(..) => self.block(stmt),
             StmtType::IfStmt(..) => self.if_else(stmt),
             StmtType::WhileStmt(..) => self.whiles(stmt),
+            StmtType::FunDeclStmt(..) => self.fun(stmt),
         }
     }
 
@@ -18,6 +19,7 @@ pub trait StmtVisitor<T> {
     fn block(&mut self, stmt: &Stmt) -> Result<T, Error>;
     fn if_else(&mut self, stmt: &Stmt) -> Result<T, Error>;
     fn whiles(&mut self, stmt: &Stmt) -> Result<T, Error>;
+    fn fun(&mut self, stmt: &Stmt) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {

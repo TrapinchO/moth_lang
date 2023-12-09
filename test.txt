@@ -1,10 +1,19 @@
+fun add(x, y) {
+    print(x + y);
+    print("HELLO FUNCTIONS");
+}
+
+add(1, 2);
+
+
+/*
 let s = time();
 let i = 0;
 while i < 1000000 {
     i = i + 1;
 }
 print(time()-s);
-
+*/
 
 /*
 //print print(1 1);

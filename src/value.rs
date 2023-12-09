@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::time::SystemTime;
 
+use crate::exprstmt::Stmt;
 // TODO: kinda circular import, but it should be fine
 use crate::located::Located;
 use crate::reassoc::{Associativity, Precedence};
@@ -12,7 +13,8 @@ pub enum ValueType {
     Bool(bool),
     Int(i32),
     Float(f32),
-    Function(fn(Vec<Value>) -> Result<ValueType, String>),
+    NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
+    Function(Vec<String>, Vec<Stmt>),
     Unit,
 }
 impl ValueType {
@@ -22,7 +24,8 @@ impl ValueType {
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::Function(_) => "<function>".to_string(), // TODO: improve
+            Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
+            Self::Function(..) => "<function>".to_string(),
             Self::Unit => "()".to_string(),
         }
     }
@@ -325,9 +328,9 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
 ];
 
 pub fn get_builtins() -> HashMap<String, ValueType> {
-    let ops = NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::Function(f)));
+    let ops = NATIVE_OPERATORS.map(|(name, _, f)| (name.to_string(), ValueType::NativeFunction(f)));
     let fns = NATIVE_FUNCS
-        .map(|(name, f)| (name.to_string(), ValueType::Function(f)))
+        .map(|(name, f)| (name.to_string(), ValueType::NativeFunction(f)))
         .to_vec();
     let mut builtins = ops.to_vec();
     builtins.extend(fns);

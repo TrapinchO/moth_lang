@@ -71,6 +71,9 @@ impl Environment {
     pub fn add_scope(&mut self) {
         self.scopes.push(HashMap::new())
     }
+    pub fn add_scope_vars(&mut self, vars: HashMap<String, ValueType>) {
+        self.scopes.push(vars);
+    }
 
     pub fn remove_scope(&mut self) {
         self.scopes.pop();

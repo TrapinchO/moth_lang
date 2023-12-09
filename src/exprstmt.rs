@@ -52,14 +52,18 @@ pub enum StmtType {
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
+    FunDeclStmt(Token, Vec<Token>, Vec<Stmt>),
 }
 impl StmtType {
     fn format(&self) -> String {
         match self {
             Self::ExprStmt(expr) => expr.to_string() + ";",
             Self::VarDeclStmt(ident, expr) => format!("let {} = {};", ident, expr),
-            Self::AssignStmt(name, expr) => format!("{} = {};", name, expr),
-            Self::BlockStmt(block) => block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
+            Self::AssignStmt(ident, expr) => format!("{} = {};", ident, expr),
+            Self::BlockStmt(block) => format!(
+                "{{\n{}\n}}",
+                block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+            ),
             Self::IfStmt(blocks) => {
                 let first = blocks.first().unwrap(); // always present
                 let rest = &blocks[1..]
@@ -84,6 +88,11 @@ impl StmtType {
                 cond,
                 block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
+            Self::FunDeclStmt(ident, params, block) => format!("fun {}({}){}",
+                ident,
+                params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
+                block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+            )
         }
     }
 }
@@ -96,3 +105,4 @@ impl Display for StmtType {
 
 pub type Stmt = Located<StmtType>;
 pub type Block = Vec<Stmt>;
+

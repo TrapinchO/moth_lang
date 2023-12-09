@@ -115,6 +115,29 @@ impl StmtVisitor<()> for Interpreter {
         let _ = self.visit_expr(expr)?;
         Ok(())
     }
+    fn fun(&mut self, stmt: &Stmt) -> Result<(), Error> {
+        let StmtType::FunDeclStmt(ident, params, block) = &stmt.val else {
+            unreachable!()
+        };
+        let mut params2 = vec![];
+        for p in params {
+            let TokenType::Identifier(n) = &p.val else {
+                unreachable!()
+            };
+            params2.push(n.clone());
+        }
+        println!("{}", stmt);
+        self.environment.insert(
+            ident,
+            Value {
+                val: ValueType::Function(params2, block.clone()),
+                start: stmt.start,
+                end: stmt.end,
+            }
+        )?;
+        // TODO: nothing here yet
+        Ok(())
+    }
 }
 
 impl ExprVisitor<Value> for Interpreter {
@@ -182,25 +205,50 @@ impl ExprVisitor<Value> for Interpreter {
         let ExprType::Call(callee, args) = &expr.val else {
             unreachable!()
         };
-        let callee = self.visit_expr(callee)?;
-        let ValueType::Function(func) = callee.val else {
-            return Err(Error {
-                msg: format!("\"{}\" is not calleable", callee.val),
-                lines: vec![callee.loc()]
-            })
-        };
         let mut args2 = vec![];
         for arg in args {
             args2.push(self.visit_expr(arg)?);
         }
-        Ok(Value {
-            val: func(args2).map_err(|msg| Error {
-                msg,
-                lines: vec![expr.loc()],
-            })?,
-            start: expr.start,
-            end: expr.end,
-        })
+
+        let callee = self.visit_expr(callee)?;
+        match callee.val {
+            ValueType::NativeFunction(func) => {
+                Ok(Value {
+                    val: func(args2).map_err(|msg| Error {
+                        msg,
+                        lines: vec![expr.loc()],
+                    })?,
+                    start: expr.start,
+                    end: expr.end,
+                })
+            },
+            ValueType::Function(params, block) => {
+                if args.len() != params.len() {
+                    return Err(Error {
+                        msg: format!("the number of arguments ({}) must match the number of parameters ({})", args2.len(), params.len()),
+                        lines: vec![expr.loc()]
+                    });
+                }
+                self.environment.add_scope_vars(
+                    params.iter().zip(args2)
+                    .map(|(n, v)| { (n.clone(), v.val) })
+                    .collect::<HashMap<_, _>>()
+                );
+                self.interpret_block(&block)?;
+                self.remove_scope();
+                return Ok(Value {
+                    val: ValueType::Unit,
+                    start: expr.start,
+                    end: expr.end,
+                });
+            },
+            _ => {
+                return Err(Error {
+                    msg: format!("\"{}\" is not calleable", callee.val),
+                    lines: vec![callee.loc()]
+                })
+            }
+        }
     }
     fn unary(&mut self, expr: &Expr) -> Result<Value, Error> {
         let ExprType::UnaryOperation(op, expr2) = &expr.val else {
@@ -210,7 +258,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let ValueType::NativeFunction(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![op.loc()],
@@ -234,7 +282,7 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::Function(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let ValueType::NativeFunction(func) = self.environment.get(op_name, (op.start, op.end))? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![op.loc()],
