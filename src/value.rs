@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::time::SystemTime;
 
 // TODO: kinda circular import, but it should be fine
 use crate::located::Located;
@@ -301,12 +302,21 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
 ];
 
 
-pub const NATIVE_FUNCS: [(&str, NativeFunction); 1] = [
+pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
     (
         "print",
         |args| {
             println!("{}", args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" "));
             Ok(ValueType::Unit)
+        }
+    ),
+    (
+        "time",
+        |args| {
+            if args.len() > 0 {
+                return Err(format!("\"times\" function takes no arguments, got: {}", args.len()))
+            }
+            Ok(ValueType::Int(SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs().try_into().unwrap()))
         }
     ),
 ];
