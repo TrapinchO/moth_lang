@@ -46,11 +46,17 @@ impl Environment {
     }
 
     pub fn update(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
+        //println!("{:?}", self.scopes);
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
-        let last_scope = self.scopes.iter_mut().last().unwrap();
-        *last_scope.get_mut(name).unwrap() = val.val;
+        //let last_scope = self.scopes.iter_mut().last().unwrap();
+        for scope in self.scopes.iter_mut().rev() {
+            if scope.contains_key(name) {
+                *scope.get_mut(name).unwrap() = val.val;
+                return Ok(())
+            }
+        }
         Ok(())
     }
 
