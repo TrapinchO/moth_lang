@@ -234,7 +234,7 @@ impl Parser {
         while !self.is_at_end() {
             params.push(self.expect(&TokenType::Identifier("".to_string()), "Expected a parameter name")?);
             if self.is_typ(&TokenType::RParen) {
-                let rparen = self.expect(&TokenType::RParen, "")?;
+                let _ = self.expect(&TokenType::RParen, "")?;
                 let block = self.parse_block()?;
                 // TODO: horrible cheating, but eh
                 let StmtType::BlockStmt(bl) = block.val else {

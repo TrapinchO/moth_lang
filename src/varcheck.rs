@@ -1,4 +1,11 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*, visitor::*};
+use crate::{
+    environment::Environment,
+    error::Error,
+    exprstmt::*,
+    token::*,
+    value::*,
+    visitor::*,
+};
 
 use std::collections::HashMap;
 
@@ -48,8 +55,6 @@ impl VarCheck {
                     },
                     ..
                 ) => {
-                    self.visit_stmt(s)?;
-
                     if self.env.contains(name) {
                         return Err(Error {
                             msg: "Already declared variable".to_string(),
@@ -62,6 +67,8 @@ impl VarCheck {
                         &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
                         Value { val: ValueType::Unit, start: 0, end: 0 }
                     ).unwrap();
+
+                    self.visit_stmt(s)?;
                 },
                 StmtType::AssignStmt(
                     Token {
@@ -147,7 +154,7 @@ impl StmtVisitor<Stmt> for VarCheck {
         Ok(stmt.clone())
     }
     fn fun(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::FunDeclStmt(ident, params, block) = &stmt.val else {
+        let StmtType::FunDeclStmt(_, params, block) = &stmt.val else {
             unreachable!()
         };
         self.env.add_scope_vars(params.iter().map(|p| {

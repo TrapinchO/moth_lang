@@ -5,6 +5,16 @@ fun add(x, y) {
 
 add(1, 2);
 
+let x = 6;
+if x == 1 {
+    print("1z");
+} else if x < 10 {
+    print("1-10");
+} else {
+    print("too big");
+}
+
+
 
 /*
 let s = time();
