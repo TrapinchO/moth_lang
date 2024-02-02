@@ -89,6 +89,22 @@ impl Parser {
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(),
+            TokenType::Continue => {
+                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+            },
+            TokenType::Break => {
+                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+            },
+            TokenType::Return => {
+                self.advance();
+                let val = if self.is_typ(&TokenType::Semicolon) {
+                    // TODO: unit
+                }
+                else {
+                    self.parse_expression()?;
+                };
+                self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+            },
             _ => {
                 let expr = self.parse_expression()?;
                 let stmt = Stmt {
@@ -228,7 +244,9 @@ impl Parser {
 
     fn parse_fun(&mut self) -> Result<Stmt, Error> {
         let fun = self.expect(&TokenType::Fun, "unreachable")?;
+
         let name = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
+
         self.expect(&TokenType::LParen, "Expected an opening parenthesis")?;
         let mut params = vec![];
         while !self.is_at_end() {
