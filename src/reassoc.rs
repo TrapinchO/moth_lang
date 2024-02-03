@@ -19,7 +19,7 @@ pub struct Precedence {
     pub assoc: Associativity,
 }
 
-pub fn reassociate(ops: HashMap<String, Precedence>, stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
+pub fn reassociate(ops: HashMap<String, Precedence>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
     let mut ls = vec![];
     for s in stmt {
@@ -32,7 +32,7 @@ struct Reassociate {
     ops: HashMap<String, Precedence>,
 }
 impl Reassociate {
-    pub fn reassociate(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+    pub fn reassociate(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
         self.visit_stmt(stmt)
     }
 
@@ -109,7 +109,7 @@ impl Reassociate {
     }
 }
 impl StmtVisitor<Stmt> for Reassociate {
-    fn expr(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
+    fn expr(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
         let StmtType::ExprStmt(expr) = &stmt.val else {
             unreachable!()
         };
@@ -119,29 +119,29 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: expr.end,
         })
     }
-    fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::VarDeclStmt(ident, expr) = &stmt.val else {
+    fn var_decl(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
         Ok(Stmt {
-            val: StmtType::VarDeclStmt(ident.clone(), self.visit_expr(expr)?),
+            val: StmtType::VarDeclStmt(ident, self.visit_expr(&expr)?),
             start: stmt.start,
             end: stmt.end,
         })
     }
-    fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::AssignStmt(ident, expr) = &stmt.val else {
+    fn assignment(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::AssignStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
         Ok(Stmt {
-            val: StmtType::AssignStmt(ident.clone(), self.visit_expr(expr)?),
+            val: StmtType::AssignStmt(ident, self.visit_expr(&expr)?),
             start: stmt.start,
             end: stmt.end,
         })
     }
 
-    fn block(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::BlockStmt(block) = &stmt.val else {
+    fn block(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::BlockStmt(block) = stmt.val else {
             unreachable!()
         };
         let mut block2: Vec<Stmt> = vec![];
@@ -155,8 +155,8 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
 
-    fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::IfStmt(blocks) = &stmt.val else {
+    fn if_else(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::IfStmt(blocks) = stmt.val else {
             unreachable!()
         };
         let mut blocks_result: Vec<(Expr, Block)> = vec![];
@@ -165,7 +165,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             for s in stmts {
                 block.push(self.visit_stmt(s)?)
             }
-            blocks_result.push((self.visit_expr(cond)?, block))
+            blocks_result.push((self.visit_expr(&cond)?, block))
         }
 
         Ok(Stmt {
@@ -174,11 +174,11 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: stmt.end,
         })
     }
-    fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::WhileStmt(cond, block) = &stmt.val else {
+    fn whiles(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::WhileStmt(cond, block) = stmt.val else {
             unreachable!()
         };
-        let cond = self.visit_expr(cond)?;
+        let cond = self.visit_expr(&cond)?;
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -189,8 +189,8 @@ impl StmtVisitor<Stmt> for Reassociate {
             end: stmt.end,
         })
     }
-    fn fun(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::FunDeclStmt(ident, params, block) = &stmt.val else {
+    fn fun(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::FunDeclStmt(ident, params, block) = stmt.val else {
             unreachable!()
         };
         let mut block2: Block = vec![];
@@ -198,8 +198,8 @@ impl StmtVisitor<Stmt> for Reassociate {
             block2.push(self.visit_stmt(s)?)
         }
         Ok(Stmt {
-            val: StmtType::FunDeclStmt(ident.clone(), params.clone(), block2),
-            ..*stmt
+            val: StmtType::FunDeclStmt(ident, params, block2),
+            ..stmt
         })
     }
 }

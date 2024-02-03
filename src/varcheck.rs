@@ -9,12 +9,12 @@ use crate::{
 
 use std::collections::HashMap;
 
-pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: &Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
+pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     VarCheck {
         env: Environment::new(builtins),
     }
-    .check_block(stmt)?;
-    Ok(stmt.clone())
+    .check_block(stmt.clone())?;
+    Ok(stmt)
 }
 
 struct VarCheck {
@@ -22,7 +22,7 @@ struct VarCheck {
 }
 
 impl VarCheck {
-    fn check_block(&mut self, block: &Vec<Stmt>) -> Result<(), Error> {
+    fn check_block(&mut self, block: Vec<Stmt>) -> Result<(), Error> {
         self.env.add_scope();
         for s in block {
             match &s.val {
@@ -106,55 +106,55 @@ impl VarCheck {
 
 impl StmtVisitor<Stmt> for VarCheck {
     // for these there is nothing to check (yet)
-    fn var_decl(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::VarDeclStmt(_, expr) = &stmt.val else {
+    fn var_decl(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::VarDeclStmt(_, expr) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(expr)?;
-        Ok(stmt.clone())
+        self.visit_expr(&expr)?;
+        Ok(stmt)
     }
-    fn assignment(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::AssignStmt(_, expr) = &stmt.val else {
+    fn assignment(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::AssignStmt(_, expr) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(expr)?;
-        Ok(stmt.clone())
+        self.visit_expr(&expr)?;
+        Ok(stmt)
     }
-    fn expr(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::ExprStmt(expr) = &stmt.val else {
+    fn expr(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::ExprStmt(expr) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(expr)?;
-        Ok(stmt.clone())
+        self.visit_expr(&expr)?;
+        Ok(stmt)
     }
     // go through
-    fn block(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::BlockStmt(block) = &stmt.val else {
+    fn block(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::BlockStmt(block) = stmt.val.clone() else {
             unreachable!()
         };
         self.check_block(block)?;
-        Ok(stmt.clone())
+        Ok(stmt)
     }
-    fn if_else(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::IfStmt(blocks) = &stmt.val else {
+    fn if_else(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::IfStmt(blocks) = stmt.val.clone() else {
             unreachable!()
         };
         for block in blocks {
             self.visit_expr(&block.0)?;
-            self.check_block(&block.1)?;
+            self.check_block(block.1)?;
         }
-        Ok(stmt.clone())
+        Ok(stmt)
     }
-    fn whiles(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::WhileStmt(cond, block) = &stmt.val else {
+    fn whiles(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::WhileStmt(cond, block) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(cond)?;
+        self.visit_expr(&cond)?;
         self.check_block(block)?;
-        Ok(stmt.clone())
+        Ok(stmt)
     }
-    fn fun(&mut self, stmt: &Stmt) -> Result<Stmt, Error> {
-        let StmtType::FunDeclStmt(_, params, block) = &stmt.val else {
+    fn fun(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::FunDeclStmt(_, params, block) = stmt.val.clone() else {
             unreachable!()
         };
         self.env.add_scope_vars(params.iter().map(|p| {
@@ -165,7 +165,7 @@ impl StmtVisitor<Stmt> for VarCheck {
         }).collect::<HashMap<_, _>>());
         self.check_block(block)?;
         self.env.remove_scope();
-        Ok(stmt.clone())
+        Ok(stmt)
     }
 }
 

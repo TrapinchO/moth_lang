@@ -89,6 +89,7 @@ impl Parser {
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(),
+            /*
             TokenType::Continue => {
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
             },
@@ -105,6 +106,7 @@ impl Parser {
                 };
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
             },
+            */
             _ => {
                 let expr = self.parse_expression()?;
                 let stmt = Stmt {

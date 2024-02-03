@@ -9,7 +9,7 @@ use crate::{
     visitor::{ExprVisitor, StmtVisitor},
 };
 
-pub fn interpret(builtins: HashMap<String, ValueType>, stmts: &Vec<Stmt>) -> Result<(), Error> {
+pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new(builtins).interpret(stmts)
 }
 
@@ -24,7 +24,7 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> Result<(), Error> {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), Error> {
         // not really needed, but might make a bit less mess when debugging
         self.add_scope();
         for s in stmts {
@@ -39,7 +39,7 @@ impl Interpreter {
         self.environment.remove_scope();
     }
 
-    fn interpret_block(&mut self, block: &Vec<Stmt>) -> Result<(), Error> {
+    fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), Error> {
         self.add_scope();
         for s in block {
             self.visit_stmt(s)?;
@@ -50,38 +50,38 @@ impl Interpreter {
 }
 
 impl StmtVisitor<()> for Interpreter {
-    fn var_decl(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::VarDeclStmt(ident, expr) = &stmt.val else {
+    fn var_decl(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
-        let val = self.visit_expr(expr)?;
-        self.environment.insert(ident, val)?;
+        let val = self.visit_expr(&expr)?;
+        self.environment.insert(&ident, val)?;
         Ok(())
     }
 
-    fn assignment(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::AssignStmt(ident, expr) = &stmt.val else {
+    fn assignment(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::AssignStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
-        let val = self.visit_expr(expr)?;
-        self.environment.update(ident, val)?;
+        let val = self.visit_expr(&expr)?;
+        self.environment.update(&ident, val)?;
         Ok(())
     }
 
-    fn block(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::BlockStmt(block) = &stmt.val else {
+    fn block(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::BlockStmt(block) = stmt.val else {
             unreachable!()
         };
         self.interpret_block(block)?;
         Ok(())
     }
 
-    fn if_else(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::IfStmt(blocks) = &stmt.val else {
+    fn if_else(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::IfStmt(blocks) = stmt.val else {
             unreachable!()
         };
         for (cond, block) in blocks {
-            let ValueType::Bool(cond2) = self.visit_expr(cond)?.val else {
+            let ValueType::Bool(cond2) = self.visit_expr(&cond)?.val else {
                 return Err(Error {
                     msg: format!("Expected bool, got {}", cond.val),
                     lines: vec![cond.loc()],
@@ -97,26 +97,26 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn whiles(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::WhileStmt(cond, block) = &stmt.val else {
+    fn whiles(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::WhileStmt(cond, block) = stmt.val else {
             unreachable!()
         };
-        while let ValueType::Bool(true) = self.visit_expr(cond)?.val {
-            self.interpret_block(block)?;
+        while let ValueType::Bool(true) = self.visit_expr(&cond)?.val {
+            self.interpret_block(block.clone())?;
         }
         Ok(())
     }
 
-    fn expr(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::ExprStmt(expr) = &stmt.val else {
+    fn expr(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::ExprStmt(expr) = stmt.val else {
             unreachable!()
         };
         // TODO: later check if it is not unit!
-        let _ = self.visit_expr(expr)?;
+        let _ = self.visit_expr(&expr)?;
         Ok(())
     }
-    fn fun(&mut self, stmt: &Stmt) -> Result<(), Error> {
-        let StmtType::FunDeclStmt(ident, params, block) = &stmt.val else {
+    fn fun(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::FunDeclStmt(ident, params, block) = stmt.val else {
             unreachable!()
         };
         let mut params2 = vec![];
@@ -126,11 +126,10 @@ impl StmtVisitor<()> for Interpreter {
             };
             params2.push(n.clone());
         }
-        println!("{}", stmt);
         self.environment.insert(
-            ident,
+            &ident,
             Value {
-                val: ValueType::Function(params2, block.clone()),
+                val: ValueType::Function(params2, block),
                 start: stmt.start,
                 end: stmt.end,
             }
@@ -234,16 +233,16 @@ impl ExprVisitor<Value> for Interpreter {
                     .map(|(n, v)| { (n.clone(), v.val) })
                     .collect::<HashMap<_, _>>()
                 );
-                self.interpret_block(&block)?;
+                self.interpret_block(block)?;
                 self.remove_scope();
-                return Ok(Value {
+                Ok(Value {
                     val: ValueType::Unit,
                     start: expr.start,
                     end: expr.end,
-                });
+                })
             },
             _ => {
-                return Err(Error {
+                Err(Error {
                     msg: format!("\"{}\" is not calleable", callee.val),
                     lines: vec![callee.loc()]
                 })

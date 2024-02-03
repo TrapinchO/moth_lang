@@ -1,8 +1,8 @@
 use crate::{error::Error, exprstmt::*};
 
 pub trait StmtVisitor<T> {
-    fn visit_stmt(&mut self, stmt: &Stmt) -> Result<T, Error> {
-        match &stmt.val {
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
+        match stmt.val {
             StmtType::VarDeclStmt(..) => self.var_decl(stmt),
             StmtType::AssignStmt(..) => self.assignment(stmt),
             StmtType::ExprStmt(..) => self.expr(stmt),
@@ -13,13 +13,13 @@ pub trait StmtVisitor<T> {
         }
     }
 
-    fn var_decl(&mut self, stmt: &Stmt) -> Result<T, Error>;
-    fn assignment(&mut self, stmt: &Stmt) -> Result<T, Error>;
-    fn expr(&mut self, expr: &Stmt) -> Result<T, Error>;
-    fn block(&mut self, stmt: &Stmt) -> Result<T, Error>;
-    fn if_else(&mut self, stmt: &Stmt) -> Result<T, Error>;
-    fn whiles(&mut self, stmt: &Stmt) -> Result<T, Error>;
-    fn fun(&mut self, stmt: &Stmt) -> Result<T, Error>;
+    fn var_decl(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn assignment(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn expr(&mut self, expr: Stmt) -> Result<T, Error>;
+    fn block(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn if_else(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn whiles(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn fun(&mut self, stmt: Stmt) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {

@@ -82,7 +82,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
         NATIVE_OPERATORS
             .map(|(name, assoc, _)| (name.to_string(), assoc))
             .into(),
-        &ast,
+        ast,
     )?;
     /*
     println!("===== reassociating =====");
@@ -91,11 +91,11 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let var_check = varcheck::varcheck(get_builtins(), &resassoc)?;
+    let var_check = varcheck::varcheck(get_builtins(), resassoc)?;
 
     let start_time = Instant::now();
     //println!("===== evaluating =====");
-    interp.interpret(&var_check)?;
+    interp.interpret(var_check)?;
     //interp.interpret(&resassoc)?;
 
     println!("Finished in: {:?}", start_time.elapsed());
