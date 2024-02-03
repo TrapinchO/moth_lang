@@ -1,10 +1,16 @@
 fun add(x, y) {
     print(x + y);
     print("HELLO FUNCTIONS");
+    //return "Oh hello!";
+    return;
+    break;
+    continue;
 }
 
-add(1, 2);
+let x = add(1, 2);
+print(x);
 
+/*
 let x = 6;
 if x == 1 {
     print("1z");
@@ -13,6 +19,7 @@ if x == 1 {
 } else {
     print("too big");
 }
+*/
 
 
 

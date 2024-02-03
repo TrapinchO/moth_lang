@@ -89,24 +89,43 @@ impl Parser {
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(),
-            /*
             TokenType::Continue => {
+                self.advance();
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+                Ok(Stmt {
+                    val: StmtType::ContinueStmt,
+                    start: tok.start,
+                    end: tok.end,
+                })
             },
             TokenType::Break => {
+                self.advance();
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+                Ok(Stmt {
+                    val: StmtType::BreakStmt,
+                    start: tok.start,
+                    end: tok.end,
+                })
             },
             TokenType::Return => {
                 self.advance();
                 let val = if self.is_typ(&TokenType::Semicolon) {
-                    // TODO: unit
-                }
-                else {
-                    self.parse_expression()?;
+                    // phantom value, the location is for the return statement
+                    Expr {
+                        val: ExprType::Unit,
+                        start: tok.start,
+                        end: tok.end,
+                    }
+                } else {
+                    self.parse_expression()?
                 };
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
+                Ok(Stmt {
+                    val: StmtType::ReturnStmt(val),
+                    start: tok.start,
+                    end: tok.end,
+                })
             },
-            */
             _ => {
                 let expr = self.parse_expression()?;
                 let stmt = Stmt {

@@ -4,6 +4,7 @@ use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExprType {
+    Unit,
     Int(i32),
     Float(f32),
     String(String),
@@ -18,6 +19,7 @@ pub enum ExprType {
 impl ExprType {
     fn format(&self) -> String {
         match self {
+            Self::Unit => "()".to_string(),
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
@@ -53,6 +55,9 @@ pub enum StmtType {
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
     FunDeclStmt(Token, Vec<Token>, Vec<Stmt>),
+    ReturnStmt(Expr),
+    BreakStmt,
+    ContinueStmt,
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -94,6 +99,9 @@ impl StmtType {
                 params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
                 block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
+            Self::ReturnStmt(expr) => format!("return {};", expr),
+            Self::BreakStmt => "break;".to_string(),
+            Self::ContinueStmt => "continue;".to_string(),
         }
     }
 }

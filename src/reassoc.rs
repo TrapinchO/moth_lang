@@ -203,8 +203,27 @@ impl StmtVisitor<Stmt> for Reassociate {
             ..stmt
         })
     }
+    fn brek(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    fn cont(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    fn retur(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::ReturnStmt(expr) = stmt.val else {
+            unreachable!()
+        };
+        Ok(Stmt {
+            start: expr.start,
+            end: expr.end,
+            val: StmtType::ReturnStmt(self.visit_expr(expr)?),
+        })
+    }
 }
 impl ExprVisitor<Expr> for Reassociate {
+    fn unit(&mut self, expr: Expr) -> Result<Expr, Error> {
+        Ok(expr)
+    }
     fn int(&mut self, expr: Expr) -> Result<Expr, Error> {
         Ok(expr)
     }

@@ -137,9 +137,32 @@ impl StmtVisitor<()> for Interpreter {
         // TODO: nothing here yet
         Ok(())
     }
+    fn brek(&mut self, stmt: Stmt) -> Result<(), Error> {
+        println!("BREAK DOWN");
+        Ok(())
+    }
+    fn cont(&mut self, stmt: Stmt) -> Result<(), Error> {
+        println!("NOTHING TO SEE HERE, PLEASE CONTINUE");
+        Ok(())
+    }
+    fn retur(&mut self, stmt: Stmt) -> Result<(), Error> {
+        let StmtType::ReturnStmt(expr) = stmt.val else {
+            unreachable!()
+        };
+        let val = self.visit_expr(expr)?;
+        println!("RETURN I REPEAT RETURN {}", val);
+        Ok(())
+    }
 }
 
 impl ExprVisitor<Value> for Interpreter {
+    fn unit(&mut self, expr: Expr) -> Result<Value, Error> {
+        Ok(Value {
+            val: ValueType::Unit,
+            start: expr.start,
+            end: expr.end,
+        })
+    }
     fn int(&mut self, expr: Expr) -> Result<Value, Error> {
         let ExprType::Int(n) = expr.val else {
             unreachable!()

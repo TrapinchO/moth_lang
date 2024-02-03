@@ -167,9 +167,25 @@ impl StmtVisitor<Stmt> for VarCheck {
         self.env.remove_scope();
         Ok(stmt)
     }
+    fn cont(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    fn brek(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        Ok(stmt)
+    }
+    fn retur(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
+        let StmtType::ReturnStmt(expr) = stmt.val.clone() else {
+            unreachable!()
+        };
+        self.visit_expr(expr)?;
+        Ok(stmt)
+    }
 }
 
 impl ExprVisitor<()> for VarCheck {
+    fn unit(&mut self, _: Expr) -> Result<(), Error> {
+        Ok(())
+    }
     fn int(&mut self, _: Expr) -> Result<(), Error> {
         Ok(())
     }

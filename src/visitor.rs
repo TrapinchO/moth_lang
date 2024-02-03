@@ -10,6 +10,9 @@ pub trait StmtVisitor<T> {
             StmtType::IfStmt(..) => self.if_else(stmt),
             StmtType::WhileStmt(..) => self.whiles(stmt),
             StmtType::FunDeclStmt(..) => self.fun(stmt),
+            StmtType::ContinueStmt => self.cont(stmt),
+            StmtType::BreakStmt => self.brek(stmt),
+            StmtType::ReturnStmt(..) => self.retur(stmt),
         }
     }
 
@@ -20,11 +23,15 @@ pub trait StmtVisitor<T> {
     fn if_else(&mut self, stmt: Stmt) -> Result<T, Error>;
     fn whiles(&mut self, stmt: Stmt) -> Result<T, Error>;
     fn fun(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn cont(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn brek(&mut self, stmt: Stmt) -> Result<T, Error>;
+    fn retur(&mut self, stmt: Stmt) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {
     fn visit_expr(&mut self, expr: Expr) -> Result<T, Error> {
         match &expr.val {
+            ExprType::Unit => self.unit(expr),
             ExprType::Int(..) => self.int(expr),
             ExprType::Float(..) => self.float(expr),
             ExprType::String(..) => self.string(expr),
@@ -36,6 +43,7 @@ pub trait ExprVisitor<T> {
             ExprType::BinaryOperation(..) => self.binary(expr),
         }
     }
+    fn unit(&mut self, expr: Expr) -> Result<T, Error>;
     fn int(&mut self, expr: Expr) -> Result<T, Error>;
     fn float(&mut self, expr: Expr) -> Result<T, Error>;
     fn string(&mut self, expr: Expr) -> Result<T, Error>;
