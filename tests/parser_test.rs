@@ -121,7 +121,7 @@ mod tests {
         let input = "let x = 10; x = 1;".to_string();
         let tokens = lex(&input)?;
         let ast = parse(tokens)?;
-        let checked = varcheck::varcheck(get_builtins(), &ast);
+        let checked = varcheck::varcheck(get_builtins(), ast);
         if let Ok(_) = checked {
             return Ok(());
         }
@@ -426,7 +426,7 @@ mod tests {
             .into();
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc::reassociate(symbols.clone(), &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()
+                &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()
                     [0],
                 &stmt!(StmtType::ExprStmt(expr!(op)))
             ));
