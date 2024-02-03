@@ -1,5 +1,7 @@
 //use crate::{token::{TokenType}, reassoc::Precedence};
 
+use crate::value::Value;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Pos {
     line: usize,
@@ -29,6 +31,20 @@ enum ErrorType {
     UndeclaredVariable(String),
 }
 */
+
+#[derive(Debug, PartialEq)]
+pub enum ErrorType {
+    Error(Error),
+    Return(Value),
+    Continue,
+    Break,
+}
+// a miracle
+impl From<Error> for ErrorType {
+    fn from(value: Error) -> Self {
+        ErrorType::Error(value)
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {

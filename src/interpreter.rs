@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     environment::Environment,
-    error::Error,
+    error::{Error, ErrorType},
     exprstmt::{Expr, ExprType, Stmt, StmtType},
     token::*,
     value::*,
@@ -28,7 +28,15 @@ impl Interpreter {
         // not really needed, but might make a bit less mess when debugging
         self.add_scope();
         for s in stmts {
-            self.visit_stmt(s)?;
+            match self.visit_stmt(s) {
+                Ok(..) => {},
+                Err(err) => match err {  // TODO: ERRORRRRRR
+                    ErrorType::Error(err) => return Err(err),
+                    ErrorType::Return(_) => {},
+                    ErrorType::Break => {},
+                    ErrorType::Continue => {},
+                }
+            };
         }
         Ok(())
     }
@@ -39,7 +47,7 @@ impl Interpreter {
         self.environment.remove_scope();
     }
 
-    fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), Error> {
+    fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), ErrorType> {
         self.add_scope();
         for s in block {
             self.visit_stmt(s)?;
@@ -49,8 +57,22 @@ impl Interpreter {
     }
 }
 
-impl StmtVisitor<()> for Interpreter {
-    fn var_decl(&mut self, stmt: Stmt) -> Result<(), Error> {
+impl Interpreter {
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
+        match stmt.val {
+            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
+            StmtType::AssignStmt(..) => self.assignment(stmt),
+            StmtType::ExprStmt(..) => self.expr(stmt),
+            StmtType::BlockStmt(..) => self.block(stmt),
+            StmtType::IfStmt(..) => self.if_else(stmt),
+            StmtType::WhileStmt(..) => self.whiles(stmt),
+            StmtType::FunDeclStmt(..) => self.fun(stmt),
+            StmtType::ContinueStmt => self.cont(stmt),
+            StmtType::BreakStmt => self.brek(stmt),
+            StmtType::ReturnStmt(..) => self.retur(stmt),
+        }
+    }
+    fn var_decl(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
@@ -59,7 +81,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn assignment(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn assignment(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::AssignStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
@@ -68,7 +90,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn block(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn block(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::BlockStmt(block) = stmt.val else {
             unreachable!()
         };
@@ -76,16 +98,16 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn if_else(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn if_else(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::IfStmt(blocks) = stmt.val else {
             unreachable!()
         };
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
-                return Err(Error {
+                return Err(ErrorType::Error(Error {
                     msg: format!("Expected bool, got {}", cond.val),
                     lines: vec![cond.loc()],
-                });
+                }));
             };
             // do not continue
             if cond2 {
@@ -97,7 +119,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn whiles(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn whiles(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::WhileStmt(cond, block) = stmt.val else {
             unreachable!()
         };
@@ -107,7 +129,7 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn expr(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn expr(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::ExprStmt(expr) = stmt.val else {
             unreachable!()
         };
@@ -115,7 +137,7 @@ impl StmtVisitor<()> for Interpreter {
         let _ = self.visit_expr(expr)?;
         Ok(())
     }
-    fn fun(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn fun(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::FunDeclStmt(ident, params, block) = stmt.val else {
             unreachable!()
         };
@@ -137,21 +159,20 @@ impl StmtVisitor<()> for Interpreter {
         // TODO: nothing here yet
         Ok(())
     }
-    fn brek(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn brek(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         println!("BREAK DOWN");
-        Ok(())
+        Err(ErrorType::Break)
     }
-    fn cont(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn cont(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         println!("NOTHING TO SEE HERE, PLEASE CONTINUE");
-        Ok(())
+        Err(ErrorType::Continue)
     }
-    fn retur(&mut self, stmt: Stmt) -> Result<(), Error> {
+    fn retur(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
         let StmtType::ReturnStmt(expr) = stmt.val else {
             unreachable!()
         };
         let val = self.visit_expr(expr)?;
-        println!("RETURN I REPEAT RETURN {}", val);
-        Ok(())
+        Err(ErrorType::Return(val))
     }
 }
 
@@ -260,10 +281,25 @@ impl ExprVisitor<Value> for Interpreter {
                         .map(|(n, v)| (n.clone(), v.val))
                         .collect::<HashMap<_, _>>(),
                 );
-                self.interpret_block(block)?;
+                //self.interpret_block(block)?;
+                let val = match self.interpret_block(block) {
+                    Ok(..) => ValueType::Unit,  // hope this doesnt bite me later...
+                    Err(err) => match err {  // TODO: ERRORRRRRR
+                        ErrorType::Error(err) => return Err(err),
+                        ErrorType::Return(val) => val.val,
+                        ErrorType::Break => return Err(Error {
+                            msg: "Cannot use break outside of loop".to_string(),
+                            lines: vec![],  // TODO: add locations
+                        }),
+                        ErrorType::Continue => return Err(Error {
+                            msg: "Cannot use break outside of loop".to_string(),
+                            lines: vec![],  // TODO: add locations
+                        }),
+                    }
+                };
                 self.remove_scope();
                 Ok(Value {
-                    val: ValueType::Unit,
+                    val: val,
                     start: expr.start,
                     end: expr.end,
                 })

@@ -1,14 +1,12 @@
 fun add(x, y) {
     print(x + y);
     print("HELLO FUNCTIONS");
-    //return "Oh hello!";
-    return;
-    break;
-    continue;
+    return "Oh hello!";
+    return 135;
 }
 
-let x = add(1, 2);
-print(x);
+let z = add(1, 2);
+print(z);
 
 /*
 let x = 6;
