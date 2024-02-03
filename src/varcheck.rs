@@ -33,7 +33,7 @@ impl VarCheck {
                     },
                     expr,
                 ) => {
-                    self.visit_expr(expr)?;
+                    self.visit_expr(expr.clone())?;
 
                     if self.env.contains(name) {
                         return Err(Error {
@@ -77,7 +77,7 @@ impl VarCheck {
                     },
                     expr,
                 ) => {
-                    self.visit_expr(expr)?;
+                    self.visit_expr(expr.clone())?;
                     if !self.env.contains(name) {
                         return Err(Error {
                             msg: "Undeclared variable".to_string(),
@@ -110,21 +110,21 @@ impl StmtVisitor<Stmt> for VarCheck {
         let StmtType::VarDeclStmt(_, expr) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(&expr)?;
+        self.visit_expr(expr)?;
         Ok(stmt)
     }
     fn assignment(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
         let StmtType::AssignStmt(_, expr) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(&expr)?;
+        self.visit_expr(expr)?;
         Ok(stmt)
     }
     fn expr(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
         let StmtType::ExprStmt(expr) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(&expr)?;
+        self.visit_expr(expr)?;
         Ok(stmt)
     }
     // go through
@@ -139,9 +139,9 @@ impl StmtVisitor<Stmt> for VarCheck {
         let StmtType::IfStmt(blocks) = stmt.val.clone() else {
             unreachable!()
         };
-        for block in blocks {
-            self.visit_expr(&block.0)?;
-            self.check_block(block.1)?;
+        for (cond, block) in blocks {
+            self.visit_expr(cond)?;
+            self.check_block(block)?;
         }
         Ok(stmt)
     }
@@ -149,7 +149,7 @@ impl StmtVisitor<Stmt> for VarCheck {
         let StmtType::WhileStmt(cond, block) = stmt.val.clone() else {
             unreachable!()
         };
-        self.visit_expr(&cond)?;
+        self.visit_expr(cond)?;
         self.check_block(block)?;
         Ok(stmt)
     }
@@ -169,61 +169,61 @@ impl StmtVisitor<Stmt> for VarCheck {
     }
 }
 
-impl ExprVisitor<Expr> for VarCheck {
-    fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+impl ExprVisitor<()> for VarCheck {
+    fn int(&mut self, _: Expr) -> Result<(), Error> {
+        Ok(())
     }
-    fn float(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn float(&mut self, _: Expr) -> Result<(), Error> {
+        Ok(())
     }
-    fn string(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn string(&mut self, _: Expr) -> Result<(), Error> {
+        Ok(())
     }
-    fn bool(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn bool(&mut self, _: Expr) -> Result<(), Error> {
+        Ok(())
     }
-    fn identifier(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::Identifier(name) = &expr.val else {
+    fn identifier(&mut self, expr: Expr) -> Result<(), Error> {
+        let ExprType::Identifier(name) = expr.val.clone() else {
             unreachable!()
         };
-        if !self.env.contains(name) {
+        if !self.env.contains(&name) {
             return Err(Error {
                 msg: "Undeclared variable".to_string(),
                 lines: vec![expr.loc()],
             });
         }
-        Ok(expr.clone())
+        Ok(())
     }
-    fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::Parens(expr2) = &expr.val else {
+    fn parens(&mut self, expr: Expr) -> Result<(), Error> {
+        let ExprType::Parens(expr2) = expr.val else {
             unreachable!()
         };
-        self.visit_expr(expr2)?;
-        Ok(expr.clone())
+        self.visit_expr(*expr2)?;
+        Ok(())
     }
-    fn call(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::Call(callee, args) = &expr.val else {
+    fn call(&mut self, expr: Expr) -> Result<(), Error> {
+        let ExprType::Call(callee, args) = expr.val else {
             unreachable!()
         };
-        self.visit_expr(callee)?;
+        self.visit_expr(*callee)?;
         for arg in args {
             self.visit_expr(arg)?;
         }
-        Ok(expr.clone())
+        Ok(())
     }
-    fn unary(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::UnaryOperation(_, expr2) = &expr.val else {
+    fn unary(&mut self, expr: Expr) -> Result<(), Error> {
+        let ExprType::UnaryOperation(_, expr2) = expr.val else {
             unreachable!()
         };
-        self.visit_expr(expr2)?;
-        Ok(expr.clone())
+        self.visit_expr(*expr2)?;
+        Ok(())
     }
-    fn binary(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::BinaryOperation(left, _, right) = &expr.val else {
+    fn binary(&mut self, expr: Expr) -> Result<(), Error> {
+        let ExprType::BinaryOperation(left, _, right) = expr.val else {
             unreachable!()
         };
-        self.visit_expr(left)?;
-        self.visit_expr(right)?;
-        Ok(expr.clone())
+        self.visit_expr(*left)?;
+        self.visit_expr(*right)?;
+        Ok(())
     }
 }

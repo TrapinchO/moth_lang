@@ -1,6 +1,6 @@
 use crate::{located::Located, token::Token};
 
-use std::{fmt::Display, rc::Rc};
+use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExprType {
@@ -9,10 +9,10 @@ pub enum ExprType {
     String(String),
     Bool(bool),
     Identifier(String),
-    Parens(Rc<Expr>),
-    Call(Rc<Expr>, Vec<Expr>), // calle, args (calle(arg1, arg2, arg3))
-    UnaryOperation(Token, Rc<Expr>),
-    BinaryOperation(Rc<Expr>, Token, Rc<Expr>),
+    Parens(Box<Expr>),
+    Call(Box<Expr>, Vec<Expr>), // calle, args (calle(arg1, arg2, arg3))
+    UnaryOperation(Token, Box<Expr>),
+    BinaryOperation(Box<Expr>, Token, Box<Expr>),
 }
 
 impl ExprType {

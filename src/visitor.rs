@@ -23,7 +23,7 @@ pub trait StmtVisitor<T> {
 }
 
 pub trait ExprVisitor<T> {
-    fn visit_expr(&mut self, expr: &Expr) -> Result<T, Error> {
+    fn visit_expr(&mut self, expr: Expr) -> Result<T, Error> {
         match &expr.val {
             ExprType::Int(..) => self.int(expr),
             ExprType::Float(..) => self.float(expr),
@@ -36,13 +36,13 @@ pub trait ExprVisitor<T> {
             ExprType::BinaryOperation(..) => self.binary(expr),
         }
     }
-    fn int(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn float(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn string(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn bool(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn identifier(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn parens(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn call(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn unary(&mut self, expr: &Expr) -> Result<T, Error>;
-    fn binary(&mut self, expr: &Expr) -> Result<T, Error>;
+    fn int(&mut self, expr: Expr) -> Result<T, Error>;
+    fn float(&mut self, expr: Expr) -> Result<T, Error>;
+    fn string(&mut self, expr: Expr) -> Result<T, Error>;
+    fn bool(&mut self, expr: Expr) -> Result<T, Error>;
+    fn identifier(&mut self, expr: Expr) -> Result<T, Error>;
+    fn parens(&mut self, expr: Expr) -> Result<T, Error>;
+    fn call(&mut self, expr: Expr) -> Result<T, Error>;
+    fn unary(&mut self, expr: Expr) -> Result<T, Error>;
+    fn binary(&mut self, expr: Expr) -> Result<T, Error>;
 }

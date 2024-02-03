@@ -54,7 +54,7 @@ impl StmtVisitor<()> for Interpreter {
         let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
-        let val = self.visit_expr(&expr)?;
+        let val = self.visit_expr(expr)?;
         self.environment.insert(&ident, val)?;
         Ok(())
     }
@@ -63,7 +63,7 @@ impl StmtVisitor<()> for Interpreter {
         let StmtType::AssignStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
-        let val = self.visit_expr(&expr)?;
+        let val = self.visit_expr(expr)?;
         self.environment.update(&ident, val)?;
         Ok(())
     }
@@ -81,7 +81,7 @@ impl StmtVisitor<()> for Interpreter {
             unreachable!()
         };
         for (cond, block) in blocks {
-            let ValueType::Bool(cond2) = self.visit_expr(&cond)?.val else {
+            let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
                 return Err(Error {
                     msg: format!("Expected bool, got {}", cond.val),
                     lines: vec![cond.loc()],
@@ -101,7 +101,7 @@ impl StmtVisitor<()> for Interpreter {
         let StmtType::WhileStmt(cond, block) = stmt.val else {
             unreachable!()
         };
-        while let ValueType::Bool(true) = self.visit_expr(&cond)?.val {
+        while let ValueType::Bool(true) = self.visit_expr(cond.clone())?.val {
             self.interpret_block(block.clone())?;
         }
         Ok(())
@@ -112,7 +112,7 @@ impl StmtVisitor<()> for Interpreter {
             unreachable!()
         };
         // TODO: later check if it is not unit!
-        let _ = self.visit_expr(&expr)?;
+        let _ = self.visit_expr(expr)?;
         Ok(())
     }
     fn fun(&mut self, stmt: Stmt) -> Result<(), Error> {
@@ -140,68 +140,68 @@ impl StmtVisitor<()> for Interpreter {
 }
 
 impl ExprVisitor<Value> for Interpreter {
-    fn int(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Int(n) = &expr.val.clone() else {
+    fn int(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Int(n) = expr.val else {
             unreachable!()
         };
         Ok(Value {
-            val: ValueType::Int(*n),
+            val: ValueType::Int(n),
             start: expr.start,
             end: expr.end,
         })
     }
-    fn float(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Float(f) = &expr.val.clone() else {
+    fn float(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Float(f) = expr.val else {
             unreachable!()
         };
         Ok(Value {
-            val: ValueType::Float(*f),
+            val: ValueType::Float(f),
             start: expr.start,
             end: expr.end,
         })
     }
-    fn string(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::String(s) = &expr.val.clone() else {
+    fn string(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::String(s) = expr.val else {
             unreachable!()
         };
         Ok(Value {
-            val: ValueType::String(s.clone()),
+            val: ValueType::String(s),
             start: expr.start,
             end: expr.end,
         })
     }
-    fn identifier(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Identifier(name) = &expr.val.clone() else {
+    fn identifier(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Identifier(name) = expr.val.clone() else {
             unreachable!()
         };
         Ok(Value {
-            val: self.environment.get(name, (expr.start, expr.end))?,
+            val: self.environment.get(&name, (expr.start, expr.end))?,
             start: expr.start,
             end: expr.end,
         })
     }
-    fn bool(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Bool(b) = &expr.val.clone() else {
+    fn bool(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Bool(b) = expr.val else {
             unreachable!()
         };
         Ok(Value {
-            val: ValueType::Bool(*b),
+            val: ValueType::Bool(b),
             start: expr.start,
             end: expr.end,
         })
     }
-    fn parens(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Parens(expr2) = &expr.val else {
+    fn parens(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Parens(expr2) = expr.val else {
             unreachable!()
         };
         Ok(Value {
             start: expr.start,
             end: expr.end,
-            val: self.visit_expr(expr2)?.val,
+            val: self.visit_expr(*expr2)?.val,
         })
     }
-    fn call(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::Call(callee, args) = &expr.val else {
+    fn call(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Call(callee, args) = expr.val.clone() else {
             unreachable!()
         };
         let mut args2 = vec![];
@@ -209,7 +209,7 @@ impl ExprVisitor<Value> for Interpreter {
             args2.push(self.visit_expr(arg)?);
         }
 
-        let callee = self.visit_expr(callee)?;
+        let callee = self.visit_expr(*callee)?;
         match callee.val {
             ValueType::NativeFunction(func) => {
                 Ok(Value {
@@ -222,7 +222,7 @@ impl ExprVisitor<Value> for Interpreter {
                 })
             },
             ValueType::Function(params, block) => {
-                if args.len() != params.len() {
+                if args2.len() != params.len() {
                     return Err(Error {
                         msg: format!("the number of arguments ({}) must match the number of parameters ({})", args2.len(), params.len()),
                         lines: vec![expr.loc()]
@@ -249,11 +249,11 @@ impl ExprVisitor<Value> for Interpreter {
             }
         }
     }
-    fn unary(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::UnaryOperation(op, expr2) = &expr.val else {
+    fn unary(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::UnaryOperation(op, expr2) = expr.val.clone() else {
             unreachable!()
         };
-        let val = self.visit_expr(expr2)?;
+        let val = self.visit_expr(*expr2)?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
@@ -264,20 +264,20 @@ impl ExprVisitor<Value> for Interpreter {
             });
         };
         Ok(Value {
+            start: expr.start,
+            end: expr.end,
             val: func(vec![val]).map_err(|msg| Error {
                 msg,
                 lines: vec![expr.loc()],
             })?,
-            start: expr.start,
-            end: expr.end,
         })
     }
-    fn binary(&mut self, expr: &Expr) -> Result<Value, Error> {
-        let ExprType::BinaryOperation(left, op, right) = &expr.val else {
+    fn binary(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::BinaryOperation(left, op, right) = expr.val else {
             unreachable!()
         };
-        let left2 = self.visit_expr(left)?;
-        let right2 = self.visit_expr(right)?;
+        let left2 = self.visit_expr(*left)?;
+        let right2 = self.visit_expr(*right.clone())?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
@@ -288,12 +288,12 @@ impl ExprVisitor<Value> for Interpreter {
             });
         };
         Ok(Value {
+            start: left2.start,
+            end: right2.end,
             val: func(vec![left2, right2]).map_err(|msg| Error {
                 msg,
                 lines: vec![right.loc()],
             })?,
-            start: left.start,
-            end: right.end,
         })
     }
 }

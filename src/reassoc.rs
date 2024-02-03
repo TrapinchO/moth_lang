@@ -39,15 +39,16 @@ impl Reassociate {
     // the one method this file exists for
     // binary operator reassociation
     // https://stackoverflow.com/a/67992584
-    fn reassoc(&mut self, left: &Expr, op1: &Token, right: &Expr) -> Result<Expr, Error> {
+    // TODO: play with references and stuff once I dare again
+    fn reassoc(&mut self, left: Expr, op1: Token, right: Expr) -> Result<Expr, Error> {
         let left = self.visit_expr(left)?;
         let right = self.visit_expr(right)?;
         // not a binary operation, no need to reassociate it
-        let ExprType::BinaryOperation(left2, op2, right2) = &right.val else {
+        let ExprType::BinaryOperation(left2, op2, right2) = right.val.clone() else {
             return Ok(Expr {
-                val: ExprType::BinaryOperation(left.clone().into(), op1.clone(), right.clone().into()),
                 start: left.start,
                 end: right.end,
+                val: ExprType::BinaryOperation(left.into(), op1, right.into()),
             });
         };
 
@@ -69,7 +70,7 @@ impl Reassociate {
         // TODO: make functions like in the SO answer?
         match prec1.prec.cmp(&prec2.prec) {
             std::cmp::Ordering::Greater => {
-                let left = self.reassoc(&left, op1, left2)?.into();
+                let left = self.reassoc(left, op1, *left2)?.into();
                 Ok(Expr {
                     val: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                     start: right2.start,
@@ -78,24 +79,24 @@ impl Reassociate {
             }
 
             std::cmp::Ordering::Less => Ok(Expr {
-                val: ExprType::BinaryOperation(left.clone().into(), op1.clone(), right.clone().into()),
                 start: left.start,
                 end: right.end,
+                val: ExprType::BinaryOperation(left.into(), op1, right.into()),
             }),
 
             std::cmp::Ordering::Equal => match (prec1.assoc, prec2.assoc) {
                 (Associativity::Left, Associativity::Left) => {
-                    let left = self.reassoc(&left, op1, left2)?.into();
+                    let left = self.reassoc(left, op1, *left2)?.into();
                     Ok(Expr {
-                        val: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                         start: right2.start,
                         end: right2.end,
+                        val: ExprType::BinaryOperation(left, op2, right2),
                     })
                 }
                 (Associativity::Right, Associativity::Right) => Ok(Expr {
-                    val: ExprType::BinaryOperation(left.clone().into(), op1.clone(), right.clone().into()),
                     start: left.start,
                     end: right.end,
+                    val: ExprType::BinaryOperation(left.into(), op1, right.into()),
                 }),
                 _ => Err(Error {
                     msg: format!(
@@ -110,13 +111,13 @@ impl Reassociate {
 }
 impl StmtVisitor<Stmt> for Reassociate {
     fn expr(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
-        let StmtType::ExprStmt(expr) = &stmt.val else {
+        let StmtType::ExprStmt(expr) = stmt.val else {
             unreachable!()
         };
         Ok(Stmt {
-            val: StmtType::ExprStmt(self.visit_expr(expr)?),
             start: expr.start,
             end: expr.end,
+            val: StmtType::ExprStmt(self.visit_expr(expr)?),
         })
     }
     fn var_decl(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
@@ -124,7 +125,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             unreachable!()
         };
         Ok(Stmt {
-            val: StmtType::VarDeclStmt(ident, self.visit_expr(&expr)?),
+            val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
             start: stmt.start,
             end: stmt.end,
         })
@@ -134,7 +135,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             unreachable!()
         };
         Ok(Stmt {
-            val: StmtType::AssignStmt(ident, self.visit_expr(&expr)?),
+            val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
             start: stmt.start,
             end: stmt.end,
         })
@@ -165,7 +166,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             for s in stmts {
                 block.push(self.visit_stmt(s)?)
             }
-            blocks_result.push((self.visit_expr(&cond)?, block))
+            blocks_result.push((self.visit_expr(cond)?, block))
         }
 
         Ok(Stmt {
@@ -178,7 +179,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         let StmtType::WhileStmt(cond, block) = stmt.val else {
             unreachable!()
         };
-        let cond = self.visit_expr(&cond)?;
+        let cond = self.visit_expr(cond)?;
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -204,32 +205,32 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
 }
 impl ExprVisitor<Expr> for Reassociate {
-    fn int(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn int(&mut self, expr: Expr) -> Result<Expr, Error> {
+        Ok(expr)
     }
-    fn bool(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn bool(&mut self, expr: Expr) -> Result<Expr, Error> {
+        Ok(expr)
     }
-    fn float(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn float(&mut self, expr: Expr) -> Result<Expr, Error> {
+        Ok(expr)
     }
-    fn string(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn string(&mut self, expr: Expr) -> Result<Expr, Error> {
+        Ok(expr)
     }
-    fn identifier(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        Ok(expr.clone())
+    fn identifier(&mut self, expr: Expr) -> Result<Expr, Error> {
+        Ok(expr)
     }
-    fn parens(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::Parens(expr2) = &expr.val else {
+    fn parens(&mut self, expr: Expr) -> Result<Expr, Error> {
+        let ExprType::Parens(expr2) = expr.val else {
             unreachable!()
         };
         Ok(Expr {
-            val: ExprType::Parens(self.visit_expr(expr2)?.into()),
-            ..*expr
+            val: ExprType::Parens(self.visit_expr(*expr2)?.into()),
+            ..expr
         })
     }
-    fn call(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::Call(callee, args) = &expr.val else {
+    fn call(&mut self, expr: Expr) -> Result<Expr, Error> {
+        let ExprType::Call(callee, args) = expr.val else {
             unreachable!()
         };
         let mut args2 = vec![];
@@ -237,25 +238,25 @@ impl ExprVisitor<Expr> for Reassociate {
             args2.push(self.visit_expr(arg)?);
         }
         Ok(Expr {
-            val: ExprType::Call(self.visit_expr(callee)?.into(), args2),
-            ..*expr
+            val: ExprType::Call(self.visit_expr(*callee)?.into(), args2),
+            ..expr
         })
     }
-    fn unary(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::UnaryOperation(op, expr2) = &expr.val else {
+    fn unary(&mut self, expr: Expr) -> Result<Expr, Error> {
+        let ExprType::UnaryOperation(op, expr2) = expr.val else {
             unreachable!()
         };
-        let expr2 = self.visit_expr(expr2)?;
+        let expr2 = self.visit_expr(*expr2)?;
         Ok(Expr {
             start: op.start,
             end: expr2.end,
-            val: ExprType::UnaryOperation(op.clone(), expr2.into()),
+            val: ExprType::UnaryOperation(op, expr2.into()),
         })
     }
-    fn binary(&mut self, expr: &Expr) -> Result<Expr, Error> {
-        let ExprType::BinaryOperation(left, op, right) = &expr.val else {
+    fn binary(&mut self, expr: Expr) -> Result<Expr, Error> {
+        let ExprType::BinaryOperation(left, op, right) = expr.val else {
             unreachable!()
         };
-        self.reassoc(left, op, right)
+        self.reassoc(*left, op, *right)
     }
 }
