@@ -264,7 +264,7 @@ impl Parser {
                     val: StmtType::FunDeclStmt(name, params, bl),
                     start: fun.start,
                     end: block.end,
-                })
+                });
             }
             self.expect(&TokenType::Comma, "Expected a comma \",\" after an argument")?;
         }

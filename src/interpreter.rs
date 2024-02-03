@@ -132,7 +132,7 @@ impl StmtVisitor<()> for Interpreter {
                 val: ValueType::Function(params2, block),
                 start: stmt.start,
                 end: stmt.end,
-            }
+            },
         )?;
         // TODO: nothing here yet
         Ok(())
@@ -211,27 +211,31 @@ impl ExprVisitor<Value> for Interpreter {
 
         let callee = self.visit_expr(*callee)?;
         match callee.val {
-            ValueType::NativeFunction(func) => {
-                Ok(Value {
-                    val: func(args2).map_err(|msg| Error {
-                        msg,
-                        lines: vec![expr.loc()],
-                    })?,
-                    start: expr.start,
-                    end: expr.end,
-                })
-            },
+            ValueType::NativeFunction(func) => Ok(Value {
+                val: func(args2).map_err(|msg| Error {
+                    msg,
+                    lines: vec![expr.loc()],
+                })?,
+                start: expr.start,
+                end: expr.end,
+            }),
             ValueType::Function(params, block) => {
                 if args2.len() != params.len() {
                     return Err(Error {
-                        msg: format!("the number of arguments ({}) must match the number of parameters ({})", args2.len(), params.len()),
-                        lines: vec![expr.loc()]
+                        msg: format!(
+                            "the number of arguments ({}) must match the number of parameters ({})",
+                            args2.len(),
+                            params.len()
+                        ),
+                        lines: vec![expr.loc()],
                     });
                 }
                 self.environment.add_scope_vars(
-                    params.iter().zip(args2)
-                    .map(|(n, v)| { (n.clone(), v.val) })
-                    .collect::<HashMap<_, _>>()
+                    params
+                        .iter()
+                        .zip(args2)
+                        .map(|(n, v)| (n.clone(), v.val))
+                        .collect::<HashMap<_, _>>(),
                 );
                 self.interpret_block(block)?;
                 self.remove_scope();
@@ -240,13 +244,11 @@ impl ExprVisitor<Value> for Interpreter {
                     start: expr.start,
                     end: expr.end,
                 })
-            },
-            _ => {
-                Err(Error {
-                    msg: format!("\"{}\" is not calleable", callee.val),
-                    lines: vec![callee.loc()]
-                })
             }
+            _ => Err(Error {
+                msg: format!("\"{}\" is not calleable", callee.val),
+                lines: vec![callee.loc()],
+            }),
         }
     }
     fn unary(&mut self, expr: Expr) -> Result<Value, Error> {

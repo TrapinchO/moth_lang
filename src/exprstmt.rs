@@ -88,11 +88,12 @@ impl StmtType {
                 cond,
                 block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::FunDeclStmt(ident, params, block) => format!("fun {}({}){}",
+            Self::FunDeclStmt(ident, params, block) => format!(
+                "fun {}({}){}",
                 ident,
                 params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
                 block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
-            )
+            ),
         }
     }
 }
@@ -105,4 +106,3 @@ impl Display for StmtType {
 
 pub type Stmt = Located<StmtType>;
 pub type Block = Vec<Stmt>;
-
