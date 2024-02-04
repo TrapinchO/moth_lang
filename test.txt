@@ -4,13 +4,11 @@
 //    return a + b;
 //}
 
-fun add(x, y) {
-    return x + y;
-}
-
-// not an error ?!???!
 fun sub(z, y) {
     return z - y;
+}
+fun add(x, y) {
+    return sub(x + y);
 }
 
 fun apply(f, x, y) {
@@ -34,11 +32,12 @@ fun fn(a, b) {
         i = i + 1;
     }
 }
-print(fn(! -/ -1, 2));
+print(fn(-1, 2));
 
+print(());
 
 /*
-let x = 6;
+let x = 100;
 if x == 1 {
     print("1z");
 } else if x < 10 {
