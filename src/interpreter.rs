@@ -139,7 +139,15 @@ impl Interpreter {
             unreachable!()
         };
         while let ValueType::Bool(true) = self.visit_expr(cond.clone())?.val {
-            self.interpret_block(block.clone())?;
+            match self.interpret_block(block.clone()) {
+                Ok(_) => {},
+                Err(err) => match err {
+                    ErrorType::Error(_) => return Err(err),
+                    ErrorType::Return(_) => return Err(err),
+                    ErrorType::Continue => continue,
+                    ErrorType::Break => break,
+                }
+            }
         }
         Ok(())
     }

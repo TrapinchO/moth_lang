@@ -5,13 +5,7 @@
 //}
 
 fun add(x, y) {
-    print(x + y);
-    print("HELLO FUNCTIONS");
-    if true {
-        let aaaaa = 100;
-        return "Oh hello!1111111";
-    }
-    return 135;
+    return x + y;
 }
 
 // not an error ?!???!
@@ -23,13 +17,23 @@ fun apply(f, x, y) {
     return f(x, y);
 }
 
-// an error...
-let z = sub(1, 2);
-print(z);
-print(sub(2, 10));
-print(apply(add, 100, 10000));
+//let z = sub(1, 2);
+//print(z);
+//print(sub(2, 10));
+//print(apply(add, 100, 10000));
 
-
+fun fn(a, b) {
+    let i = 0;
+    while i < 10 {
+	if i == 5 {
+	    print("BREAK");
+	    return i;
+	}
+	print(i);
+        i = i + 1;
+    }
+}
+print(fn(1, 2));
 
 
 /*
