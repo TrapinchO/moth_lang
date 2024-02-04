@@ -319,23 +319,25 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
-        // if it is a symbol, look for nested unary operator
-        if let tok @ Token {
-            val: TokenType::Symbol(_),
-            ..
-        } = self.get_current().clone()
-        {
-            self.advance();
-
-            let expr = self.parse_unary()?;
-            Ok(Expr {
-                start: tok.start,
-                end: expr.end,
-                val: ExprType::UnaryOperation(tok, expr.into()),
+        let tok @ Token { val: TokenType::Symbol(_), .. } = self.get_current().clone() else {
+            return self.parse_call()
+        };
+        let TokenType::Symbol(sym) = &tok.val else {
+            unreachable!()
+        };
+        if !vec!["-", "!"].contains(&sym.as_str()) {
+            return Err(Error {
+                msg: format!("Unknown operator: \"{}\"", sym),
+                lines: vec![tok.loc()],
             })
-        } else {
-            Ok(self.parse_call()?)
         }
+        self.advance();
+        let expr = self.parse_unary()?;
+        Ok(Expr {
+            start: tok.start,
+            end: expr.end,
+            val: ExprType::UnaryOperation(tok, expr.into()),
+        })
     }
 
     fn parse_call(&mut self) -> Result<Expr, Error> {

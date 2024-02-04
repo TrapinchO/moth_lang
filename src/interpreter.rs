@@ -338,20 +338,30 @@ impl ExprVisitor<Value> for Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
-        let ValueType::NativeFunction(func) = self.environment.get(op_name, (op.start, op.end))? else {
-            return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function", op_name),
-                lines: vec![op.loc()],
-            });
+        let new_val = match op_name.as_str() {
+            "-" => match val.val {
+                ValueType::Int(n) => ValueType::Int(-n),
+                ValueType::Float(n) => ValueType::Float(-n),
+                _ => return Err(Error {
+                    msg: format!("Incorrect type: {}", val.val),
+                    lines: vec![val.loc()]
+                }),
+            },
+            "!" => match val.val {
+                ValueType::Bool(b) => ValueType::Bool(!b),
+                _ => return Err(Error {
+                    msg: format!("Incorrect type: {}", val.val),
+                    lines: vec![val.loc()]
+                }),
+            },
+            sym => { unreachable!("unknown binary operator interpreted: {}", sym); }
         };
+
         Ok(Value {
+            val: new_val,
             start: expr.start,
             end: expr.end,
-            val: func(vec![val]).map_err(|msg| Error {
-                msg,
-                lines: vec![expr.loc()],
-            })?,
-        })
+        }) 
     }
     fn binary(&mut self, expr: Expr) -> Result<Value, Error> {
         let ExprType::BinaryOperation(left, op, right) = expr.val else {
