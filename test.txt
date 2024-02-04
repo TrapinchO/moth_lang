@@ -1,12 +1,36 @@
+//highlights the entire function
+//let add = 10;
+//fun add(a, b) {
+//    return a + b;
+//}
+
 fun add(x, y) {
     print(x + y);
     print("HELLO FUNCTIONS");
-    return "Oh hello!";
+    if true {
+        let aaaaa = 100;
+        return "Oh hello!1111111";
+    }
     return 135;
 }
 
-let z = add(1, 2);
+// not an error ?!???!
+fun sub(z, y) {
+    return z - y;
+}
+
+fun apply(f, x, y) {
+    return f(x, y);
+}
+
+// an error...
+let z = sub(1, 2);
 print(z);
+print(sub(2, 10));
+print(apply(add, 100, 10000));
+
+
+
 
 /*
 let x = 6;

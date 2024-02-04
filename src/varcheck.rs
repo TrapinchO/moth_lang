@@ -7,7 +7,7 @@ use crate::{
     visitor::*,
 };
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     VarCheck {
@@ -36,6 +36,8 @@ impl VarCheck {
                     self.visit_expr(expr.clone())?;
 
                     if self.env.contains(name) {
+                        // TODO: functions behave weirdly
+                        // TODO: also add the first declaration
                         return Err(Error {
                             msg: "Already declared variable".to_string(),
                             lines: vec![s.loc()],
@@ -65,7 +67,7 @@ impl VarCheck {
                     // it is always going to succeed (as I already check for the existence)
                     self.env.insert(
                         &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        Value { val: ValueType::Unit, start: 0, end: 0 }
+                        Value { val: ValueType::Function(vec![], vec![]), start: 0, end: 0 }
                     ).unwrap();
 
                     self.visit_stmt(s)?;
@@ -94,7 +96,17 @@ impl VarCheck {
                 StmtType::WhileStmt(..) => {
                     self.visit_stmt(s)?;
                 }
+                StmtType::ExprStmt(..) => {
+                    self.visit_stmt(s)?;
+                }
+                StmtType::BreakStmt => {},
+                StmtType::ContinueStmt => {},
+                StmtType::ReturnStmt(..) => {
+                    self.visit_stmt(s)?;
+                }
                 _ => {
+                    // TODO: this is like the classic meme "idk what it did so I removed it"...
+                    // it broke.
                     self.visit_stmt(s)?;
                 }
             }
@@ -157,12 +169,22 @@ impl StmtVisitor<Stmt> for VarCheck {
         let StmtType::FunDeclStmt(_, params, block) = stmt.val.clone() else {
             unreachable!()
         };
-        self.env.add_scope_vars(params.iter().map(|p| {
+        let mut params2 = HashSet::new();
+        for p in params.iter() {
             let TokenType::Identifier(name) = &p.val else {
                 unreachable!()
             };
-            (name.clone(), ValueType::Unit)
-        }).collect::<HashMap<_, _>>());
+            if params2.contains(name) {
+                return Err(Error {
+                    msg: format!("Found duplicate parameter: \"{}\"", p),
+                    lines: vec![p.loc()],
+                })
+            }
+            params2.insert(name.clone());
+        }
+        self.env.add_scope_vars(
+            params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
+        );
         self.check_block(block)?;
         self.env.remove_scope();
         Ok(stmt)

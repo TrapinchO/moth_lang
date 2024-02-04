@@ -28,13 +28,22 @@ impl Interpreter {
         // not really needed, but might make a bit less mess when debugging
         self.add_scope();
         for s in stmts {
-            match self.visit_stmt(s) {
+            match self.visit_stmt(s.clone()) {
                 Ok(..) => {},
                 Err(err) => match err {  // TODO: ERRORRRRRR
                     ErrorType::Error(err) => return Err(err),
-                    ErrorType::Return(_) => {},
-                    ErrorType::Break => {},
-                    ErrorType::Continue => {},
+                    ErrorType::Return(_) => return Err(Error {
+                        msg: "Cannot use return outside of a function".to_string(),
+                        lines: vec![s.loc()],  // TODO: add locations
+                    }),
+                    ErrorType::Break => return Err(Error {
+                        msg: "Cannot use break outside of a loop".to_string(),
+                        lines: vec![s.loc()],  // TODO: add locations
+                    }),
+                    ErrorType::Continue => return Err(Error {
+                        msg: "Cannot use break outside of a loop".to_string(),
+                        lines: vec![s.loc()],  // TODO: add locations
+                    }),
                 }
             };
         }
@@ -50,7 +59,13 @@ impl Interpreter {
     fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), ErrorType> {
         self.add_scope();
         for s in block {
-            self.visit_stmt(s)?;
+            match self.visit_stmt(s) {
+                Ok(_) => {},
+                Err(err) => {
+                    self.remove_scope();
+                    return Err(err);
+                }
+            }
         }
         self.remove_scope();
         Ok(())
@@ -160,11 +175,9 @@ impl Interpreter {
         Ok(())
     }
     fn brek(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        println!("BREAK DOWN");
         Err(ErrorType::Break)
     }
     fn cont(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        println!("NOTHING TO SEE HERE, PLEASE CONTINUE");
         Err(ErrorType::Continue)
     }
     fn retur(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
@@ -281,7 +294,6 @@ impl ExprVisitor<Value> for Interpreter {
                         .map(|(n, v)| (n.clone(), v.val))
                         .collect::<HashMap<_, _>>(),
                 );
-                //self.interpret_block(block)?;
                 let val = match self.interpret_block(block) {
                     Ok(..) => ValueType::Unit,  // hope this doesnt bite me later...
                     Err(err) => match err {  // TODO: ERRORRRRRR
@@ -289,17 +301,17 @@ impl ExprVisitor<Value> for Interpreter {
                         ErrorType::Return(val) => val.val,
                         ErrorType::Break => return Err(Error {
                             msg: "Cannot use break outside of loop".to_string(),
-                            lines: vec![],  // TODO: add locations
+                            lines: vec![expr.loc()],  // TODO: add locations
                         }),
                         ErrorType::Continue => return Err(Error {
                             msg: "Cannot use break outside of loop".to_string(),
-                            lines: vec![],  // TODO: add locations
+                            lines: vec![expr.loc()],  // TODO: add locations
                         }),
                     }
                 };
                 self.remove_scope();
                 Ok(Value {
-                    val: val,
+                    val,
                     start: expr.start,
                     end: expr.end,
                 })
