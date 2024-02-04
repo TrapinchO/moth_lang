@@ -9,12 +9,12 @@ use crate::{
 
 use std::collections::{HashMap, HashSet};
 
-pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
+pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<(), Error> {
     VarCheck {
         env: Environment::new(builtins),
     }
-    .check_block(stmt.clone())?;
-    Ok(stmt)
+    .check_block(stmt)?;
+    Ok(())
 }
 
 struct VarCheck {

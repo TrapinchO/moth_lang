@@ -32,7 +32,7 @@ fun fn(a, b) {
         i = i + 1;
     }
 }
-print(fn(-1, 2));
+//print(fn(-1, 2));
 
 print(());
 

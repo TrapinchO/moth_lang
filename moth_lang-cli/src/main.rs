@@ -59,6 +59,7 @@ fn repl() {
 }
 
 fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
+    let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = lexer::lex(&input)?;
@@ -91,14 +92,17 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     }
     */
 
-    let var_check = varcheck::varcheck(get_builtins(), resassoc)?;
+    // TODO: change back to reference, less cloning
+    varcheck::varcheck(get_builtins(), resassoc.clone())?;
 
-    let start_time = Instant::now();
+    let compile_end = compile_start.elapsed();
+    let eval_time = Instant::now();
     //println!("===== evaluating =====");
-    interp.interpret(var_check)?;
+    interp.interpret(resassoc)?;
     //interp.interpret(&resassoc)?;
 
-    println!("Finished in: {:?}", start_time.elapsed());
+    println!("Compiled in: {:?}", compile_end);
+    println!("Evaluated in: {:?}", eval_time.elapsed());
 
     Ok(())
 }
