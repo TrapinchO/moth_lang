@@ -236,7 +236,7 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn identifier(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Identifier(name) = expr.val.clone() else {
+        let ExprType::Identifier(name) = expr.val else {
             unreachable!()
         };
         Ok(Value {
