@@ -93,7 +93,15 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: change back to reference, less cloning
-    varcheck::varcheck(get_builtins(), resassoc.clone())?;
+    match varcheck::varcheck(get_builtins(), resassoc.clone()) {
+        Ok(()) => {},
+        Err(errs) => {
+            for e in errs {
+                println!("{}", e.format_message(&input));
+            }
+            return Ok(())
+        }
+    }
 
     let compile_end = compile_start.elapsed();
     let eval_time = Instant::now();

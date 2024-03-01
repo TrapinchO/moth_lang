@@ -9,16 +9,23 @@ use crate::{
 
 use std::collections::{HashMap, HashSet};
 
-pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<(), Error> {
-    VarCheck {
+pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
+    let mut var_check = VarCheck {
         env: Environment::new(builtins),
+        errs: vec![],
+    };
+    var_check.check_block(stmt);
+    println!("{:?}", var_check.errs);
+    if !var_check.errs.is_empty() {
+        Err(var_check.errs)
+    } else {
+        Ok(())
     }
-    .check_block(stmt)?;
-    Ok(())
 }
 
 struct VarCheck {
     env: Environment,
+    errs: Vec<Error>,
 }
 
 impl VarCheck {
@@ -38,7 +45,7 @@ impl VarCheck {
                     if self.env.contains(name) {
                         // TODO: functions behave weirdly
                         // TODO: also add the first declaration
-                        return Err(Error {
+                        self.errs.push(Error {
                             msg: "Already declared variable".to_string(),
                             lines: vec![s.loc()],
                         });
@@ -58,7 +65,7 @@ impl VarCheck {
                     ..
                 ) => {
                     if self.env.contains(name) {
-                        return Err(Error {
+                        self.errs.push(Error {
                             msg: "Already declared variable".to_string(),
                             lines: vec![s.loc()],
                         });
@@ -81,7 +88,7 @@ impl VarCheck {
                 ) => {
                     self.visit_expr(expr.clone())?;
                     if !self.env.contains(name) {
-                        return Err(Error {
+                        self.errs.push(Error {
                             msg: "Undeclared variable".to_string(),
                             lines: vec![s.loc()],
                         });
@@ -175,10 +182,10 @@ impl StmtVisitor<Stmt> for VarCheck {
                 unreachable!()
             };
             if params2.contains(name) {
-                return Err(Error {
+                self.errs.push(Error {
                     msg: format!("Found duplicate parameter: \"{}\"", p),
                     lines: vec![p.loc()],
-                })
+                });
             }
             params2.insert(name.clone());
         }
@@ -225,7 +232,7 @@ impl ExprVisitor<()> for VarCheck {
             unreachable!()
         };
         if !self.env.contains(&name) {
-            return Err(Error {
+            self.errs.push(Error {
                 msg: "Undeclared variable".to_string(),
                 lines: vec![expr.loc()],
             });
