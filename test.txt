@@ -24,6 +24,7 @@ fun apply(f, x, y) {
 fun fn(a, b) {
     print(a);
     let i = 0;
+    //break;
     while i < 10 {
 	if i == 5 {
 	    print("BREAK");
@@ -37,8 +38,7 @@ print(fn(-1, 2));
 
 print(());
 
-
-// /*
+/*
 let g = 100;
 if n == 1 {
     print("1z");
@@ -50,7 +50,7 @@ if n == 1 {
 } else {
     print("too big");
 }
-// */
+*/
 
 
 

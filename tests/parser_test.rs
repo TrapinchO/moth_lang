@@ -425,8 +425,7 @@ mod tests {
             .into();
         for (s, op) in ops {
             assert!(compare_elements(
-                &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()
-                    [0],
+                &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()[0],
                 &stmt!(StmtType::ExprStmt(expr!(op)))
             ));
         }

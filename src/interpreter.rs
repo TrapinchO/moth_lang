@@ -6,7 +6,7 @@ use crate::{
     exprstmt::{Expr, ExprType, Stmt, StmtType},
     token::*,
     value::*,
-    visitor::{ExprVisitor, StmtVisitor},
+    visitor::ExprVisitor,
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -29,21 +29,18 @@ impl Interpreter {
         self.add_scope();
         for s in stmts {
             match self.visit_stmt(s.clone()) {
-                Ok(..) => {},
-                Err(err) => match err {  // TODO: ERRORRRRRR
-                    ErrorType::Error(err) => return Err(err),
-                    ErrorType::Return(_) => return Err(Error {
-                        msg: "Cannot use return outside of a function".to_string(),
-                        lines: vec![s.loc()],  // TODO: add locations
-                    }),
-                    ErrorType::Break => return Err(Error {
-                        msg: "Cannot use break outside of a loop".to_string(),
-                        lines: vec![s.loc()],  // TODO: add locations
-                    }),
-                    ErrorType::Continue => return Err(Error {
-                        msg: "Cannot use break outside of a loop".to_string(),
-                        lines: vec![s.loc()],  // TODO: add locations
-                    }),
+                Ok(..) => {}
+                Err(err) => {
+                    let msg = match err {
+                        ErrorType::Error(error) => return Err(error),
+                        ErrorType::Return(_) => "Cannot use return outside of a function",
+                        ErrorType::Break => "Cannot use break outside of a loop",
+                        ErrorType::Continue => "Cannot use continue outside of a loop",
+                    }.to_string();
+                    return Err(Error {
+                        msg,
+                        lines: vec![s.loc()] // TODO: add locations
+                    });
                 }
             };
         }
@@ -60,7 +57,7 @@ impl Interpreter {
         self.add_scope();
         for s in block {
             match self.visit_stmt(s) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(err) => {
                     self.remove_scope();
                     return Err(err);
@@ -140,13 +137,13 @@ impl Interpreter {
         };
         while let ValueType::Bool(true) = self.visit_expr(cond.clone())?.val {
             match self.interpret_block(block.clone()) {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(err) => match err {
                     ErrorType::Error(_) => return Err(err),
                     ErrorType::Return(_) => return Err(err),
                     ErrorType::Continue => continue,
                     ErrorType::Break => break,
-                }
+                },
             }
         }
         Ok(())
@@ -182,10 +179,10 @@ impl Interpreter {
         // TODO: nothing here yet
         Ok(())
     }
-    fn brek(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
+    fn brek(&mut self, _stmt: Stmt) -> Result<(), ErrorType> {
         Err(ErrorType::Break)
     }
-    fn cont(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
+    fn cont(&mut self, _stmt: Stmt) -> Result<(), ErrorType> {
         Err(ErrorType::Continue)
     }
     fn retur(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
@@ -206,9 +203,7 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn int(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Int(n) = expr.val else {
-            unreachable!()
-        };
+        let ExprType::Int(n) = expr.val else { unreachable!() };
         Ok(Value {
             val: ValueType::Int(n),
             start: expr.start,
@@ -216,9 +211,7 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn float(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Float(f) = expr.val else {
-            unreachable!()
-        };
+        let ExprType::Float(f) = expr.val else { unreachable!() };
         Ok(Value {
             val: ValueType::Float(f),
             start: expr.start,
@@ -226,9 +219,7 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn string(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::String(s) = expr.val else {
-            unreachable!()
-        };
+        let ExprType::String(s) = expr.val else { unreachable!() };
         Ok(Value {
             val: ValueType::String(s),
             start: expr.start,
@@ -246,9 +237,7 @@ impl ExprVisitor<Value> for Interpreter {
         })
     }
     fn bool(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Bool(b) = expr.val else {
-            unreachable!()
-        };
+        let ExprType::Bool(b) = expr.val else { unreachable!() };
         Ok(Value {
             val: ValueType::Bool(b),
             start: expr.start,
@@ -303,19 +292,24 @@ impl ExprVisitor<Value> for Interpreter {
                         .collect::<HashMap<_, _>>(),
                 );
                 let val = match self.interpret_block(block) {
-                    Ok(..) => ValueType::Unit,  // hope this doesnt bite me later...
-                    Err(err) => match err {  // TODO: ERRORRRRRR
+                    Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
+                    Err(err) => match err {
+                        // TODO: ERRORRRRRR
                         ErrorType::Error(err) => return Err(err),
                         ErrorType::Return(val) => val.val,
-                        ErrorType::Break => return Err(Error {
-                            msg: "Cannot use break outside of loop".to_string(),
-                            lines: vec![expr.loc()],  // TODO: add locations
-                        }),
-                        ErrorType::Continue => return Err(Error {
-                            msg: "Cannot use break outside of loop".to_string(),
-                            lines: vec![expr.loc()],  // TODO: add locations
-                        }),
-                    }
+                        ErrorType::Break => {
+                            return Err(Error {
+                                msg: "Cannot use break outside of loop".to_string(),
+                                lines: vec![expr.loc()], // TODO: add locations
+                            })
+                        }
+                        ErrorType::Continue => {
+                            return Err(Error {
+                                msg: "Cannot use break outside of loop".to_string(),
+                                lines: vec![expr.loc()], // TODO: add locations
+                            })
+                        }
+                    },
                 };
                 self.remove_scope();
                 Ok(Value {
@@ -342,26 +336,32 @@ impl ExprVisitor<Value> for Interpreter {
             "-" => match val.val {
                 ValueType::Int(n) => ValueType::Int(-n),
                 ValueType::Float(n) => ValueType::Float(-n),
-                _ => return Err(Error {
-                    msg: format!("Incorrect type: {}", val.val),
-                    lines: vec![val.loc()]
-                }),
+                _ => {
+                    return Err(Error {
+                        msg: format!("Incorrect type: {}", val.val),
+                        lines: vec![val.loc()],
+                    })
+                }
             },
             "!" => match val.val {
                 ValueType::Bool(b) => ValueType::Bool(!b),
-                _ => return Err(Error {
-                    msg: format!("Incorrect type: {}", val.val),
-                    lines: vec![val.loc()]
-                }),
+                _ => {
+                    return Err(Error {
+                        msg: format!("Incorrect type: {}", val.val),
+                        lines: vec![val.loc()],
+                    })
+                }
             },
-            sym => { unreachable!("unknown binary operator interpreted: {}", sym); }
+            sym => {
+                unreachable!("unknown binary operator interpreted: {}", sym);
+            }
         };
 
         Ok(Value {
             val: new_val,
             start: expr.start,
             end: expr.end,
-        }) 
+        })
     }
     fn binary(&mut self, expr: Expr) -> Result<Value, Error> {
         let ExprType::BinaryOperation(left, op, right) = expr.val else {

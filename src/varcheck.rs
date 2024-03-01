@@ -1,10 +1,4 @@
-use crate::{
-    environment::Environment,
-    error::Error,
-    exprstmt::*,
-    token::*,
-    value::*,
-};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*};
 
 use std::collections::{HashMap, HashSet};
 
@@ -72,7 +66,7 @@ impl VarCheck {
                     ).unwrap();
 
                     self.visit_stmt(s);
-                },
+                }
                 StmtType::AssignStmt(t, expr) => {
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
@@ -98,15 +92,14 @@ impl VarCheck {
                 StmtType::ExprStmt(..) => {
                     self.visit_stmt(s);
                 }
-                StmtType::BreakStmt => {},
-                StmtType::ContinueStmt => {},
+                StmtType::BreakStmt => {}
+                StmtType::ContinueStmt => {}
                 StmtType::ReturnStmt(..) => {
                     self.visit_stmt(s);
                 }
             }
         }
         self.env.remove_scope();
-        
     }
 }
 
@@ -120,8 +113,8 @@ impl VarCheck {
             StmtType::IfStmt(..) => self.if_else(stmt),
             StmtType::WhileStmt(..) => self.whiles(stmt),
             StmtType::FunDeclStmt(..) => self.fun(stmt),
-            StmtType::ContinueStmt => {},
-            StmtType::BreakStmt => {},
+            StmtType::ContinueStmt => {}
+            StmtType::BreakStmt => {}
             StmtType::ReturnStmt(..) => self.retur(stmt),
         }
     }
@@ -215,16 +208,11 @@ impl VarCheck {
         }
     }
 
-    fn unit(&mut self, _: Expr) {
-    }
-    fn int(&mut self, _: Expr) {
-    }
-    fn float(&mut self, _: Expr) {
-    }
-    fn string(&mut self, _: Expr) {
-    }
-    fn bool(&mut self, _: Expr) {
-    }
+    fn unit(&mut self, _: Expr) {}
+    fn int(&mut self, _: Expr) {}
+    fn float(&mut self, _: Expr) {}
+    fn string(&mut self, _: Expr) {}
+    fn bool(&mut self, _: Expr) {}
     fn identifier(&mut self, expr: Expr) {
         let ExprType::Identifier(name) = expr.val.clone() else {
             unreachable!()

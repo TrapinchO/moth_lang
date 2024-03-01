@@ -97,7 +97,7 @@ impl Parser {
                     start: tok.start,
                     end: tok.end,
                 })
-            },
+            }
             TokenType::Break => {
                 self.advance();
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
@@ -106,7 +106,7 @@ impl Parser {
                     start: tok.start,
                     end: tok.end,
                 })
-            },
+            }
             TokenType::Return => {
                 self.advance();
                 let val = if !self.is_typ(&TokenType::Semicolon) {
@@ -125,7 +125,7 @@ impl Parser {
                     end: val.end,
                     val: StmtType::ReturnStmt(val),
                 })
-            },
+            }
             _ => {
                 let expr = self.parse_expression()?;
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
@@ -213,7 +213,7 @@ impl Parser {
         while self.is_typ(&TokenType::Else) {
             let else_kw = self.get_current().clone();
             self.advance();
-            
+
             let cond = if self.is_typ(&TokenType::If) {
                 self.advance();
                 self.parse_expression()?
@@ -316,11 +316,11 @@ impl Parser {
         let TokenType::Symbol(sym) = &tok.val else {
             unreachable!()
         };
-        if !vec!["-", "!"].contains(&sym.as_str()) {
+        if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
                 msg: format!("Unknown operator: \"{}\"", sym),
                 lines: vec![tok.loc()],
-            })
+            });
         }
         self.advance();
         let expr = self.parse_unary()?;
