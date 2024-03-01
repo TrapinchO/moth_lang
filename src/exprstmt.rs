@@ -54,6 +54,7 @@ pub enum StmtType {
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
+    // name, parameters, body
     FunDeclStmt(Token, Vec<Token>, Vec<Stmt>),
     ReturnStmt(Expr),
     BreakStmt,

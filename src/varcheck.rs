@@ -31,13 +31,11 @@ impl VarCheck {
         self.env.add_scope();
         for s in block {
             match &s.val {
-                StmtType::VarDeclStmt(
-                    Token {
-                        val: TokenType::Identifier(name),
-                        ..
-                    },
-                    expr,
-                ) => {
+                StmtType::VarDeclStmt(t, expr) => {
+                    // TODO: I hate this, but destructuring in the match is horrible
+                    let Token { val: TokenType::Identifier(name), .. } = t else {
+                        unreachable!();
+                    };
                     self.visit_expr(expr.clone());
 
                     if self.env.contains(name) {
@@ -55,13 +53,11 @@ impl VarCheck {
                         Value { val: ValueType::Unit, start: 0, end: 0 }
                     ).unwrap();
                 },
-                StmtType::FunDeclStmt(
-                    Token {
-                        val: TokenType::Identifier(name),
-                        ..
-                    },
-                    ..
-                ) => {
+                StmtType::FunDeclStmt(t, _, _) => {
+                    let Token { val: TokenType::Identifier(name), .. } = t else {
+                        unreachable!();
+                    };
+
                     if self.env.contains(name) {
                         self.errs.push(Error {
                             msg: "Already declared variable".to_string(),
@@ -77,13 +73,11 @@ impl VarCheck {
 
                     self.visit_stmt(s);
                 },
-                StmtType::AssignStmt(
-                    Token {
-                        val: TokenType::Identifier(name),
-                        ..
-                    },
-                    expr,
-                ) => {
+                StmtType::AssignStmt(t, expr) => {
+                    let Token { val: TokenType::Identifier(name), .. } = t else {
+                        unreachable!();
+                    };
+
                     self.visit_expr(expr.clone());
                     if !self.env.contains(name) {
                         self.errs.push(Error {
@@ -107,11 +101,6 @@ impl VarCheck {
                 StmtType::BreakStmt => {},
                 StmtType::ContinueStmt => {},
                 StmtType::ReturnStmt(..) => {
-                    self.visit_stmt(s);
-                }
-                _ => {
-                    // TODO: this is like the classic meme "idk what it did so I removed it"...
-                    // it broke.
                     self.visit_stmt(s);
                 }
             }
