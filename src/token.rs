@@ -34,10 +34,10 @@ pub enum TokenType {
 }
 
 impl TokenType {
-    // TODO: better format for non-value types
     fn format(&self) -> String {
         match self {
             Self::Int(n) => n.to_string(),
+            Self::Float(n) => n.to_string(),
             Self::String(s) => format!("\"{}\"", s),
             Self::Symbol(s) => s.to_string(),
             Self::Identifier(i) => i.to_string(),
@@ -45,9 +45,19 @@ impl TokenType {
         }
     }
 
-    pub fn compare_variant(&self, other: &TokenType) -> bool {
-        // probably courtesy of https://stackoverflow.com/a/32554326
-        std::mem::discriminant(self) == std::mem::discriminant(other)
+    fn variant_str(&self) -> String {
+        match self {
+            Self::Int(_) => "Int".to_string(),
+            Self::String(_) => "String".to_string(),
+            Self::Symbol(_) => "Symbol".to_string(),
+            Self::Identifier(_) => "Identifier".to_string(),
+            typ => format!("{:?}", typ),
+        }
+    }
+
+    // TODO: does NOT work if other is misspelled or wrong case
+    pub fn compare_variant_str(&self, other: String) -> bool {
+        self.variant_str() == other
     }
 }
 
@@ -58,3 +68,4 @@ impl Display for TokenType {
 }
 
 pub type Token = Located<TokenType>;
+
