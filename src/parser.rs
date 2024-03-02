@@ -148,6 +148,7 @@ impl Parser {
                     val: StmtType::ReturnStmt(val),
                 })
             }
+            TokenType::LBrace => self.parse_block(),
             _ => {
                 let expr = self.parse_expression()?;
                 self.expect(&TokenType::Semicolon, "Expected a semicolon \";\"")?;
@@ -281,7 +282,7 @@ impl Parser {
     }
 
     fn parse_fun(&mut self) -> Result<Stmt, Error> {
-        let start = self.expect(&TokenType::Fun, "unreachable")?.start;
+        let start = self.expect(&TokenType::Fun, "")?.start;
 
         let ident = self.expect(&TokenType::Identifier("".to_string()), "Expected an identifier")?;
 
