@@ -205,6 +205,7 @@ impl VarCheck {
             ExprType::Call(..) => self.call(expr),
             ExprType::UnaryOperation(..) => self.unary(expr),
             ExprType::BinaryOperation(..) => self.binary(expr),
+            ExprType::List(..) => self.list(expr),
         }
     }
 
@@ -251,5 +252,13 @@ impl VarCheck {
         };
         self.visit_expr(*left);
         self.visit_expr(*right);
+    }
+    fn list(&mut self, expr: Expr) {
+        let ExprType::List(ls) = expr.val else {
+            unreachable!()
+        };
+        for e in ls {
+            self.visit_expr(e);
+        }
     }
 }

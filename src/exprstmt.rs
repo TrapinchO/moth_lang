@@ -14,6 +14,7 @@ pub enum ExprType {
     Call(Box<Expr>, Vec<Expr>), // calle, args (calle(arg1, arg2, arg3))
     UnaryOperation(Token, Box<Expr>),
     BinaryOperation(Box<Expr>, Token, Box<Expr>),
+    List(Vec<Expr>),
 }
 
 impl ExprType {
@@ -33,6 +34,10 @@ impl ExprType {
             ),
             Self::UnaryOperation(op, expr) => format!("({} {})", op.val, expr),
             Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.val, right),
+            Self::List(ls) => format!(
+                "[{}]",
+                ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
+            ),
         }
     }
 }

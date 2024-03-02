@@ -13,6 +13,7 @@ pub enum ValueType {
     Bool(bool),
     Int(i32),
     Float(f32),
+    List(Vec<Value>),
     NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
     Function(Vec<String>, Vec<Stmt>),
     Unit,
@@ -24,6 +25,7 @@ impl ValueType {
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
+            Self::List(ls) => format!("[{}]", ls.iter().map(|e| { e.val.format() }).collect::<Vec<_>>().join(", ")),
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
             Self::Function(..) => "<function>".to_string(),
             Self::Unit => "()".to_string(),

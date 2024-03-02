@@ -41,6 +41,7 @@ pub trait ExprVisitor<T> {
             ExprType::Call(..) => self.call(expr),
             ExprType::UnaryOperation(..) => self.unary(expr),
             ExprType::BinaryOperation(..) => self.binary(expr),
+            ExprType::List(..) => self.list(expr),
         }
     }
     fn unit(&mut self, expr: Expr) -> Result<T, Error>;
@@ -53,4 +54,5 @@ pub trait ExprVisitor<T> {
     fn call(&mut self, expr: Expr) -> Result<T, Error>;
     fn unary(&mut self, expr: Expr) -> Result<T, Error>;
     fn binary(&mut self, expr: Expr) -> Result<T, Error>;
+    fn list(&mut self, expr: Expr) -> Result<T, Error>;
 }

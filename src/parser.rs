@@ -33,7 +33,7 @@ impl Parser {
                 "Attempted to index token out ouf bounds: {} (length {})",
                 self.idx,
                 self.tokens.len()
-            );
+                );
         }
         &self.tokens[self.idx]
     }
@@ -64,10 +64,10 @@ impl Parser {
         let mut ls = vec![];
         while !self.is_at_end()
             && !self.is_typ(&TokenType::Eof)  // apparently needed
-            && !self.is_typ(&TokenType::RBrace)
-        {
-            ls.push(self.parse_statement()?);
-        }
+                && !self.is_typ(&TokenType::RBrace)
+                {
+                    ls.push(self.parse_statement()?);
+                }
 
         Ok(ls)
     }
@@ -145,10 +145,10 @@ impl Parser {
             .start;
         while !self.is_at_end()
             && !self.is_typ(&TokenType::Eof)  // apparently needed
-            && !self.is_typ(&TokenType::RBrace)
-        {
-            ls.push(self.parse_statement()?);
-        }
+                && !self.is_typ(&TokenType::RBrace)
+                {
+                    ls.push(self.parse_statement()?);
+                }
         let end = self
             .expect(&TokenType::RBrace, "Expected } at the end of the block")?
             .start;
@@ -411,6 +411,36 @@ impl Parser {
                     start: tok.start,
                     end,
                 });
+            }
+            TokenType::LBracket => {
+                let start = tok.start;
+                self.advance();
+                let mut items = vec![];
+                if self.is_typ(&TokenType::RBracket) {
+                    let end = self.expect(&TokenType::RBracket, "")?.end;
+                    return Ok(Expr {
+                        val: ExprType::List(items),
+                        start,
+                        end,
+                    });
+                }
+                while !self.is_at_end() {
+                    items.push(self.parse_expression()?);
+                    if self.is_typ(&TokenType::RBracket) {
+                        let end = self.expect(&TokenType::RBracket, "")?.end;
+                        return Ok(Expr {
+                            val: ExprType::List(items),
+                            start,
+                            end,
+                        });
+                    }
+                    self.expect(&TokenType::Comma, "Expected a comma \",\" after an item")?;
+                }
+                let eof = self.get_current();
+                return Err(Error {
+                    msg: "Unexpected EOF while parsing function call".to_string(),
+                    lines: vec![eof.loc()],
+                })
             }
             TokenType::Eof => {
                 return Err(Error {

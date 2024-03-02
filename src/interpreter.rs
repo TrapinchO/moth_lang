@@ -387,4 +387,18 @@ impl ExprVisitor<Value> for Interpreter {
             })?,
         })
     }
+    fn list(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::List(ls) = expr.val else {
+            unreachable!()
+        };
+        let mut ls2 = vec![];
+        for e in ls {
+            ls2.push(self.visit_expr(e)?);
+        }
+        Ok(Value {
+            start: expr.start,
+            end: expr.end,
+            val: ValueType::List(ls2)
+        })
+    }
 }
