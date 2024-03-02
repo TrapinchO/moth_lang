@@ -60,6 +60,28 @@ impl Parser {
         self.idx += 1;
     }
 
+    // TODO: accept beginning and separator
+    // TODO: allow trailing separator
+    fn sep<F, R>(&mut self, f: F, end_tok: TokenType) -> Result<Vec<R>, Error>
+    where F: Fn(&mut Self) -> Result<R, Error>, {
+        let mut items = vec![];
+        if self.is_typ(&end_tok) {
+            return Ok(items);
+        }
+        while !self.is_at_end() {
+            items.push(f(self)?);
+            if self.is_typ(&end_tok) {
+                return Ok(items);
+            }
+            self.expect(&TokenType::Comma, "Expected a comma \",\" after an item")?;
+        }
+        let eof = self.get_current();
+        Err(Error {
+            msg: "Unexpected EOF while parsing function call".to_string(),
+            lines: vec![eof.loc()],
+        })
+    }
+
     pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
         while !self.is_at_end()
@@ -337,31 +359,15 @@ impl Parser {
             return Ok(expr);
         }
         let start = self.expect(&TokenType::LParen, "")?.start;
-        let mut args = vec![];
-        if self.is_typ(&TokenType::RParen) {
-            let end = self.expect(&TokenType::RParen, "")?.end;
-            return Ok(Expr {
-                val: ExprType::Call(expr.into(), args),
-                start,
-                end,
-            });
-        }
-        while !self.is_at_end() {
-            args.push(self.parse_expression()?);
-            if self.is_typ(&TokenType::RParen) {
-                let end = self.expect(&TokenType::RParen, "")?.end;
-                return Ok(Expr {
-                    val: ExprType::Call(expr.into(), args),
-                    start,
-                    end,
-                });
-            }
-            self.expect(&TokenType::Comma, "Expected a comma \",\" after an argument")?;
-        }
-        let eof = self.get_current();
-        Err(Error {
-            msg: "Unexpected EOF while parsing function call".to_string(),
-            lines: vec![eof.loc()],
+        let args = self.sep(
+            Parser::parse_expression,
+            TokenType::RParen
+        )?;
+        let end = self.expect(&TokenType::RParen, "")?.end;
+        Ok(Expr {
+            start,
+            end,
+            val: ExprType::Call(expr.into(), args)
         })
     }
 
@@ -415,31 +421,15 @@ impl Parser {
             TokenType::LBracket => {
                 let start = tok.start;
                 self.advance();
-                let mut items = vec![];
-                if self.is_typ(&TokenType::RBracket) {
-                    let end = self.expect(&TokenType::RBracket, "")?.end;
-                    return Ok(Expr {
-                        val: ExprType::List(items),
-                        start,
-                        end,
-                    });
-                }
-                while !self.is_at_end() {
-                    items.push(self.parse_expression()?);
-                    if self.is_typ(&TokenType::RBracket) {
-                        let end = self.expect(&TokenType::RBracket, "")?.end;
-                        return Ok(Expr {
-                            val: ExprType::List(items),
-                            start,
-                            end,
-                        });
-                    }
-                    self.expect(&TokenType::Comma, "Expected a comma \",\" after an item")?;
-                }
-                let eof = self.get_current();
-                return Err(Error {
-                    msg: "Unexpected EOF while parsing function call".to_string(),
-                    lines: vec![eof.loc()],
+                let items = self.sep(
+                    Parser::parse_expression,
+                    TokenType::RBracket,
+                )?;
+                let end = self.expect(&TokenType::RBracket, "")?.end;
+                return Ok(Expr {
+                    start,
+                    end,
+                    val: ExprType::List(items),
                 })
             }
             TokenType::Eof => {

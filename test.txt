@@ -2,7 +2,10 @@ let y = 10;
 let x = [y, 2, 3, 4, 5];
 //let x = [];
 print(x);
-
+if true {
+    print("aaa");
+    1 + 1;
+}
 
 
 //highlights the entire function
@@ -225,3 +228,4 @@ if x == 0 {
 /* this is a comment to make things less readable * /
 (1 - 1) + 1000;
 */
+
