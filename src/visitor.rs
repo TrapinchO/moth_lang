@@ -42,6 +42,7 @@ pub trait ExprVisitor<T> {
             ExprType::UnaryOperation(..) => self.unary(expr),
             ExprType::BinaryOperation(..) => self.binary(expr),
             ExprType::List(..) => self.list(expr),
+            ExprType::Index(..) => self.index(expr),
         }
     }
     fn unit(&mut self, expr: Expr) -> Result<T, Error>;
@@ -55,4 +56,5 @@ pub trait ExprVisitor<T> {
     fn unary(&mut self, expr: Expr) -> Result<T, Error>;
     fn binary(&mut self, expr: Expr) -> Result<T, Error>;
     fn list(&mut self, expr: Expr) -> Result<T, Error>;
+    fn index(&mut self, expr: Expr) -> Result<T, Error>;
 }

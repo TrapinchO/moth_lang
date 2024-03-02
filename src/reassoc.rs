@@ -292,4 +292,16 @@ impl ExprVisitor<Expr> for Reassociate {
             val: ExprType::List(ls2),
         })
     }
+    fn index(&mut self, expr: Expr) -> Result<Expr, Error> {
+        let ExprType::Index(expr2, idx) = expr.val else {
+            unreachable!()
+        };
+        Ok(Expr {
+            val: ExprType::Index(
+                 self.visit_expr(*expr2)?.into(),
+                 self.visit_expr(*idx)?.into()
+            ),
+            ..expr
+        })
+    }
 }

@@ -355,7 +355,7 @@ impl Parser {
     }
 
     fn parse_call(&mut self) -> Result<Expr, Error> {
-        let expr = self.parse_primary()?;
+        let expr = self.parse_index()?;
         if !self.is_typ(&TokenType::LParen) {
             return Ok(expr);
         }
@@ -369,6 +369,21 @@ impl Parser {
             start,
             end,
             val: ExprType::Call(expr.into(), args)
+        })
+    }
+
+    fn parse_index(&mut self) -> Result<Expr, Error> {
+        let expr = self.parse_primary()?;
+        if !self.is_typ(&TokenType::LBracket) {
+            return Ok(expr);
+        }
+        let start = self.expect(&TokenType::LBracket, "")?.start;
+        let idx = self.parse_expression()?;
+        let end = self.expect(&TokenType::RBracket, "Expected closing bracket.")?.end;
+        Ok(Expr {
+            start,
+            end,
+            val: ExprType::Index(expr.into(), idx.into()),
         })
     }
 

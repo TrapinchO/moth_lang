@@ -11,10 +11,11 @@ pub enum ExprType {
     Bool(bool),
     Identifier(String),
     Parens(Box<Expr>),
-    Call(Box<Expr>, Vec<Expr>), // calle, args (calle(arg1, arg2, arg3))
+    Call(Box<Expr>, Vec<Expr>), // callee, args (calle(arg1, arg2, arg3))
     UnaryOperation(Token, Box<Expr>),
     BinaryOperation(Box<Expr>, Token, Box<Expr>),
     List(Vec<Expr>),
+    Index(Box<Expr>, Box<Expr>),  // expr[idx]
 }
 
 impl ExprType {
@@ -26,7 +27,7 @@ impl ExprType {
             Self::String(s) => format!("\"{}\"", s),
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
-            Self::Parens(expr) => format!("({})", expr.val.format()),
+            Self::Parens(expr) => format!("({})", expr.val),
             Self::Call(callee, args) => format!(
                 "{}({})",
                 callee,
@@ -38,6 +39,7 @@ impl ExprType {
                 "[{}]",
                 ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
             ),
+            Self::Index(expr, idx) => format!("{}[{}]", expr.val, idx.val)
         }
     }
 }

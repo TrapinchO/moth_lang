@@ -208,6 +208,7 @@ impl VarCheck {
             ExprType::UnaryOperation(..) => self.unary(expr),
             ExprType::BinaryOperation(..) => self.binary(expr),
             ExprType::List(..) => self.list(expr),
+            ExprType::Index(..) => self.index(expr),
         }
     }
 
@@ -262,5 +263,12 @@ impl VarCheck {
         for e in ls {
             self.visit_expr(e);
         }
+    }
+    fn index(&mut self, expr: Expr) {
+        let ExprType::Index(expr2, idx) = expr.val else {
+            unreachable!()
+        };
+        self.visit_expr(*expr2);
+        self.visit_expr(*idx);
     }
 }

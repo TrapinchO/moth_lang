@@ -401,4 +401,34 @@ impl ExprVisitor<Value> for Interpreter {
             val: ValueType::List(ls2)
         })
     }
+    fn index(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Index(expr2, idx) = expr.val.clone() else {
+            unreachable!()
+        };
+        let val = self.visit_expr(*expr2)?;
+        let idx2 = self.visit_expr(*idx)?;
+        let ValueType::Int(n) = idx2.val else {
+            return Err(Error {
+                msg: format!("Expected an integer, got {}", idx2.val),
+                lines: vec![val.loc()]
+            })
+        };
+        let ValueType::List(ls) = val.val else {
+            return Err(Error {
+                msg: format!("Expected a list, got {}", val.val),
+                lines: vec![val.loc()]
+            })
+        };
+        match ls.get(n as usize) {
+            Some(val2) => Ok(Value {
+                start: expr.start,
+                end: expr.end,
+                val: val2.val.clone(), 
+            }),
+            None => Err(Error {
+                msg: format!("Invalid index: {}", n),
+                lines: vec![expr.loc()]
+            })
+        }
+    }
 }
