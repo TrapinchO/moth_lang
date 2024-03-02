@@ -20,6 +20,8 @@ struct VarCheck {
     errs: Vec<Error>,
 }
 
+// TODO: because env.contains looks through ALL of the scopes,
+// shadowing in a different scope is not possible
 impl VarCheck {
     fn check_block(&mut self, block: Vec<Stmt>) {
         self.env.add_scope();
