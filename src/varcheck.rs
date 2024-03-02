@@ -1,8 +1,8 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*};
 
 use std::collections::{HashMap, HashSet};
 
-pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
+pub fn varcheck(builtins: HashMap<String, bool>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
     let mut var_check = VarCheck {
         env: Environment::new(builtins),
         errs: vec![],
@@ -16,7 +16,7 @@ pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result
 }
 
 struct VarCheck {
-    env: Environment,
+    env: Environment<bool>,
     errs: Vec<Error>,
 }
 
@@ -44,7 +44,7 @@ impl VarCheck {
                     // it is always going to succeed (as I already check for the existence)
                     self.env.insert(
                         &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        Value { val: ValueType::Unit, start: 0, end: 0 }
+                        false
                     ).unwrap();
                 },
                 StmtType::FunDeclStmt(t, _, _) => {
@@ -62,7 +62,7 @@ impl VarCheck {
                     // it is always going to succeed (as I already check for the existence)
                     self.env.insert(
                         &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        Value { val: ValueType::Function(vec![], vec![]), start: 0, end: 0 }
+                        false
                     ).unwrap();
 
                     self.visit_stmt(s);
@@ -97,6 +97,17 @@ impl VarCheck {
                 StmtType::ReturnStmt(..) => {
                     self.visit_stmt(s);
                 }
+            }
+        }
+        println!("{:?}", self.env.scopes.last().unwrap());
+        // TODO: no error positions existence
+        // idea - take the positions when declared as an option and none them when found
+        for (name, used) in self.env.scopes.last().unwrap() {
+            if !used {
+                self.errs.push(Error {
+                    msg: format!("Variable \"{}\" not used.", name),
+                    lines: vec![],
+                })
             }
         }
         self.env.remove_scope();
@@ -179,7 +190,7 @@ impl VarCheck {
             params2.insert(name.clone());
         }
         self.env.add_scope_vars(
-            params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
+            params2.iter().map(|p| { (p.clone(), false) }).collect::<HashMap<_, _>>()
         );
         self.check_block(block);
         self.env.remove_scope();
@@ -223,6 +234,10 @@ impl VarCheck {
                 lines: vec![expr.loc()],
             });
         }
+        self.env.update(
+            &Token { val: TokenType::Identifier(name), start: expr.start, end: expr.end },
+            true
+        ).unwrap();
     }
     fn parens(&mut self, expr: Expr) {
         let ExprType::Parens(expr2) = expr.val else {

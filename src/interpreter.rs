@@ -14,7 +14,7 @@ pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Resu
 }
 
 pub struct Interpreter {
-    environment: Environment,
+    environment: Environment<ValueType>,
 }
 
 impl Interpreter {
@@ -89,7 +89,7 @@ impl Interpreter {
             unreachable!()
         };
         let val = self.visit_expr(expr)?;
-        self.environment.insert(&ident, val)?;
+        self.environment.insert(&ident, val.val)?;
         Ok(())
     }
 
@@ -98,7 +98,7 @@ impl Interpreter {
             unreachable!()
         };
         let val = self.visit_expr(expr)?;
-        self.environment.update(&ident, val)?;
+        self.environment.update(&ident, val.val)?;
         Ok(())
     }
 
@@ -170,11 +170,7 @@ impl Interpreter {
         }
         self.environment.insert(
             &ident,
-            Value {
-                val: ValueType::Function(params2, block),
-                start: stmt.start,
-                end: stmt.end,
-            },
+            ValueType::Function(params2, block)
         )?;
         // TODO: nothing here yet
         Ok(())

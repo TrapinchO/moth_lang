@@ -9,7 +9,7 @@ use moth_lang::{
 use std::{
     env, fs,
     io::{self, Write},
-    time::Instant,
+    time::Instant, collections::HashMap,
 };
 
 fn main() {
@@ -93,7 +93,8 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: change back to reference, less cloning
-    match varcheck::varcheck(get_builtins(), resassoc.clone()) {
+    let builtins = get_builtins().iter().map(|(name, _)| { (name.clone(), false) }).collect::<HashMap<_, _>>();
+    match varcheck::varcheck(builtins, resassoc.clone()) {
         Ok(()) => {}
         Err(errs) => {
             for e in errs {
