@@ -44,21 +44,6 @@ impl TokenType {
             typ => format!("{:?}", typ),
         }
     }
-
-    fn variant_str(&self) -> String {
-        match self {
-            Self::Int(_) => "Int".to_string(),
-            Self::String(_) => "String".to_string(),
-            Self::Symbol(_) => "Symbol".to_string(),
-            Self::Identifier(_) => "Identifier".to_string(),
-            typ => format!("{:?}", typ),
-        }
-    }
-
-    // TODO: does NOT work if other is misspelled or wrong case
-    pub fn compare_variant_str(&self, other: String) -> bool {
-        self.variant_str() == other
-    }
 }
 
 impl Display for TokenType {
