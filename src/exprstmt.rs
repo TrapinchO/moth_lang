@@ -11,7 +11,7 @@ pub enum ExprType {
     Bool(bool),
     Identifier(String),
     Parens(Box<Expr>),
-    Call(Box<Expr>, Vec<Expr>), // callee, args (calle(arg1, arg2, arg3))
+    Call(Box<Expr>, Vec<Expr>), // calle(arg1, arg2, arg3)
     UnaryOperation(Token, Box<Expr>),
     BinaryOperation(Box<Expr>, Token, Box<Expr>),
     List(Vec<Expr>),
@@ -57,6 +57,7 @@ pub enum StmtType {
     ExprStmt(Expr),
     // identifier, expression
     VarDeclStmt(Token, Expr),
+    //
     AssignStmt(Token, Expr),
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
@@ -122,3 +123,4 @@ impl Display for StmtType {
 
 pub type Stmt = Located<StmtType>;
 pub type Block = Vec<Stmt>;
+

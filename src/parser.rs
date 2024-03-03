@@ -1,4 +1,4 @@
-use std::vec;
+use std::{vec, mem};
 
 use crate::{error::Error, exprstmt::*, token::*};
 
@@ -70,16 +70,21 @@ impl Parser {
     // TODO: allow trailing separator
     fn sep<F, R>(&mut self, f: F, end_tok: TokenType) -> Result<Vec<R>, Error>
     where F: Fn(&mut Self) -> Result<R, Error>, {
+        // TODO: fix hack
+        // funnily enough, my new system with macros broke this one
+        fn cmp(this: &TokenType, other: &TokenType) -> bool {
+            mem::discriminant(this) == mem::discriminant(other)
+        }
         let mut items = vec![];
-        if self.is_typ(&end_tok) {
+        if cmp(&self.get_current().val, &end_tok) {
             return Ok(items);
         }
         while !self.is_at_end() {
             items.push(f(self)?);
-            if self.is_typ(&end_tok) {
+            if cmp(&self.get_current().val, &end_tok) {
                 return Ok(items);
             }
-            self.expect(&TokenType::Comma, "Expected a comma \",\" after an item")?;
+            check_variant!(self, Comma, "Expected a comma \",\" after an item");
         }
         let eof = self.get_current();
         Err(Error {
@@ -366,12 +371,12 @@ impl Parser {
         if !is_typ!(self, LParen) {
             return Ok(expr);
         }
-        let start = check_variant!(self, LParen, "")?.start;
+        let start = check_variant!(self, LParen, "").start;
         let args = self.sep(
             Parser::parse_expression,
             TokenType::RParen
         )?;
-        let end = check_variant!(self, RParen, "")?.end;
+        let end = check_variant!(self, RParen, "").end;
         Ok(Expr {
             start,
             end,
@@ -384,9 +389,9 @@ impl Parser {
         if !is_typ!(self, LBracket) {
             return Ok(expr);
         }
-        let start = check_variant!(self, LBracket, "")?.start;
+        let start = check_variant!(self, LBracket, "").start;
         let idx = self.parse_expression()?;
-        let end = check_variant!(self, RBracket, "Expected closing bracket.")?.end;
+        let end = check_variant!(self, RBracket, "Expected closing bracket.").end;
         Ok(Expr {
             start,
             end,
@@ -448,7 +453,7 @@ impl Parser {
                     Parser::parse_expression,
                     TokenType::RBracket,
                 )?;
-                let end = self.expect(&TokenType::RBracket, "")?.end;
+                let end = check_variant!(self, RBracket, "").end;
                 return Ok(Expr {
                     start,
                     end,
