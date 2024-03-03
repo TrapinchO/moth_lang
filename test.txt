@@ -45,13 +45,13 @@ fun fn(a, b) {
         i = i + 1;
     }
 }
-print(fn(-1, 2));
+//print(fn(-1, 2));
 
 print(());
 */
-/*
-let g = 100;
-if n == 1 {
+// /*
+let x = 100;
+if x == 1 {
     print("1z");
 } else if x < 10 {
     print("1-10");
@@ -61,7 +61,7 @@ if n == 1 {
 } else {
     print("too big");
 }
-*/
+// */
 
 
 
