@@ -158,9 +158,7 @@ impl VarCheck {
             },
         }
     }
-}
 
-impl VarCheck {
     fn visit_expr(&mut self, expr: Expr) {
         match expr.val {
             ExprType::Unit => {},
