@@ -7,7 +7,10 @@ print(x[0]);
     print(x);
     1 + 1;
 }
-
+let a = [1, 2];
+let b = [3, 4];
+let c = a + b;
+print(a, b, c);
 
 //highlights the entire function
 //let add = 10;

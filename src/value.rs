@@ -64,6 +64,11 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
+                (ValueType::List(a), ValueType::List(b)) => {
+                    let mut res = a.clone();
+                    res.append(&mut b.clone());
+                    ValueType::List(res)
+                }
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
         },
