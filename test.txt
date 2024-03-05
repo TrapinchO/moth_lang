@@ -14,7 +14,8 @@ fun modify(ls, i, idx) {
     }
     return ls2;
 }
-print(modify([1, 2, 3, 4, 5], 10, -1));
+//print(modify([1, 2, 3, 4, 5], 10, -1));
+print([1, 2, 3][-2.5]);
 
 
 /*

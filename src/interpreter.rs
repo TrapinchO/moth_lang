@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 
 use crate::{
     environment::Environment,
@@ -410,7 +410,7 @@ impl ExprVisitor<Value> for Interpreter {
         let ValueType::Int(n) = idx2.val else {
             return Err(Error {
                 msg: format!("Expected an integer, got {}", idx2.val),
-                lines: vec![val.loc()]
+                lines: vec![idx2.loc()]
             })
         };
         let ValueType::List(ls) = val.val else {
@@ -419,16 +419,17 @@ impl ExprVisitor<Value> for Interpreter {
                 lines: vec![val.loc()]
             })
         };
-        match ls.get(n as usize) {
-            Some(val2) => Ok(Value {
-                start: expr.start,
-                end: expr.end,
-                val: val2.val.clone(), 
-            }),
-            None => Err(Error {
-                msg: format!("Invalid index: {}", n),
+        if n >= ls.len() as i32 || n < -(ls.len() as i32) {
+            return Err(Error {
+                msg: format!("Index out of range: {}", n),
                 lines: vec![expr.loc()]
-            })
+            });
         }
+        Ok(Value {
+            start: expr.start,
+            end: expr.end,
+            val: ls.get(if n < 0 { ls.len() as i32 + n } else { n } as usize)
+                .unwrap().val.clone(),
+        })
     }
 }
