@@ -118,7 +118,7 @@ impl Reassociate {
             },
             StmtType::AssignStmt(ident, expr) => {
                 Stmt {
-                    val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
+                    val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
                     ..stmt
                 }
             },
