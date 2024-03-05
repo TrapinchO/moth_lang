@@ -2,6 +2,30 @@ use std::vec;
 
 use crate::{error::Error, exprstmt::*, token::*};
 
+
+macro_rules! check_variant {
+    ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
+        {
+            let tok = $self.get_current().clone();
+            match tok.val {
+                TokenType::$variant $( ( $($pattern),+ ) )? => { $self.advance(); tok },
+                _ => return Err(Error {
+                    //msg: concat!("Expected ", stringify!($variant)).to_string(),
+                    msg: $msg.to_string(),
+                    lines: vec![tok.loc()],
+                })
+            }
+        }
+    };
+}
+
+macro_rules! is_typ {
+    ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?) => {
+        matches!($self.get_current().val, TokenType::$variant $( ( $($pattern),+ ) )?)
+    };
+}
+
+
 pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
     if tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof {
         return Ok(vec![]);
@@ -33,27 +57,9 @@ impl Parser {
                 "Attempted to index token out ouf bounds: {} (length {})",
                 self.idx,
                 self.tokens.len()
-            );
+                );
         }
         &self.tokens[self.idx]
-    }
-
-    fn expect(&mut self, typ: &str, msg: &str) -> Result<Token, Error> {
-        let tok = self.get_current().clone();
-        if !tok.val.compare_variant_str(typ.to_string()) {
-            Err(Error {
-                msg: msg.to_string(),
-                lines: vec![tok.loc()],
-            })
-        } else {
-            self.advance();
-            Ok(tok)
-        }
-    }
-
-    /// if the current token has said type
-    fn is_typ(&self, typ: &str) -> bool {
-        self.get_current().val.compare_variant_str(typ.to_string())
     }
 
     fn advance(&mut self) {
@@ -63,11 +69,11 @@ impl Parser {
     pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
         while !self.is_at_end()
-            && !self.is_typ("Eof")  // apparently needed
-            && !self.is_typ("RBrace")
-        {
-            ls.push(self.parse_statement()?);
-        }
+            && !is_typ!(self, Eof)  // apparently needed
+            && !is_typ!(self, RBrace)
+                {
+                    ls.push(self.parse_statement()?);
+                }
 
         Ok(ls)
     }
@@ -78,12 +84,12 @@ impl Parser {
             TokenType::Let => {
                 self.advance();
                 let stmt = self.parse_var_decl()?;
-                self.expect("Semicolon", "Expected a semicolon \";\"")?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
                 Ok(stmt)
             }
             TokenType::Identifier(_) => {
                 let stmt = self.parse_assign()?;
-                self.expect("Semicolon", "Expected a semicolon \";\"")?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
                 Ok(stmt)
             }
             TokenType::If => self.parse_if_else(),
@@ -91,7 +97,7 @@ impl Parser {
             TokenType::Fun => self.parse_fun(),
             TokenType::Continue => {
                 self.advance();
-                self.expect("Semicolon", "Expected a semicolon \";\"")?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
                 Ok(Stmt {
                     val: StmtType::ContinueStmt,
                     start: tok.start,
@@ -100,7 +106,7 @@ impl Parser {
             }
             TokenType::Break => {
                 self.advance();
-                self.expect("Semicolon", "Expected a semicolon \";\"")?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
                 Ok(Stmt {
                     val: StmtType::BreakStmt,
                     start: tok.start,
@@ -109,7 +115,7 @@ impl Parser {
             }
             TokenType::Return => {
                 self.advance();
-                let val = if !self.is_typ("Semicolon") {
+                let val = if !is_typ!(self, Semicolon) {
                     self.parse_expression()?
                 } else {
                     // phantom value, the location is for the return statement
@@ -119,7 +125,7 @@ impl Parser {
                         end: tok.end,
                     }
                 };
-                self.expect("Semicolon", "Expected a semicolon \";\"")?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
                 Ok(Stmt {
                     start: tok.start,
                     end: val.end,
@@ -128,7 +134,7 @@ impl Parser {
             }
             _ => {
                 let expr = self.parse_expression()?;
-                self.expect("Semicolon", "Expected a semicolon \";\"")?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
                 Ok(Stmt {
                     start: expr.start,
                     end: expr.end,
@@ -139,19 +145,17 @@ impl Parser {
     }
 
     fn parse_block(&mut self) -> Result<Stmt, Error> {
+        // maybe can be changed into get + advance?
+        let start = check_variant!(self, LBrace, "Expected { at the beginning of the block").start;
+
         let mut ls = vec![];
-        let start = self
-            .expect("LBrace", "Expected { at the beginning of the block")?
-            .start;
         while !self.is_at_end()
-            && !self.is_typ("Eof")  // apparently needed
-            && !self.is_typ("RBrace")
-        {
-            ls.push(self.parse_statement()?);
-        }
-        let end = self
-            .expect("RBrace", "Expected } at the end of the block")?
-            .start;
+            && !is_typ!(self, Eof)  // apparently needed
+            && !is_typ!(self, RBrace)
+                {
+                    ls.push(self.parse_statement()?);
+                }
+        let end = check_variant!(self, RBrace, "Expected } at the end of the block").end;
 
         Ok(Stmt {
             val: StmtType::BlockStmt(ls),
@@ -161,8 +165,8 @@ impl Parser {
     }
 
     fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
-        let ident = self.expect("Identifier", "Expected an identifier")?;
-        self.expect("Equals", "Expected an equals symbol")?;
+        let ident = check_variant!(self, Identifier(_), "Expected an identifier");
+        check_variant!(self, Equals, "Expected an equals symbol");
         let expr = self.parse_expression()?;
         Ok(Stmt {
             start: ident.start,
@@ -175,7 +179,7 @@ impl Parser {
         let ident = self.get_current().clone();
         self.advance();
 
-        Ok(if self.is_typ("Equals") {
+        Ok(if is_typ!(self, Equals) {
             self.advance();
             let expr = self.parse_expression()?;
             Stmt {
@@ -197,10 +201,10 @@ impl Parser {
     }
 
     fn parse_if_else(&mut self) -> Result<Stmt, Error> {
-        let mut blocks = vec![];
-
         let start = self.get_current().start;
         self.advance(); // move past if
+
+        let mut blocks = vec![];
 
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
@@ -210,11 +214,11 @@ impl Parser {
         blocks.push((cond, bl));
         let mut end = if_block.end;
         let mut exit = false;
-        while self.is_typ("Else") {
+        while is_typ!(self, Else) {
             let else_kw = self.get_current().clone();
             self.advance();
 
-            let cond = if self.is_typ("If") {
+            let cond = if is_typ!(self, If) {
                 self.advance();
                 self.parse_expression()?
             } else {
@@ -259,16 +263,18 @@ impl Parser {
     }
 
     fn parse_fun(&mut self) -> Result<Stmt, Error> {
-        let start = self.expect("Fun", "unreachable")?.start;
+        let start = self.get_current().start;
+        self.advance();
 
-        let ident = self.expect("Identifier", "Expected an identifier")?;
+        let ident = check_variant!(self, Identifier(_), "Expected an identifier");
 
-        self.expect("LParen", "Expected an opening parenthesis")?;
+        check_variant!(self, LParen, "Expected an opening parenthesis");
         let mut params = vec![];
         while !self.is_at_end() {
-            params.push(self.expect("Identifier", "Expected a parameter name")?);
-            if self.is_typ("RParen") {
-                let _ = self.expect("RParen", "")?;
+            params.push(check_variant!(self, Identifier(_), "Expected a parameter name"));
+            if is_typ!(self, RParen) {
+                self.advance();
+                //check_variant!(self, RParen, "");
                 let block = self.parse_block()?;
                 // TODO: horrible cheating, but eh
                 let StmtType::BlockStmt(bl) = block.val else {
@@ -280,7 +286,7 @@ impl Parser {
                     end: block.end,
                 });
             }
-            self.expect("Comma", "Expected a comma \",\" after an argument")?;
+            check_variant!(self, Comma, "Expected a comma \",\" after an argument");
         }
         Err(Error {
             msg: "Reached EOF".to_string(), // TODO: idk yet how
@@ -333,13 +339,15 @@ impl Parser {
 
     fn parse_call(&mut self) -> Result<Expr, Error> {
         let expr = self.parse_primary()?;
-        if !self.is_typ("LParen") {
+        if !is_typ!(self, LParen) {
             return Ok(expr);
         }
-        let start = self.expect("LParen", "")?.start;
+        let start = self.get_current().start;
+        self.advance();
         let mut args = vec![];
-        if self.is_typ("RParen") {
-            let end = self.expect("RParen", "")?.end;
+        if is_typ!(self, RParen) {
+            let end = self.get_current().end;
+            self.advance();
             return Ok(Expr {
                 val: ExprType::Call(expr.into(), args),
                 start,
@@ -348,15 +356,16 @@ impl Parser {
         }
         while !self.is_at_end() {
             args.push(self.parse_expression()?);
-            if self.is_typ("RParen") {
-                let end = self.expect("RParen", "")?.end;
+            if is_typ!(self, RParen) {
+                let end = self.get_current().end;
+                self.advance();
                 return Ok(Expr {
                     val: ExprType::Call(expr.into(), args),
                     start,
                     end,
                 });
             }
-            self.expect("Comma", "Expected a comma \",\" after an argument")?;
+            check_variant!(self, Comma, "Expected a comma \",\" after an argument");
         }
         let eof = self.get_current();
         Err(Error {
@@ -400,12 +409,12 @@ impl Parser {
             }
             TokenType::LParen => {
                 self.advance();
-                let val = if self.is_typ("RParen") {
+                let val = if is_typ!(self, RParen) {
                     ExprType::Unit
                 } else {
                     ExprType::Parens(self.parse_expression()?.into())
                 };
-                let end = self.expect("RParen", "Expected closing parenthesis")?.end;
+                let end = check_variant!(self, RParen, "Expected closing parenthesis").end;
                 return Ok(Expr {
                     val,
                     start: tok.start,
