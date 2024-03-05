@@ -311,7 +311,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
     ),
 ];
 
-pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
+pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
     ("print", |args| {
         println!(
             "{}",
@@ -332,6 +332,17 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
                 .unwrap(),
         ))
     }),
+    ("len", |args| {
+        if args.len() != 1 {
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()))
+        }
+        let val = &args.get(0).unwrap().val;
+        Ok(ValueType::Int(match val {
+            ValueType::String(s) => s.len() as i32,
+            ValueType::List(ls) => ls.len() as i32,
+            _ => return Err(format!("Invalid value: {}", val))
+        }))
+    })
 ];
 
 pub fn get_builtins() -> HashMap<String, ValueType> {

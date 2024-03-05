@@ -1,3 +1,23 @@
+fun append(ls, i) {
+    return ls + [i];
+}
+fun modify(ls, i, idx) {
+    let idx2 = 0;
+    let ls2 = [];
+    while idx2 < len(ls) {
+        if idx2 == idx {
+            ls2 = append(ls2, i);
+	} else {
+            ls2 = append(ls2, ls[idx2]);
+	}
+	    idx2 = idx2 + 1;
+    }
+    return ls2;
+}
+print(modify([1, 2, 3, 4, 5], 10, -1));
+
+
+/*
 let y = 10;
 let x = [y, 2, 3, 4, 5];
 //let x = [];
@@ -12,6 +32,7 @@ let b = [3, 4];
 let c = a + b;
 print(a, b, c);
 
+*/
 //highlights the entire function
 //let add = 10;
 //fun add(a, b) {
