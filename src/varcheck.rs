@@ -39,6 +39,7 @@ impl VarCheck {
                             msg: "Already declared variable".to_string(),
                             lines: vec![s.loc()],
                         });
+                        continue;
                     }
                     // give dummy values
                     // it is always going to succeed (as I already check for the existence)
@@ -106,150 +107,87 @@ impl VarCheck {
 impl VarCheck {
     fn visit_stmt(&mut self, stmt: Stmt) {
         match stmt.val {
-            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
-            StmtType::AssignStmt(..) => self.assignment(stmt),
-            StmtType::ExprStmt(..) => self.expr(stmt),
-            StmtType::BlockStmt(..) => self.block(stmt),
-            StmtType::IfStmt(..) => self.if_else(stmt),
-            StmtType::WhileStmt(..) => self.whiles(stmt),
-            StmtType::FunDeclStmt(..) => self.fun(stmt),
+            // for these there is nothing to check (yet)
+            StmtType::VarDeclStmt(_, expr) => {
+                self.visit_expr(expr);
+            },
+            StmtType::AssignStmt(_, expr) => {
+                self.visit_expr(expr);
+            },
+            StmtType::ExprStmt(expr) => {
+                self.visit_expr(expr);
+            },
+            StmtType::BlockStmt(block) => {
+                // go through
+                self.check_block(block);
+            },
+            StmtType::IfStmt(blocks) => {
+                for (cond, block) in blocks {
+                    self.visit_expr(cond);
+                    self.check_block(block);
+                }
+            },
+            StmtType::WhileStmt(cond, block) => {
+                self.visit_expr(cond);
+                self.check_block(block);
+            },
+            StmtType::FunDeclStmt(_, params, block) => {
+                let mut params2 = HashSet::new();
+                for p in params {
+                    let TokenType::Identifier(name) = &p.val else {
+                        unreachable!()
+                    };
+                    if params2.contains(name) {
+                        self.errs.push(Error {
+                            msg: format!("Found duplicate parameter: \"{}\"", p),
+                            lines: vec![p.loc()],
+                        });
+                    }
+                    params2.insert(name.clone());
+                }
+                self.env.add_scope_vars(
+                    params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
+                    );
+                self.check_block(block);
+                self.env.remove_scope();
+            },
             StmtType::ContinueStmt => {}
             StmtType::BreakStmt => {}
-            StmtType::ReturnStmt(..) => self.retur(stmt),
+            StmtType::ReturnStmt(expr) => {
+                self.visit_expr(expr);
+            },
         }
-    }
-
-    // for these there is nothing to check (yet)
-    fn var_decl(&mut self, stmt: Stmt) {
-        let StmtType::VarDeclStmt(_, expr) = stmt.val.clone() else {
-            unreachable!()
-        };
-        self.visit_expr(expr);
-    }
-    fn assignment(&mut self, stmt: Stmt) {
-        let StmtType::AssignStmt(_, expr) = stmt.val.clone() else {
-            unreachable!()
-        };
-        self.visit_expr(expr);
-    }
-    fn expr(&mut self, stmt: Stmt) {
-        let StmtType::ExprStmt(expr) = stmt.val.clone() else {
-            unreachable!()
-        };
-        self.visit_expr(expr);
-    }
-    // go through
-    fn block(&mut self, stmt: Stmt) {
-        let StmtType::BlockStmt(block) = stmt.val.clone() else {
-            unreachable!()
-        };
-        self.check_block(block);
-    }
-    fn if_else(&mut self, stmt: Stmt) {
-        let StmtType::IfStmt(blocks) = stmt.val.clone() else {
-            unreachable!()
-        };
-        for (cond, block) in blocks {
-            self.visit_expr(cond);
-            self.check_block(block);
-        }
-    }
-    fn whiles(&mut self, stmt: Stmt) {
-        let StmtType::WhileStmt(cond, block) = stmt.val.clone() else {
-            unreachable!()
-        };
-        self.visit_expr(cond);
-        self.check_block(block);
-    }
-    fn fun(&mut self, stmt: Stmt) {
-        let StmtType::FunDeclStmt(_, params, block) = stmt.val.clone() else {
-            unreachable!()
-        };
-        let mut params2 = HashSet::new();
-        for p in params.iter() {
-            let TokenType::Identifier(name) = &p.val else {
-                unreachable!()
-            };
-            if params2.contains(name) {
-                self.errs.push(Error {
-                    msg: format!("Found duplicate parameter: \"{}\"", p),
-                    lines: vec![p.loc()],
-                });
-            }
-            params2.insert(name.clone());
-        }
-        self.env.add_scope_vars(
-            params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
-        );
-        self.check_block(block);
-        self.env.remove_scope();
-    }
-    fn retur(&mut self, stmt: Stmt) {
-        let StmtType::ReturnStmt(expr) = stmt.val.clone() else {
-            unreachable!()
-        };
-        self.visit_expr(expr);
     }
 }
 
 impl VarCheck {
     fn visit_expr(&mut self, expr: Expr) {
-        match &expr.val {
-            ExprType::Unit => self.unit(expr),
-            ExprType::Int(..) => self.int(expr),
-            ExprType::Float(..) => self.float(expr),
-            ExprType::String(..) => self.string(expr),
-            ExprType::Bool(..) => self.bool(expr),
-            ExprType::Identifier(..) => self.identifier(expr),
-            ExprType::Parens(..) => self.parens(expr),
-            ExprType::Call(..) => self.call(expr),
-            ExprType::UnaryOperation(..) => self.unary(expr),
-            ExprType::BinaryOperation(..) => self.binary(expr),
+        match expr.val {
+            ExprType::Unit => {},
+            ExprType::Int(..) => {},
+            ExprType::Float(..) => {},
+            ExprType::String(..) => {},
+            ExprType::Bool(..) => {},
+            ExprType::Identifier(ref name) => {
+                if !self.env.contains(name) {
+                    self.errs.push(Error {
+                        msg: "Undeclared variable".to_string(),
+                        lines: vec![expr.loc()],
+                    });
+                }
+            },
+            ExprType::Parens(expr2) => self.visit_expr(*expr2),
+            ExprType::Call(callee, args) => {
+                self.visit_expr(*callee);
+                for arg in args {
+                    self.visit_expr(arg);
+                }
+            },
+            ExprType::UnaryOperation(_, expr2) => self.visit_expr(*expr2),
+            ExprType::BinaryOperation(left, _, right) => {
+                self.visit_expr(*left);
+                self.visit_expr(*right);
+            },
         }
-    }
-
-    fn unit(&mut self, _: Expr) {}
-    fn int(&mut self, _: Expr) {}
-    fn float(&mut self, _: Expr) {}
-    fn string(&mut self, _: Expr) {}
-    fn bool(&mut self, _: Expr) {}
-    fn identifier(&mut self, expr: Expr) {
-        let ExprType::Identifier(name) = expr.val.clone() else {
-            unreachable!()
-        };
-        if !self.env.contains(&name) {
-            self.errs.push(Error {
-                msg: "Undeclared variable".to_string(),
-                lines: vec![expr.loc()],
-            });
-        }
-    }
-    fn parens(&mut self, expr: Expr) {
-        let ExprType::Parens(expr2) = expr.val else {
-            unreachable!()
-        };
-        self.visit_expr(*expr2);
-    }
-    fn call(&mut self, expr: Expr) {
-        let ExprType::Call(callee, args) = expr.val else {
-            unreachable!()
-        };
-        self.visit_expr(*callee);
-        for arg in args {
-            self.visit_expr(arg);
-        }
-    }
-    fn unary(&mut self, expr: Expr) {
-        let ExprType::UnaryOperation(_, expr2) = expr.val else {
-            unreachable!()
-        };
-        self.visit_expr(*expr2);
-    }
-    fn binary(&mut self, expr: Expr) {
-        let ExprType::BinaryOperation(left, _, right) = expr.val else {
-            unreachable!()
-        };
-        self.visit_expr(*left);
-        self.visit_expr(*right);
     }
 }
