@@ -4,7 +4,6 @@
 //    return a + b;
 //}
 
-let x = y + 1;
 
 fun sub(z, y) {
     return z - y;

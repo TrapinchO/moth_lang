@@ -2,7 +2,7 @@ use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value
 
 use std::collections::{HashMap, HashSet};
 
-pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
+pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: &Vec<Stmt>) -> Result<(), Vec<Error>> {
     let mut var_check = VarCheck {
         env: Environment::new(builtins),
         errs: vec![],
@@ -21,7 +21,7 @@ struct VarCheck {
 }
 
 impl VarCheck {
-    fn check_block(&mut self, block: Vec<Stmt>) {
+    fn check_block(&mut self, block: &Vec<Stmt>) {
         self.env.add_scope();
         for s in block {
             match &s.val {
@@ -30,7 +30,7 @@ impl VarCheck {
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
                     };
-                    self.visit_expr(expr.clone());
+                    self.visit_expr(expr);
 
                     if self.env.contains(name) {
                         // TODO: functions behave weirdly
@@ -73,7 +73,7 @@ impl VarCheck {
                         unreachable!();
                     };
 
-                    self.visit_expr(expr.clone());
+                    self.visit_expr(expr);
                     if !self.env.contains(name) {
                         self.errs.push(Error {
                             msg: "Undeclared variable".to_string(),
@@ -105,8 +105,8 @@ impl VarCheck {
 }
 
 impl VarCheck {
-    fn visit_stmt(&mut self, stmt: Stmt) {
-        match stmt.val {
+    fn visit_stmt(&mut self, stmt: &Stmt) {
+        match &stmt.val {
             // for these there is nothing to check (yet)
             StmtType::VarDeclStmt(_, expr) => {
                 self.visit_expr(expr);
@@ -159,14 +159,14 @@ impl VarCheck {
         }
     }
 
-    fn visit_expr(&mut self, expr: Expr) {
-        match expr.val {
+    fn visit_expr(&mut self, expr: &Expr) {
+        match &expr.val {
             ExprType::Unit => {},
             ExprType::Int(..) => {},
             ExprType::Float(..) => {},
             ExprType::String(..) => {},
             ExprType::Bool(..) => {},
-            ExprType::Identifier(ref name) => {
+            ExprType::Identifier(name) => {
                 if !self.env.contains(name) {
                     self.errs.push(Error {
                         msg: "Undeclared variable".to_string(),
@@ -174,17 +174,17 @@ impl VarCheck {
                     });
                 }
             },
-            ExprType::Parens(expr2) => self.visit_expr(*expr2),
+            ExprType::Parens(expr2) => self.visit_expr(expr2),
             ExprType::Call(callee, args) => {
-                self.visit_expr(*callee);
+                self.visit_expr(callee);
                 for arg in args {
                     self.visit_expr(arg);
                 }
             },
-            ExprType::UnaryOperation(_, expr2) => self.visit_expr(*expr2),
+            ExprType::UnaryOperation(_, expr2) => self.visit_expr(expr2),
             ExprType::BinaryOperation(left, _, right) => {
-                self.visit_expr(*left);
-                self.visit_expr(*right);
+                self.visit_expr(left);
+                self.visit_expr(right);
             },
         }
     }
