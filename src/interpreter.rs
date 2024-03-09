@@ -230,7 +230,7 @@ impl Interpreter {
         Ok(ValueType::Bool(b))
     }
     fn identifier(&mut self, ident: String, loc: (usize, usize)) -> Result<ValueType, Error> {
-        Ok(self.environment.get(&ident, loc)?)
+        self.environment.get(&ident, loc)
     }
     fn parens(&mut self, expr: Expr) -> Result<ValueType, Error> {
         Ok(self.visit_expr(expr)?.val)
@@ -243,6 +243,7 @@ impl Interpreter {
 
         let callee = self.visit_expr(callee)?;
         match callee.val {
+            // TODO: the ok and ? can be removed
             ValueType::NativeFunction(func) => Ok(
                 func(args2).map_err(|msg| Error {
                     msg,
@@ -341,9 +342,9 @@ impl Interpreter {
                 lines: vec![op.loc()],
             });
         };
-        Ok(func(vec![left2, right2]).map_err(|msg| Error {
+        func(vec![left2, right2]).map_err(|msg| Error {
             msg,
             lines: vec![right_loc],
-        })?)
+        })
     }
 }
