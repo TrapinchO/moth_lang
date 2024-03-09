@@ -121,7 +121,7 @@ mod tests {
         let input = "let x = 10; x = 1;".to_string();
         let tokens = lex(&input)?;
         let ast = parse(tokens)?;
-        let checked = varcheck::varcheck(get_builtins(), ast);
+        let checked = varcheck::varcheck(get_builtins(), &ast);
         if let Ok(_) = checked {
             return Ok(());
         }
