@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     error::Error,
     exprstmt::*,
-    token::*,
+    token::*, visitor::ExprVisitor, visitor::{Location, StmtVisitor},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,36 +109,40 @@ impl Reassociate {
     }
 }
 
-impl Reassociate {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<Stmt, Error> {
-        Ok(match stmt.val {
-            StmtType::VarDeclStmt(ident, expr) => Stmt {
-                val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
-                ..stmt
-            },
-            StmtType::AssignStmt(ident, expr) => {
-                Stmt {
-                    val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
-                    ..stmt
-                }
-            },
-            StmtType::ExprStmt(expr) => {
-                Stmt {
-                    val: StmtType::ExprStmt(self.visit_expr(expr)?),
-                    ..stmt
-                }
-            },
-            StmtType::BlockStmt(block) => {
+impl StmtVisitor<Stmt> for Reassociate {
+    fn expr(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::ExprStmt(self.visit_expr(expr)?),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn var_decl(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn assignment(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<Stmt, Error> {
                 let mut block2: Vec<Stmt> = vec![];
                 for s in block {
                     block2.push(self.visit_stmt(s)?)
                 }
-                Stmt {
+                Ok(Stmt {
                     val: StmtType::BlockStmt(block2),
-                    ..stmt
-                }
-            },
-            StmtType::IfStmt(blocks) => {
+            start: loc.0,
+            end: loc.1,
+                })
+    }
+    fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
                 let mut blocks_result: Vec<(Expr, Block)> = vec![];
                 for (cond, stmts) in blocks {
                     let mut block: Block = vec![];
@@ -148,77 +152,127 @@ impl Reassociate {
                     blocks_result.push((self.visit_expr(cond)?, block))
                 }
 
-                Stmt {
+                Ok(Stmt {
                     val: StmtType::IfStmt(blocks_result),
-                    ..stmt
-                }
-            }
-            StmtType::WhileStmt(cond, block) => {
+            start: loc.0,
+            end: loc.1,
+                })
+    }
+    fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<Stmt, Error> {
                 let cond = self.visit_expr(cond)?;
                 let mut block2: Block = vec![];
                 for s in block {
                     block2.push(self.visit_stmt(s)?)
                 }
-                Stmt {
+                Ok(Stmt {
                     val: StmtType::WhileStmt(cond, block2),
-                    ..stmt
-                }
-            },
-            StmtType::FunDeclStmt(ident, params, block) => {
+            start: loc.0,
+            end: loc.1,
+                })
+    }
+    fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<Stmt, Error> {
                 let mut block2: Block = vec![];
                 for s in block {
                     block2.push(self.visit_stmt(s)?)
                 }
-                Stmt {
-                    val: StmtType::FunDeclStmt(ident, params, block2),
-                    ..stmt
-                }
-            },
-            StmtType::ContinueStmt => stmt,
-            StmtType::BreakStmt => stmt,
-            StmtType::ReturnStmt(expr) => {
-                Stmt {
-                    val: StmtType::ReturnStmt(self.visit_expr(expr)?),
-                    ..stmt
-                }
-            },
+                Ok(Stmt {
+                    val: StmtType::FunDeclStmt(name, params, block2),
+            start: loc.0,
+            end: loc.1,
+                })
+    }
+    fn retur(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::ReturnStmt(self.visit_expr(expr)?),
+            start: loc.0,
+            end: loc.1,
         })
     }
-
-    fn visit_expr(&mut self, expr: Expr) -> Result<Expr, Error> {
-        Ok(match expr.val {
-            ExprType::Unit => expr,
-            ExprType::Int(_) => expr,
-            ExprType::Float(_) => expr,
-            ExprType::String(_) => expr,
-            ExprType::Bool(_) => expr,
-            ExprType::Identifier(_) => expr,
-            ExprType::Parens(expr2) => {
-                Expr {
-                    val: ExprType::Parens(self.visit_expr(*expr2)?.into()),
-                    ..expr
-                }
-            },
-            ExprType::Call(callee, args) => {
-                let mut args2 = vec![];
-                for arg in args {
-                    args2.push(self.visit_expr(arg)?);
-                }
-                Expr {
-                    val: ExprType::Call(self.visit_expr(*callee)?.into(), args2),
-                    ..expr
-                }
-            },
-            ExprType::UnaryOperation(op, expr2) => {
-                Expr {
-                    val: ExprType::UnaryOperation(op, self.visit_expr(*expr2)?.into()),
-                    ..expr
-                }
-            },
-            ExprType::BinaryOperation(left, op, right) => {
-                self.reassoc(*left, op, *right)?
-            },
-
+    fn cont(&mut self, loc: Location) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::ContinueStmt,
+            start: loc.0,
+            end: loc.1,
         })
+    }
+    fn brek(&mut self, loc: Location) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::ContinueStmt,
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+}
+
+impl ExprVisitor<Expr> for Reassociate {
+    fn unit(&mut self, loc: Location) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::Unit,
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn int(&mut self, loc: Location, n: i32) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::Int(n),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn float(&mut self, loc: Location, n: f32) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::Float(n),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn string(&mut self, loc: Location, s: String) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::String(s),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn bool(&mut self, loc: Location, b: bool) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::Bool(b),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn identifier(&mut self, loc: Location, ident: String) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::Identifier(ident),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn parens(&mut self, loc: Location, expr: Expr) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::Parens(self.visit_expr(expr)?.into()),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn call(&mut self, loc: Location, callee: Expr, args: Vec<Expr>) -> Result<Expr, Error> {
+        let mut args2 = vec![];
+        for arg in args {
+            args2.push(self.visit_expr(arg)?);
+        }
+        Ok(Expr {
+            val: ExprType::Call(self.visit_expr(callee)?.into(), args2),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn unary(&mut self, loc: Location, op: Token, expr: Expr) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::UnaryOperation(op, self.visit_expr(expr)?.into()),
+            start: loc.0,
+            end: loc.1,
+        })
+    }
+    fn binary(&mut self, _: Location, left: Expr, op: Token, right: Expr) -> Result<Expr, Error> {
+        self.reassoc(left, op, right)
     }
 }

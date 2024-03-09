@@ -1,4 +1,4 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*, visitor::Location};
 
 use std::collections::{HashMap, HashSet};
 
@@ -106,86 +106,119 @@ impl VarCheck {
 
 impl VarCheck {
     fn visit_stmt(&mut self, stmt: &Stmt) {
+        let loc = stmt.loc();
         match &stmt.val {
-            // for these there is nothing to check (yet)
-            StmtType::VarDeclStmt(_, expr) => {
-                self.visit_expr(expr);
-            },
-            StmtType::AssignStmt(_, expr) => {
-                self.visit_expr(expr);
-            },
-            StmtType::ExprStmt(expr) => {
-                self.visit_expr(expr);
-            },
-            StmtType::BlockStmt(block) => {
-                // go through
-                self.check_block(block);
-            },
-            StmtType::IfStmt(blocks) => {
-                for (cond, block) in blocks {
-                    self.visit_expr(cond);
-                    self.check_block(block);
-                }
-            },
-            StmtType::WhileStmt(cond, block) => {
-                self.visit_expr(cond);
-                self.check_block(block);
-            },
-            StmtType::FunDeclStmt(_, params, block) => {
-                let mut params2 = HashSet::new();
-                for p in params {
-                    let TokenType::Identifier(name) = &p.val else {
-                        unreachable!()
-                    };
-                    if params2.contains(name) {
-                        self.errs.push(Error {
-                            msg: format!("Found duplicate parameter: \"{}\"", p),
-                            lines: vec![p.loc()],
-                        });
-                    }
-                    params2.insert(name.clone());
-                }
-                self.env.add_scope_vars(
-                    params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
-                    );
-                self.check_block(block);
-                self.env.remove_scope();
-            },
-            StmtType::ContinueStmt => {}
-            StmtType::BreakStmt => {}
-            StmtType::ReturnStmt(expr) => {
-                self.visit_expr(expr);
-            },
+            StmtType::ExprStmt(expr) => self.expr(loc, expr),
+            StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
+            StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
+            StmtType::BlockStmt(block) => self.block(loc, block),
+            StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
+            StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
+            StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
+            StmtType::ReturnStmt(expr) => self.retur(loc, expr),
+            StmtType::BreakStmt => self.brek(loc),
+            StmtType::ContinueStmt => self.cont(loc),
         }
     }
-
-    fn visit_expr(&mut self, expr: &Expr) {
-        match &expr.val {
-            ExprType::Unit => {},
-            ExprType::Int(..) => {},
-            ExprType::Float(..) => {},
-            ExprType::String(..) => {},
-            ExprType::Bool(..) => {},
-            ExprType::Identifier(name) => {
-                if !self.env.contains(name) {
-                    self.errs.push(Error {
-                        msg: "Undeclared variable".to_string(),
-                        lines: vec![expr.loc()],
-                    });
-                }
-            },
-            ExprType::Parens(expr2) => self.visit_expr(expr2),
-            ExprType::Call(callee, args) => {
-                self.visit_expr(callee);
-                for arg in args {
-                    self.visit_expr(arg);
-                }
-            },
-            ExprType::UnaryOperation(_, expr2) => self.visit_expr(expr2),
-            ExprType::BinaryOperation(left, _, right) => {
-                self.visit_expr(left);
-                self.visit_expr(right);
-            },
+    fn expr(&mut self, _: Location, expr: &Expr) {
+        self.visit_expr(expr);
+    }
+    fn var_decl(&mut self, _: Location, _: &Token, expr: &Expr) {
+        self.visit_expr(expr);
+    }
+    fn assignment(&mut self, _: Location, _: &Token, expr: &Expr) {
+        self.visit_expr(expr);
+    }
+    fn block(&mut self, _: Location, block: &Vec<Stmt>) {
+        self.check_block(block);
+    }
+    fn if_else(&mut self, _: Location, blocks: &Vec<(Expr, Vec<Stmt>)>) {
+        for (cond, block) in blocks {
+            self.visit_expr(cond);
+            self.check_block(block);
         }
+    }
+    fn whiles(&mut self, _: Location, cond: &Expr, block: &Vec<Stmt>) {
+        self.visit_expr(cond);
+        self.check_block(block);
+    }
+    fn fun(&mut self, _: Location, _: &Token, params: &Vec<Token>, block: &Vec<Stmt>) {
+        let mut params2 = HashSet::new();
+        for p in params {
+            let TokenType::Identifier(name) = &p.val else {
+                unreachable!()
+            };
+            if params2.contains(name) {
+                self.errs.push(Error {
+                    msg: format!("Found duplicate parameter: \"{}\"", p),
+                    lines: vec![p.loc()],
+                });
+            }
+            params2.insert(name.clone());
+        }
+        self.env.add_scope_vars(
+            params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
+        );
+        self.check_block(block);
+        self.env.remove_scope();
+    }
+    fn retur(&mut self, _: Location, expr: &Expr) {
+        self.visit_expr(expr);
+    }
+    fn brek(&mut self, _: Location) {
+    }
+    fn cont(&mut self, _: Location) {
+    }
+}
+impl VarCheck {
+    fn visit_expr(&mut self, expr: &Expr) {
+        let loc = expr.loc();
+        match &expr.val {
+            ExprType::Unit => self.unit(loc),
+            ExprType::Int(n) => self.int(loc, n),
+            ExprType::Float(n) => self.float(loc, n),
+            ExprType::String(s) => self.string(loc, s),
+            ExprType::Bool(b) => self.bool(loc, b),
+            ExprType::Identifier(ident) => self.identifier(loc, ident),
+            ExprType::Parens(expr1) => self.parens(loc, expr1),
+            ExprType::Call(callee, args) => self.call(loc, callee, args),
+            ExprType::UnaryOperation(op, expr1) => self.unary(loc, op, expr1),
+            ExprType::BinaryOperation(left, op, right) => self.binary(loc, left, op, right),
+        };
+    }
+    // nothing to check
+    fn unit(&mut self, _: Location) {
+    }
+    fn int(&mut self, _: Location, _: &i32) {
+    }
+    fn float(&mut self, _: Location, _: &f32) {
+    }
+    fn string(&mut self, _: Location, _: &String) {
+    }
+    fn bool(&mut self, _: Location, _: &bool) {
+    }
+    fn identifier(&mut self, loc: Location, ident: &String) {
+        if !self.env.contains(ident) {
+            self.errs.push(Error {
+                msg: "Undeclared variable".to_string(),
+                lines: vec![loc],
+            });
+        }
+    }
+    fn parens(&mut self, _: Location, expr: &Expr) {
+        self.visit_expr(expr);
+    }
+    fn call(&mut self, _: Location, callee: &Expr, args: &Vec<Expr>) {
+        self.visit_expr(callee);
+        for arg in args {
+            self.visit_expr(arg);
+        }
+    }
+    fn unary(&mut self, _: Location, _: &Token, expr: &Expr) {
+        self.visit_expr(expr);
+    }
+    fn binary(&mut self, _: Location, left: &Expr, _: &Token, right: &Expr) {
+        self.visit_expr(left);
+        self.visit_expr(right);
     }
 }
