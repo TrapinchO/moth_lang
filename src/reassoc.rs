@@ -54,7 +54,7 @@ impl Reassociate {
         let TokenType::Symbol(op1_sym) = &op1.val else {
             unreachable!()
         };
-        let prec1 = self.ops.get(op1_sym.as_str()).ok_or(Error {
+        let prec1 = self.ops.get(op1_sym).ok_or(Error {
             msg: format!("Operator not found: {}", op1_sym),
             lines: vec![op1.loc()],
         })?;
@@ -62,7 +62,7 @@ impl Reassociate {
         let TokenType::Symbol(op2_sym) = &op2.val else {
             unreachable!()
         };
-        let prec2 = self.ops.get(op2_sym.as_str()).ok_or(Error {
+        let prec2 = self.ops.get(op2_sym).ok_or(Error {
             msg: format!("Operator not found: {}", op2_sym),
             lines: vec![op2.loc()],
         })?;
@@ -71,9 +71,9 @@ impl Reassociate {
             std::cmp::Ordering::Greater => {
                 let left = self.reassoc(left, op1, *left2)?.into();
                 Ok(Expr {
-                    val: ExprType::BinaryOperation(left, op2.clone(), right2.clone()),
                     start: right2.start,
                     end: right2.end,
+                    val: ExprType::BinaryOperation(left, op2, right2),
                 })
             }
 
