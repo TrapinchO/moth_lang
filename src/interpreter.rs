@@ -195,75 +195,47 @@ impl Interpreter {
 
 impl Interpreter {
     fn visit_expr(&mut self, expr: Expr) -> Result<Value, Error> {
+        let loc = expr.loc();
         let val = match expr.val {
-            ExprType::Unit => self.unit(expr.loc()),
-            ExprType::Int(n) => self.int(n, expr.loc()),
-            ExprType::Float(n) => self.float(n, expr.loc()),
-            ExprType::String(s) => self.string(s, expr.loc()),
-            ExprType::Bool(b) => self.bool(b, expr.loc()),
-            ExprType::Identifier(ident) => self.identifier(ident, expr.loc()),
-            ExprType::Parens(expr1) => self.parens(*expr1, expr.loc()),
-            ExprType::Call(callee, args) => self.call(*callee, args, expr.loc()),
-            ExprType::UnaryOperation(op, expr1) => self.unary(op, *expr1, expr.loc()),
-            ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right, expr.loc()),
-        };
+            ExprType::Unit => self.unit(),
+            ExprType::Int(n) => self.int(n),
+            ExprType::Float(n) => self.float(n),
+            ExprType::String(s) => self.string(s),
+            ExprType::Bool(b) => self.bool(b),
+            ExprType::Identifier(ident) => self.identifier(ident, loc),
+            ExprType::Parens(expr1) => self.parens(*expr1),
+            ExprType::Call(callee, args) => self.call(*callee, args, loc),
+            ExprType::UnaryOperation(op, expr1) => self.unary(op, *expr1),
+            ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right),
+        }?;
         Ok(Value {
             start: expr.start,
             end: expr.end,
             val,
         })
     }
-    fn unit(&mut self, loc: (usize, usize)) -> Result<Value, Error> {
-        return Ok(ValueType::Unit);
-        Ok(Value {
-            val: ValueType::Unit,
-            start: loc.0,
-            end: loc.1,
-        })
+    fn unit(&mut self) -> Result<ValueType, Error> {
+        Ok(ValueType::Unit)
     }
-    fn int(&mut self, n: i32, loc: (usize, usize)) -> Result<Value, Error> {
-        Ok(Value {
-            val: ValueType::Int(n),
-            start: loc.0,
-            end: loc.1,
-        })
+    fn int(&mut self, n: i32) -> Result<ValueType, Error> {
+        Ok(ValueType::Int(n))
     }
-    fn float(&mut self, n: f32, loc: (usize, usize)) -> Result<Value, Error> {
-        Ok(Value {
-            val: ValueType::Float(n),
-            start: loc.0,
-            end: loc.1,
-        })
+    fn float(&mut self, n: f32) -> Result<ValueType, Error> {
+        Ok(ValueType::Float(n))
     }
-    fn string(&mut self, s: String, loc: (usize, usize)) -> Result<Value, Error> {
-        Ok(Value {
-            val: ValueType::String(s),
-            start: loc.0,
-            end: loc.1,
-        })
+    fn string(&mut self, s: String) -> Result<ValueType, Error> {
+        Ok(ValueType::String(s))
     }
-    fn bool(&mut self, b: bool, loc: (usize, usize)) -> Result<Value, Error> {
-        Ok(Value {
-            val: ValueType::Bool(b),
-            start: loc.0,
-            end: loc.1,
-        })
+    fn bool(&mut self, b: bool) -> Result<ValueType, Error> {
+        Ok(ValueType::Bool(b))
     }
-    fn identifier(&mut self, ident: String, loc: (usize, usize)) -> Result<Value, Error> {
-        Ok(Value {
-            val: self.environment.get(&ident, loc)?,
-            start: loc.0,
-            end: loc.1,
-        })
+    fn identifier(&mut self, ident: String, loc: (usize, usize)) -> Result<ValueType, Error> {
+        Ok(self.environment.get(&ident, loc)?)
     }
-    fn parens(&mut self, expr: Expr, loc: (usize, usize)) -> Result<Value, Error> {
-        Ok(Value {
-            start: loc.0,
-            end: loc.1,
-            val: self.visit_expr(expr)?.val,
-        })
+    fn parens(&mut self, expr: Expr) -> Result<ValueType, Error> {
+        Ok(self.visit_expr(expr)?.val)
     }
-    fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: (usize, usize)) -> Result<Value, Error> {
+    fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: (usize, usize)) -> Result<ValueType, Error> {
         let mut args2 = vec![];
         for arg in args {
             args2.push(self.visit_expr(arg)?);
@@ -271,14 +243,12 @@ impl Interpreter {
 
         let callee = self.visit_expr(callee)?;
         match callee.val {
-            ValueType::NativeFunction(func) => Ok(Value {
-                val: func(args2).map_err(|msg| Error {
+            ValueType::NativeFunction(func) => Ok(
+                func(args2).map_err(|msg| Error {
                     msg,
                     lines: vec![loc],
-                })?,
-                start: loc.0,
-                end: loc.1,
-            }),
+                })?
+            ),
             ValueType::Function(params, block) => {
                 if args2.len() != params.len() {
                     return Err(Error {
@@ -318,11 +288,7 @@ impl Interpreter {
                     },
                 };
                 self.remove_scope();
-                Ok(Value {
-                    val,
-                    start: loc.0,
-                    end: loc.1,
-                })
+                Ok(val)
             }
             _ => Err(Error {
                 msg: format!("\"{}\" is not calleable", callee.val),
@@ -330,7 +296,7 @@ impl Interpreter {
             }),
         }
     }
-    fn unary(&mut self, op: Token, expr: Expr, loc: (usize, usize)) -> Result<Value, Error> {
+    fn unary(&mut self, op: Token, expr: Expr) -> Result<ValueType, Error> {
         let val = self.visit_expr(expr)?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
@@ -360,13 +326,10 @@ impl Interpreter {
             }
         };
 
-        Ok(Value {
-            val: new_val,
-            start: loc.0,
-            end: loc.1,
-        })
+        Ok(new_val)
     }
-    fn binary(&mut self, left: Expr, op: Token, right: Expr, loc: (usize, usize)) -> Result<Value, Error> {
+    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<ValueType, Error> {
+        let right_loc = right.loc();
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.val else {
@@ -378,13 +341,9 @@ impl Interpreter {
                 lines: vec![op.loc()],
             });
         };
-        Ok(Value {
-            start: loc.0,
-            end: loc.1,
-            val: func(vec![left2, right2]).map_err(|msg| Error {
-                msg,
-                lines: vec![right.loc()],
-            })?,
-        })
+        Ok(func(vec![left2, right2]).map_err(|msg| Error {
+            msg,
+            lines: vec![right_loc],
+        })?)
     }
 }
