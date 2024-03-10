@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     error::Error,
     token::{Token, TokenType},
-    value::{Value, ValueType},
+    value::{Value, ValueType}, located::Location,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -24,14 +24,14 @@ impl Environment {
         if last_scope.contains_key(name) {
             return Err(Error {
                 msg: format!("Name \"{}\" already exists", name),
-                lines: vec![ident.loc()],
+                lines: vec![ident.loc],
             });
         }
         last_scope.insert(name.clone(), val.val);
         Ok(())
     }
 
-    pub fn get(&self, ident: &String, pos: (usize, usize)) -> Result<ValueType, Error> {
+    pub fn get(&self, ident: &String, pos: Location) -> Result<ValueType, Error> {
         for scope in self.scopes.iter().rev() {
             if scope.contains_key(ident) {
                 return Ok(scope.get(ident).unwrap().clone());
@@ -55,7 +55,7 @@ impl Environment {
         }
         Err(Error {
             msg: format!("Name not found: \"{}\"", name),
-            lines: vec![ident.loc()],
+            lines: vec![ident.loc],
         })
     }
 

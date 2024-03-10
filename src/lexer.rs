@@ -1,4 +1,4 @@
-use crate::{error::Error, located::Located, token::*};
+use crate::{error::Error, located::{Located, Location}, token::*};
 
 use std::collections::HashMap;
 
@@ -75,7 +75,7 @@ impl Lexer {
     fn error(&self, msg: String) -> Error {
         Error {
             msg,
-            lines: vec![(self.start_idx, self.idx)],
+            lines: vec![Location { start: self.start_idx, end: self.idx }],
         }
     }
 

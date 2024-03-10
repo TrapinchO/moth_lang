@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     error::Error,
     exprstmt::*,
-    token::*, visitor::ExprVisitor, visitor::{Location, StmtVisitor},
+    token::*, visitor::ExprVisitor, visitor::StmtVisitor, located::Location,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,8 +45,7 @@ impl Reassociate {
         // not a binary operation, no need to reassociate it
         let ExprType::BinaryOperation(left2, op2, right2) = right.val.clone() else {
             return Ok(Expr {
-                start: left.start,
-                end: right.end,
+                loc: Location { start: left.loc.start, end: right.loc.end },
                 val: ExprType::BinaryOperation(left.into(), op1, right.into()),
             });
         };
@@ -56,7 +55,7 @@ impl Reassociate {
         };
         let prec1 = self.ops.get(op1_sym).ok_or(Error {
             msg: format!("Operator not found: {}", op1_sym),
-            lines: vec![op1.loc()],
+            lines: vec![op1.loc],
         })?;
 
         let TokenType::Symbol(op2_sym) = &op2.val else {
@@ -64,22 +63,20 @@ impl Reassociate {
         };
         let prec2 = self.ops.get(op2_sym).ok_or(Error {
             msg: format!("Operator not found: {}", op2_sym),
-            lines: vec![op2.loc()],
+            lines: vec![op2.loc],
         })?;
         // TODO: make functions like in the SO answer?
         match prec1.prec.cmp(&prec2.prec) {
             std::cmp::Ordering::Greater => {
                 let left = self.reassoc(left, op1, *left2)?.into();
                 Ok(Expr {
-                    start: right2.start,
-                    end: right2.end,
+                    loc: right2.loc,
                     val: ExprType::BinaryOperation(left, op2, right2),
                 })
             }
 
             std::cmp::Ordering::Less => Ok(Expr {
-                start: left.start,
-                end: right.end,
+                loc: Location { start: left.loc.start, end: right.loc.end },
                 val: ExprType::BinaryOperation(left.into(), op1, right.into()),
             }),
 
@@ -87,14 +84,12 @@ impl Reassociate {
                 (Associativity::Left, Associativity::Left) => {
                     let left = self.reassoc(left, op1, *left2)?.into();
                     Ok(Expr {
-                        start: right2.start,
-                        end: right2.end,
+                        loc: right2.loc,
                         val: ExprType::BinaryOperation(left, op2, right2),
                     })
                 }
                 (Associativity::Right, Associativity::Right) => Ok(Expr {
-                    start: left.start,
-                    end: right.end,
+                    loc: Location { start: left.loc.start, end: right.loc.end },
                     val: ExprType::BinaryOperation(left.into(), op1, right.into()),
                 }),
                 _ => Err(Error {
@@ -102,7 +97,7 @@ impl Reassociate {
                         "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
                         op1.val, prec1.assoc, op2.val, prec2.assoc, prec1.prec
                     ),
-                    lines: vec![op1.loc(), op2.loc()],
+                    lines: vec![op1.loc, op2.loc],
                 }),
             },
         }
@@ -113,22 +108,19 @@ impl StmtVisitor<Stmt> for Reassociate {
     fn expr(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::ExprStmt(self.visit_expr(expr)?),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn var_decl(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn assignment(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<Stmt, Error> {
@@ -138,8 +130,7 @@ impl StmtVisitor<Stmt> for Reassociate {
                 }
                 Ok(Stmt {
                     val: StmtType::BlockStmt(block2),
-            start: loc.0,
-            end: loc.1,
+            loc,
                 })
     }
     fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
@@ -154,8 +145,7 @@ impl StmtVisitor<Stmt> for Reassociate {
 
                 Ok(Stmt {
                     val: StmtType::IfStmt(blocks_result),
-            start: loc.0,
-            end: loc.1,
+            loc,
                 })
     }
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<Stmt, Error> {
@@ -166,8 +156,7 @@ impl StmtVisitor<Stmt> for Reassociate {
                 }
                 Ok(Stmt {
                     val: StmtType::WhileStmt(cond, block2),
-            start: loc.0,
-            end: loc.1,
+            loc,
                 })
     }
     fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<Stmt, Error> {
@@ -177,29 +166,25 @@ impl StmtVisitor<Stmt> for Reassociate {
                 }
                 Ok(Stmt {
                     val: StmtType::FunDeclStmt(name, params, block2),
-            start: loc.0,
-            end: loc.1,
+            loc,
                 })
     }
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::ReturnStmt(self.visit_expr(expr)?),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn cont(&mut self, loc: Location) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::ContinueStmt,
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn brek(&mut self, loc: Location) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::ContinueStmt,
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
 }
@@ -208,50 +193,43 @@ impl ExprVisitor<Expr> for Reassociate {
     fn unit(&mut self, loc: Location) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Unit,
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn int(&mut self, loc: Location, n: i32) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Int(n),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn float(&mut self, loc: Location, n: f32) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Float(n),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn string(&mut self, loc: Location, s: String) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::String(s),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn bool(&mut self, loc: Location, b: bool) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Bool(b),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn identifier(&mut self, loc: Location, ident: String) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Identifier(ident),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn parens(&mut self, loc: Location, expr: Expr) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Parens(self.visit_expr(expr)?.into()),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn call(&mut self, loc: Location, callee: Expr, args: Vec<Expr>) -> Result<Expr, Error> {
@@ -261,15 +239,13 @@ impl ExprVisitor<Expr> for Reassociate {
         }
         Ok(Expr {
             val: ExprType::Call(self.visit_expr(callee)?.into(), args2),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn unary(&mut self, loc: Location, op: Token, expr: Expr) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::UnaryOperation(op, self.visit_expr(expr)?.into()),
-            start: loc.0,
-            end: loc.1,
+            loc,
         })
     }
     fn binary(&mut self, _: Location, left: Expr, op: Token, right: Expr) -> Result<Expr, Error> {

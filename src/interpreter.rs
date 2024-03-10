@@ -5,7 +5,7 @@ use crate::{
     error::{Error, ErrorType},
     exprstmt::{Expr, ExprType, Stmt, StmtType},
     token::*,
-    value::*,
+    value::*, located::Location,
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -38,7 +38,7 @@ impl Interpreter {
                     }.to_string();
                     return Err(Error {
                         msg,
-                        lines: vec![s.loc()] // TODO: add locations
+                        lines: vec![s.loc] // TODO: add locations
                     });
                 }
             };
@@ -117,7 +117,7 @@ impl Interpreter {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
                 return Err(ErrorType::Error(Error {
                     msg: format!("Expected bool, got {}", cond.val),
-                    lines: vec![cond.loc()],
+                    lines: vec![cond.loc],
                 }));
             };
             // do not continue
@@ -171,8 +171,7 @@ impl Interpreter {
             &ident,
             Value {
                 val: ValueType::Function(params2, block),
-                start: stmt.start,
-                end: stmt.end,
+                loc: stmt.loc,
             },
         )?;
         // TODO: nothing here yet
@@ -195,7 +194,7 @@ impl Interpreter {
 
 impl Interpreter {
     fn visit_expr(&mut self, expr: Expr) -> Result<Value, Error> {
-        let loc = expr.loc();
+        let loc = expr.loc;
         let val = match expr.val {
             ExprType::Unit => self.unit(),
             ExprType::Int(n) => self.int(n),
@@ -209,9 +208,8 @@ impl Interpreter {
             ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right),
         }?;
         Ok(Value {
-            start: expr.start,
-            end: expr.end,
             val,
+            loc: expr.loc
         })
     }
     fn unit(&mut self) -> Result<ValueType, Error> {
@@ -229,13 +227,13 @@ impl Interpreter {
     fn bool(&mut self, b: bool) -> Result<ValueType, Error> {
         Ok(ValueType::Bool(b))
     }
-    fn identifier(&mut self, ident: String, loc: (usize, usize)) -> Result<ValueType, Error> {
+    fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
         self.environment.get(&ident, loc)
     }
     fn parens(&mut self, expr: Expr) -> Result<ValueType, Error> {
         Ok(self.visit_expr(expr)?.val)
     }
-    fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: (usize, usize)) -> Result<ValueType, Error> {
+    fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: Location) -> Result<ValueType, Error> {
         let mut args2 = vec![];
         for arg in args {
             args2.push(self.visit_expr(arg)?);
@@ -293,7 +291,7 @@ impl Interpreter {
             }
             _ => Err(Error {
                 msg: format!("\"{}\" is not calleable", callee.val),
-                lines: vec![callee.loc()],
+                lines: vec![callee.loc],
             }),
         }
     }
@@ -309,7 +307,7 @@ impl Interpreter {
                 _ => {
                     return Err(Error {
                         msg: format!("Incorrect type: {}", val.val),
-                        lines: vec![val.loc()],
+                        lines: vec![val.loc],
                     })
                 }
             },
@@ -318,7 +316,7 @@ impl Interpreter {
                 _ => {
                     return Err(Error {
                         msg: format!("Incorrect type: {}", val.val),
-                        lines: vec![val.loc()],
+                        lines: vec![val.loc],
                     })
                 }
             },
@@ -330,16 +328,16 @@ impl Interpreter {
         Ok(new_val)
     }
     fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<ValueType, Error> {
-        let right_loc = right.loc();
+        let right_loc = right.loc;
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::NativeFunction(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let ValueType::NativeFunction(func) = self.environment.get(op_name, op.loc)? else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
-                lines: vec![op.loc()],
+                lines: vec![op.loc],
             });
         };
         func(vec![left2, right2]).map_err(|msg| Error {

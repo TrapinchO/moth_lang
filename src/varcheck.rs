@@ -1,4 +1,4 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*, visitor::Location};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*, located::Location};
 
 use std::collections::{HashMap, HashSet};
 
@@ -37,15 +37,15 @@ impl VarCheck {
                         // TODO: also add the first declaration
                         self.errs.push(Error {
                             msg: "Already declared variable".to_string(),
-                            lines: vec![s.loc()],
+                            lines: vec![s.loc],
                         });
                         continue;
                     }
                     // give dummy values
                     // it is always going to succeed (as I already check for the existence)
                     self.env.insert(
-                        &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        Value { val: ValueType::Unit, start: 0, end: 0 }
+                        &Token { val: TokenType::Identifier(name.to_string()), loc: Location { start: 0, end: 0 } },
+                        Value { val: ValueType::Unit, loc: Location { start: 0, end: 0 } }
                     ).unwrap();
                 },
                 StmtType::FunDeclStmt(t, _, _) => {
@@ -56,14 +56,14 @@ impl VarCheck {
                     if self.env.contains(name) {
                         self.errs.push(Error {
                             msg: "Already declared variable".to_string(),
-                            lines: vec![s.loc()],
+                            lines: vec![s.loc],
                         });
                     }
                     // give dummy values
                     // it is always going to succeed (as I already check for the existence)
                     self.env.insert(
-                        &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        Value { val: ValueType::Function(vec![], vec![]), start: 0, end: 0 }
+                        &Token { val: TokenType::Identifier(name.to_string()), loc: Location { start: 0, end: 0 } },
+                        Value { val: ValueType::Function(vec![], vec![]), loc: Location { start: 0, end: 0 } }
                     ).unwrap();
 
                     self.visit_stmt(s);
@@ -77,7 +77,7 @@ impl VarCheck {
                     if !self.env.contains(name) {
                         self.errs.push(Error {
                             msg: "Undeclared variable".to_string(),
-                            lines: vec![s.loc()],
+                            lines: vec![s.loc],
                         });
                     }
                 }
@@ -106,7 +106,7 @@ impl VarCheck {
 
 impl VarCheck {
     fn visit_stmt(&mut self, stmt: &Stmt) {
-        let loc = stmt.loc();
+        let loc = stmt.loc;
         match &stmt.val {
             StmtType::ExprStmt(expr) => self.expr(loc, expr),
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
@@ -151,7 +151,7 @@ impl VarCheck {
             if params2.contains(name) {
                 self.errs.push(Error {
                     msg: format!("Found duplicate parameter: \"{}\"", p),
-                    lines: vec![p.loc()],
+                    lines: vec![p.loc],
                 });
             }
             params2.insert(name.clone());
@@ -172,7 +172,7 @@ impl VarCheck {
 }
 impl VarCheck {
     fn visit_expr(&mut self, expr: &Expr) {
-        let loc = expr.loc();
+        let loc = expr.loc;
         match &expr.val {
             ExprType::Unit => self.unit(loc),
             ExprType::Int(n) => self.int(loc, n),

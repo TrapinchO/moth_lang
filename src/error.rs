@@ -1,6 +1,6 @@
 //use crate::{token::{TokenType}, reassoc::Precedence};
 
-use crate::value::Value;
+use crate::{value::Value, located::Location};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 struct Pos {
@@ -49,7 +49,7 @@ impl From<Error> for ErrorType {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {
     pub msg: String,
-    pub lines: Vec<(usize, usize)>, // start, end INDEXES
+    pub lines: Vec<Location>, // start, end INDEXES
 }
 
 impl Error {
@@ -58,7 +58,7 @@ impl Error {
         let lines = self
             .lines
             .iter()
-            .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
+            .map(|loc| (pos_from_idx(code, loc.start), pos_from_idx(code, loc.end)))
             .collect::<Vec<_>>();
         let last_line = lines
             .iter()

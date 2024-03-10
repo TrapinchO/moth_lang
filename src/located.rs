@@ -1,20 +1,21 @@
 use std::fmt::Display;
 
-/// a struct to hold a value and its position within the source code
-#[derive(Debug, Clone, PartialEq)]
-pub struct Located<T> {
-    pub val: T,
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Location {
     pub start: usize,
     pub end: usize,
 }
 
+/// a struct to hold a value and its position within the source code
+#[derive(Debug, Clone, PartialEq)]
+pub struct Located<T> {
+    pub val: T,
+    pub loc: Location,
+}
+
 impl<T> Located<T> {
     pub fn new(val: T, start: usize, end: usize) -> Self {
-        Located { val, start, end }
-    }
-
-    pub fn loc(&self) -> (usize, usize) {
-        (self.start, self.end)
+        Located { val, loc: Location { start, end } }
     }
 }
 

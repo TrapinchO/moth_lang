@@ -1,10 +1,8 @@
-use crate::{error::Error, exprstmt::*, token::Token};
-
-pub type Location = (usize, usize);
+use crate::{error::Error, exprstmt::*, token::Token, located::Location};
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
-        let loc = stmt.loc();
+        let loc = stmt.loc;
         match stmt.val {
             StmtType::ExprStmt(expr) => self.expr(loc, expr),
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
@@ -33,7 +31,7 @@ pub trait StmtVisitor<T> {
 
 pub trait ExprVisitor<T> {
     fn visit_expr(&mut self, expr: Expr) -> Result<T, Error> {
-        let loc = expr.loc();
+        let loc = expr.loc;
         match expr.val {
             ExprType::Unit => self.unit(loc),
             ExprType::Int(n) => self.int(loc, n),
