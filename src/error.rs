@@ -64,7 +64,7 @@ impl Error {
             .iter()
             .map(|x| x.0.line)
             .max()
-            .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
+            .unwrap_or_else(|| panic!("Expected error position(s);\nMessage: {}", self.msg));
         let width = last_line.to_string().len();
 
         assert!(

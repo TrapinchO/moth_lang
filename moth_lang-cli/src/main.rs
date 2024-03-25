@@ -93,7 +93,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: change back to reference, less cloning
-    let builtins = get_builtins().iter().map(|(name, _)| { (name.clone(), false) }).collect::<HashMap<_, _>>();
+    let builtins = get_builtins().iter().map(|(name, _)| { (name.clone(), ((0, 0), false)) }).collect::<HashMap<_, _>>();
     match varcheck::varcheck(builtins, resassoc.clone()) {
         Ok(()) => {}
         Err(errs) => {

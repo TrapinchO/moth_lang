@@ -9,18 +9,23 @@ fun sub(z, y) {
     return z - y;
 }
 fun add(x, y) {
-    return sub(x + y);
+    //return sub(x + y);
+    return x + y;
 }
 
 fun apply(f, x, y) {
     return f(x, y);
 }
+fun print(x, y) {}
+let x = add(1, 2) - sub(2, 1) * apply(add, 2, 2);
+//let x = 10;
+print(x);
 
 //let z = sub(1, 2);
 //print(z);
 //print(sub(2, 10));
 //print(apply(add, 100, 10000));
-
+/*
 fun fn(a, b) {
     print(a);
     let i = 0;
@@ -37,7 +42,7 @@ fun fn(a, b) {
 print(fn(-1, 2));
 
 print(());
-
+*/
 /*
 let g = 100;
 if n == 1 {

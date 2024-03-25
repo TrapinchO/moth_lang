@@ -2,7 +2,7 @@ use crate::{environment::Environment, error::Error, exprstmt::*, token::*};
 
 use std::collections::{HashMap, HashSet};
 
-pub fn varcheck(builtins: HashMap<String, bool>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
+pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
     let mut var_check = VarCheck {
         env: Environment::new(builtins),
         errs: vec![],
@@ -16,11 +16,30 @@ pub fn varcheck(builtins: HashMap<String, bool>, stmt: Vec<Stmt>) -> Result<(), 
 }
 
 struct VarCheck {
-    env: Environment<bool>,
+    env: Environment<((usize, usize), bool)>,
     errs: Vec<Error>,
 }
 
 impl VarCheck {
+    fn declare_item(&mut self, name: &String, loc: (usize, usize)) {
+        match self.env.get(name, loc) {
+            Ok(val) => {
+                self.errs.push(Error {
+                    msg: "Already declared variable".to_string(),
+                    lines: vec![val.0, loc],
+                });
+            }
+            Err(_) => {
+                // we dont care about the error, we know it
+                // give dummy values
+                // it is always going to succeed (as I already check for the existence)
+                self.env.insert(
+                    &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
+                    (loc, false)
+                ).unwrap();
+            }
+        };
+    }
     fn check_block(&mut self, block: Vec<Stmt>) {
         self.env.add_scope();
         for s in block {
@@ -32,38 +51,14 @@ impl VarCheck {
                     };
                     self.visit_expr(expr.clone());
 
-                    if self.env.contains(name) {
-                        // TODO: functions behave weirdly
-                        // TODO: also add the first declaration
-                        self.errs.push(Error {
-                            msg: "Already declared variable".to_string(),
-                            lines: vec![s.loc()],
-                        });
-                    }
-                    // give dummy values
-                    // it is always going to succeed (as I already check for the existence)
-                    self.env.insert(
-                        &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        false
-                    ).unwrap();
+                    self.declare_item(name, t.loc());
                 },
                 StmtType::FunDeclStmt(t, _, _) => {
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
                     };
 
-                    if self.env.contains(name) {
-                        self.errs.push(Error {
-                            msg: "Already declared variable".to_string(),
-                            lines: vec![s.loc()],
-                        });
-                    }
-                    // give dummy values
-                    // it is always going to succeed (as I already check for the existence)
-                    self.env.insert(
-                        &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                        false
-                    ).unwrap();
+                    self.declare_item(name, t.loc());
 
                     self.visit_stmt(s);
                 }
@@ -103,10 +98,10 @@ impl VarCheck {
         // TODO: no error positions existence
         // idea - take the positions when declared as an option and none them when found
         for (name, used) in self.env.scopes.last().unwrap() {
-            if !used {
+            if !used.1 {
                 self.errs.push(Error {
                     msg: format!("Variable \"{}\" not used.", name),
-                    lines: vec![],
+                    lines: vec![used.0],
                 })
             }
         }
@@ -190,7 +185,8 @@ impl VarCheck {
             params2.insert(name.clone());
         }
         self.env.add_scope_vars(
-            params2.iter().map(|p| { (p.clone(), false) }).collect::<HashMap<_, _>>()
+            // TODO: what IS this, why do I put dummy stuff into it?
+            params2.iter().map(|p| { (p.clone(), ((0, 0), false)) }).collect::<HashMap<_, _>>()
         );
         self.check_block(block);
         self.env.remove_scope();
@@ -233,10 +229,12 @@ impl VarCheck {
                 msg: "Undeclared variable".to_string(),
                 lines: vec![expr.loc()],
             });
+            return;
         }
+        let var = self.env.get(&name, expr.loc()).unwrap();
         self.env.update(
             &Token { val: TokenType::Identifier(name), start: expr.start, end: expr.end },
-            true
+            (var.0, true)
         ).unwrap();
     }
     fn parens(&mut self, expr: Expr) {
