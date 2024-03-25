@@ -3,14 +3,13 @@ use std::vec;
 use crate::{error::Error, exprstmt::*, token::*, located::Location};
 
 
-// TODO: change to return option instead of returning implicitly
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
         {
             let tok = $self.get_current();
             match tok.val {
-                TokenType::$variant $( ( $($pattern),+ ) )? => { let tok = tok.clone(); $self.advance(); tok },
-                _ => return Err(Error {
+                TokenType::$variant $( ( $($pattern),+ ) )? => { let tok = tok.clone(); $self.advance(); Ok(tok) },
+                _ => Err(Error {
                     //msg: concat!("Expected ", stringify!($variant)).to_string(),
                     msg: $msg.to_string(),
                     lines: vec![tok.loc],
@@ -85,12 +84,12 @@ impl Parser {
             TokenType::Let => {
                 self.advance();
                 let stmt = self.parse_var_decl()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
             }
             TokenType::Identifier(_) => {
                 let stmt = self.parse_assign()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
             }
             TokenType::If => self.parse_if_else(),
@@ -98,7 +97,7 @@ impl Parser {
             TokenType::Fun => self.parse_fun(),
             TokenType::Continue => {
                 self.advance();
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
                     val: StmtType::ContinueStmt,
                     loc: tok.loc,
@@ -106,7 +105,7 @@ impl Parser {
             }
             TokenType::Break => {
                 self.advance();
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
                     val: StmtType::BreakStmt,
                     loc: tok.loc,
@@ -123,7 +122,7 @@ impl Parser {
                         loc: tok.loc,
                     }
                 };
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
                     loc: Location { start: tok.loc.start, end: val.loc.end },
                     val: StmtType::ReturnStmt(val),
@@ -131,7 +130,7 @@ impl Parser {
             }
             _ => {
                 let expr = self.parse_expression()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"");
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
                     loc: expr.loc,
                     val: StmtType::ExprStmt(expr),
@@ -142,7 +141,7 @@ impl Parser {
 
     fn parse_block(&mut self) -> Result<Stmt, Error> {
         // maybe can be changed into get + advance?
-        let start = check_variant!(self, LBrace, "Expected { at the beginning of the block").loc.start;
+        let start = check_variant!(self, LBrace, "Expected { at the beginning of the block")?.loc.start;
 
         let mut ls = vec![];
         while !self.is_at_end()
@@ -151,7 +150,7 @@ impl Parser {
                 {
                     ls.push(self.parse_statement()?);
                 }
-        let end = check_variant!(self, RBrace, "Expected } at the end of the block").loc.end;
+        let end = check_variant!(self, RBrace, "Expected } at the end of the block")?.loc.end;
 
         Ok(Stmt {
             val: StmtType::BlockStmt(ls),
@@ -160,8 +159,8 @@ impl Parser {
     }
 
     fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
-        let ident = check_variant!(self, Identifier(_), "Expected an identifier");
-        check_variant!(self, Equals, "Expected an equals symbol");
+        let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
+        check_variant!(self, Equals, "Expected an equals symbol")?;
         let expr = self.parse_expression()?;
         Ok(Stmt {
             loc: Location { start: ident.loc.start, end: expr.loc.end },
@@ -255,12 +254,12 @@ impl Parser {
         let start = self.get_current().loc.start;
         self.advance();
 
-        let ident = check_variant!(self, Identifier(_), "Expected an identifier");
+        let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
 
-        check_variant!(self, LParen, "Expected an opening parenthesis");
+        check_variant!(self, LParen, "Expected an opening parenthesis")?;
         let mut params = vec![];
         while !self.is_at_end() {
-            params.push(check_variant!(self, Identifier(_), "Expected a parameter name"));
+            params.push(check_variant!(self, Identifier(_), "Expected a parameter name")?);
             if is_typ!(self, RParen) {
                 self.advance();
                 //check_variant!(self, RParen, "");
@@ -274,7 +273,7 @@ impl Parser {
                     loc: Location { start, end: block.loc.end },
                 });
             }
-            check_variant!(self, Comma, "Expected a comma \",\" after an argument");
+            check_variant!(self, Comma, "Expected a comma \",\" after an argument")?;
         }
         Err(Error {
             msg: "Reached EOF".to_string(), // TODO: idk yet how
@@ -349,7 +348,7 @@ impl Parser {
                     loc: Location { start, end },
                 });
             }
-            check_variant!(self, Comma, "Expected a comma \",\" after an argument");
+            check_variant!(self, Comma, "Expected a comma \",\" after an argument")?;
         }
         let eof = self.get_current();
         Err(Error {
@@ -398,7 +397,7 @@ impl Parser {
                 } else {
                     ExprType::Parens(self.parse_expression()?.into())
                 };
-                let end = check_variant!(self, RParen, "Expected closing parenthesis").loc.end;
+                let end = check_variant!(self, RParen, "Expected closing parenthesis")?.loc.end;
                 return Ok(Expr {
                     val,
                     loc: Location { start: tok.loc.start, end },
