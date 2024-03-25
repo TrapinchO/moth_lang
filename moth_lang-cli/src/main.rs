@@ -93,7 +93,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: change back to reference, less cloning
-    match varcheck::varcheck(get_builtins(), resassoc.clone()) {
+    match varcheck::varcheck(get_builtins(), &resassoc) {
         Ok(()) => {}
         Err(errs) => {
             for e in errs {
