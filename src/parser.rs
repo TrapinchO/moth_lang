@@ -3,12 +3,13 @@ use std::vec;
 use crate::{error::Error, exprstmt::*, token::*, located::Location};
 
 
+// TODO: change to return option instead of returning implicitly
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
         {
-            let tok = $self.get_current().clone();
+            let tok = $self.get_current();
             match tok.val {
-                TokenType::$variant $( ( $($pattern),+ ) )? => { $self.advance(); tok },
+                TokenType::$variant $( ( $($pattern),+ ) )? => { let tok = tok.clone(); $self.advance(); tok },
                 _ => return Err(Error {
                     //msg: concat!("Expected ", stringify!($variant)).to_string(),
                     msg: $msg.to_string(),
