@@ -51,7 +51,7 @@ impl VarCheck {
                     self.visit_expr(expr.clone());
 
                     self.declare_item(name, t.loc());
-                },
+                }
                 StmtType::FunDeclStmt(t, _, _) => {
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
@@ -180,7 +180,7 @@ impl VarCheck {
                         msg: format!("Duplicate parameter: \"{}\"", p),
                         lines: vec![original.0, p.loc()],
                     });
-                },
+                }
                 None => {
                     params2.insert(name.clone(), (p.loc(), false));
                 }
@@ -225,11 +225,8 @@ impl VarCheck {
         };
         match self.env.get(&name) {
             Some(var) => {
-                self.env.update(
-                    &name,
-                    (var.0, true)
-                    ).unwrap();
-            },
+                self.env.update(&name, (var.0, true)).unwrap();
+            }
             None => {
                 self.errs.push(Error {
                     msg: "Undeclared variable".to_string(),
