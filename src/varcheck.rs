@@ -2,14 +2,15 @@ use crate::{environment::Environment, error::Error, exprstmt::*, token::*};
 
 use std::collections::{HashMap, HashSet};
 
-pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stmt>) -> Result<(), Vec<Error>> {
+pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stmt>) -> Result<(), (Vec<Error>, Vec<Error>)> {
     let mut var_check = VarCheck {
         env: Environment::new(builtins),
         errs: vec![],
+        warns: vec![],
     };
     var_check.check_block(stmt);
-    if !var_check.errs.is_empty() {
-        Err(var_check.errs)
+    if !var_check.errs.is_empty() || !var_check.warns.is_empty() {
+        Err((var_check.warns, var_check.errs))
     } else {
         Ok(())
     }
@@ -18,6 +19,7 @@ pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stm
 struct VarCheck {
     env: Environment<((usize, usize), bool)>,
     errs: Vec<Error>,
+    warns: Vec<Error>,
 }
 
 impl VarCheck {
@@ -99,7 +101,7 @@ impl VarCheck {
         // idea - take the positions when declared as an option and none them when found
         for (name, used) in self.env.scopes.last().unwrap() {
             if !used.1 {
-                self.errs.push(Error {
+                self.warns.push(Error {
                     msg: format!("Variable \"{}\" not used.", name),
                     lines: vec![used.0],
                 })

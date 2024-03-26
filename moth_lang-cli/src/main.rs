@@ -96,11 +96,17 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     let builtins = get_builtins().iter().map(|(name, _)| { (name.clone(), ((0, 0), false)) }).collect::<HashMap<_, _>>();
     match varcheck::varcheck(builtins, resassoc.clone()) {
         Ok(()) => {}
-        Err(errs) => {
+        Err((warns, errs)) => {
+            for w in warns {
+                println!("{}", w.format_message(&input));
+            }
+            let has_errors = !errs.is_empty();
             for e in errs {
                 println!("{}", e.format_message(&input));
             }
-            return Ok(());
+            if has_errors {
+                return Ok(());
+            }
         }
     }
 

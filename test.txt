@@ -5,8 +5,8 @@
 //}
 
 
-fun sub(z, y) {
-    return z - y;
+fun sub(z, x) {
+    return z - x;
 }
 fun add(x, y) {
     //return sub(x + y);
@@ -16,10 +16,10 @@ fun add(x, y) {
 fun apply(f, x, y) {
     return f(x, y);
 }
-fun print(x, y) {}
+//fun print(x, y) {}
 let x = add(1, 2) - sub(2, 1) * apply(add, 2, 2);
 //let x = 10;
-print(x);
+//print(x);
 
 //let z = sub(1, 2);
 //print(z);
