@@ -39,7 +39,7 @@ fun fn(a, b) {
         i = i + 1;
     }
 }
-print(fn(-1, 2));
+//print(fn(-1, 2));
 
 print(());
 */
@@ -55,7 +55,7 @@ if n == 1 {
 } else {
     print("too big");
 }
-*/
+// */
 
 
 

@@ -94,11 +94,12 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: change back to reference, less cloning
+
     let builtins = get_builtins()
         .keys()
         .map(|name| (name.clone(), ((0, 0), false)))
         .collect::<HashMap<_, _>>();
-    match varcheck::varcheck(builtins, resassoc.clone()) {
+    match varcheck::varcheck(builtins, &resassoc) {
         Ok(()) => {}
         Err((warns, errs)) => {
             for w in warns {

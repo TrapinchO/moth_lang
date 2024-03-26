@@ -5,19 +5,16 @@ macro_rules! binop {
         ExprType::BinaryOperation(
             Expr {
                 val: $left.into(),
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
             }
             .into(),
             Token {
                 val: TokenType::Symbol($op.to_string()),
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
             },
             Expr {
                 val: $right.into(),
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
             }
             .into(),
         )
@@ -29,13 +26,11 @@ macro_rules! unop {
         ExprType::UnaryOperation(
             Token {
                 val: TokenType::Symbol($op.to_string()),
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
             },
             Expr {
                 val: $expr.into(),
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
             }
             .into(),
         )
@@ -47,8 +42,7 @@ macro_rules! parenop {
         ExprType::Parens(
             Expr {
                 val: $e.into(),
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
             }
             .into(),
         )
@@ -59,8 +53,7 @@ macro_rules! expr {
     ($e:expr) => {
         Expr {
             val: $e,
-            start: 0,
-            end: 0,
+            loc: Location { start: 0, end: 0 },
         }
     };
 }
@@ -69,8 +62,7 @@ macro_rules! stmt {
     ($e:expr) => {
         Stmt {
             val: $e,
-            start: 0,
-            end: 0,
+            loc: Location { start: 0, end: 0 },
         }
     };
 }
@@ -114,6 +106,7 @@ mod tests {
         token::{Token, TokenType},
         value::{get_builtins, NATIVE_OPERATORS},
         varcheck,
+        located::Location,
     };
 
     use crate::compare_elements;
@@ -132,7 +125,7 @@ mod tests {
             checked,
             Err((vec![Error {
                 msg: "Variable \"x\" not used.".to_string(),
-                lines: vec![(4, 4)]
+                lines: vec![Location { start: 4, end: 4 }]
             }], vec![]))
         );
         Ok(())
@@ -142,8 +135,7 @@ mod tests {
     fn parse_empty() {
         assert_eq!(
             parse(vec![Token {
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
                 val: TokenType::Eof
             }]),
             Ok(vec![])
@@ -158,11 +150,9 @@ mod tests {
             vec![Stmt {
                 val: StmtType::ExprStmt(Expr {
                     val: ExprType::Int(1),
-                    start: 0,
-                    end: 0
+                    loc: Location { start: 0, end: 0 },
                 }),
-                start: 0,
-                end: 0
+                loc: Location { start: 0, end: 0 },
             }]
         );
     }
@@ -174,11 +164,9 @@ mod tests {
             vec![Stmt {
                 val: StmtType::ExprStmt(Expr {
                     val: ExprType::Float(1.1),
-                    start: 0,
-                    end: 2
+                    loc: Location { start: 0, end: 2 },
                 }),
-                start: 0,
-                end: 2
+                loc: Location { start: 0, end: 2 },
             }]
         );
     }
@@ -190,11 +178,9 @@ mod tests {
             vec![Stmt {
                 val: StmtType::ExprStmt(Expr {
                     val: ExprType::String("test".to_string()),
-                    start: 0,
-                    end: 5
+                    loc: Location { start: 0, end: 5 },
                 }),
-                start: 0,
-                end: 5
+                loc: Location { start: 0, end: 5 },
             }]
         );
     }
@@ -206,11 +192,9 @@ mod tests {
             vec![Stmt {
                 val: StmtType::ExprStmt(Expr {
                     val: ExprType::Bool(true),
-                    start: 0,
-                    end: 3
+                    loc: Location { start: 0, end: 3 },
                 }),
-                start: 0,
-                end: 3
+                loc: Location { start: 0, end: 3 },
             }]
         );
     }
@@ -222,11 +206,9 @@ mod tests {
             vec![Stmt {
                 val: StmtType::ExprStmt(Expr {
                     val: ExprType::Identifier("test".to_string()),
-                    start: 0,
-                    end: 3
+                    loc: Location { start: 0, end: 3 },
                 }),
-                start: 0,
-                end: 3
+                loc: Location { start: 0, end: 3 },
             }]
         );
     }
@@ -240,16 +222,13 @@ mod tests {
                     val: ExprType::Parens(
                         Expr {
                             val: ExprType::Int(1),
-                            start: 1,
-                            end: 1
+                            loc: Location { start: 1, end: 1 },
                         }
                         .into()
                     ),
-                    start: 0,
-                    end: 2
+                    loc: Location { start: 0, end: 2 },
                 }),
-                start: 0,
-                end: 2
+                loc: Location { start: 0, end: 2 },
             }]
         );
     }
@@ -260,7 +239,7 @@ mod tests {
             parse(lex("(1").unwrap()),
             Err(Error {
                 msg: "Expected closing parenthesis".to_string(),
-                lines: vec![(2, 2)]
+                lines: vec![Location { start: 2, end: 2 }]
             })
         );
     }
@@ -274,21 +253,17 @@ mod tests {
                     val: ExprType::UnaryOperation(
                         Token {
                             val: TokenType::Symbol("-".to_string()),
-                            start: 0,
-                            end: 0
+                            loc: Location { start: 0, end: 0 },
                         },
                         Expr {
                             val: ExprType::Int(1),
-                            start: 1,
-                            end: 1
+                            loc: Location { start: 1, end: 1 },
                         }
                         .into()
                     ),
-                    start: 0,
-                    end: 1
+                    loc: Location { start: 0, end: 1 },
                 }),
-                start: 0,
-                end: 1
+                loc: Location { start: 0, end: 1 },
             }]
         );
     }
@@ -302,33 +277,27 @@ mod tests {
                     val: ExprType::UnaryOperation(
                         Token {
                             val: TokenType::Symbol("-".to_string()),
-                            start: 0,
-                            end: 0
+                            loc: Location { start: 0, end: 0 },
                         },
                         Expr {
                             val: ExprType::UnaryOperation(
                                 Token {
                                     val: TokenType::Symbol("-".to_string()),
-                                    start: 2,
-                                    end: 2
+                                    loc: Location { start: 2, end: 2 },
                                 },
                                 Expr {
                                     val: ExprType::Int(1),
-                                    start: 3,
-                                    end: 3
+                                    loc: Location { start: 3, end: 3 },
                                 }
                                 .into()
                             ),
-                            start: 2,
-                            end: 3
+                            loc: Location { start: 2, end: 3 },
                         }
                         .into()
                     ),
-                    start: 0,
-                    end: 3
+                    loc: Location { start: 0, end: 3 },
                 }),
-                start: 0,
-                end: 3
+                loc: Location { start: 0, end: 3 },
             }]
         );
     }
@@ -342,27 +311,22 @@ mod tests {
                     val: ExprType::BinaryOperation(
                         Expr {
                             val: ExprType::Int(1),
-                            start: 0,
-                            end: 0
+                            loc: Location { start: 0, end: 0 },
                         }
                         .into(),
                         Token {
                             val: TokenType::Symbol("+".to_string()),
-                            start: 2,
-                            end: 2
+                            loc: Location { start: 2, end: 2 },
                         },
                         Expr {
                             val: ExprType::Int(1),
-                            start: 4,
-                            end: 4
+                            loc: Location { start: 4, end: 4 },
                         }
                         .into()
                     ),
-                    start: 0,
-                    end: 4
+                    loc: Location { start: 0, end: 4 },
                 }),
-                start: 0,
-                end: 4
+                loc: Location { start: 0, end: 4 },
             }]
         )
     }
@@ -371,7 +335,7 @@ mod tests {
     fn expr_error() {
         let err = Error {
             msg: "Expected an element but reached EOF".to_string(),
-            lines: vec![(2, 2)],
+            lines: vec![Location { start: 2, end: 2 }],
         };
         let op = parse(lex("1+").unwrap()).unwrap_err();
         assert_eq!(err, op);
