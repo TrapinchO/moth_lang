@@ -1,6 +1,6 @@
 use crate::{environment::Environment, error::Error, exprstmt::*, token::*};
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stmt>) -> Result<(), (Vec<Error>, Vec<Error>)> {
     let mut var_check = VarCheck {
@@ -96,7 +96,6 @@ impl VarCheck {
                 }
             }
         }
-        println!("{:?}", self.env.scopes.last().unwrap());
         // TODO: no error positions existence
         // idea - take the positions when declared as an option and none them when found
         for (name, used) in self.env.scopes.last().unwrap() {
@@ -173,23 +172,24 @@ impl VarCheck {
         let StmtType::FunDeclStmt(_, params, block) = stmt.val.clone() else {
             unreachable!()
         };
-        let mut params2 = HashSet::new();
+        let mut params2: HashMap<String, ((usize, usize), bool)> = HashMap::new();
         for p in params.iter() {
             let TokenType::Identifier(name) = &p.val else {
                 unreachable!()
             };
-            if params2.contains(name) {
-                self.errs.push(Error {
-                    msg: format!("Found duplicate parameter: \"{}\"", p),
-                    lines: vec![p.loc()],
-                });
+            match params2.get(name) {
+                Some(original) => {
+                    self.errs.push(Error {
+                        msg: format!("Duplicate parameter: \"{}\"", p),
+                        lines: vec![original.0, p.loc()],
+                    });
+                },
+                None => {
+                    params2.insert(name.clone(), (p.loc(), false));
+                }
             }
-            params2.insert(name.clone());
         }
-        self.env.add_scope_vars(
-            // TODO: what IS this, why do I put dummy stuff into it?
-            params2.iter().map(|p| { (p.clone(), ((0, 0), false)) }).collect::<HashMap<_, _>>()
-        );
+        self.env.add_scope_vars(params2);
         self.check_block(block);
         self.env.remove_scope();
     }
@@ -226,18 +226,20 @@ impl VarCheck {
         let ExprType::Identifier(name) = expr.val.clone() else {
             unreachable!()
         };
-        if !self.env.contains(&name) {
-            self.errs.push(Error {
-                msg: "Undeclared variable".to_string(),
-                lines: vec![expr.loc()],
-            });
-            return;
+        match self.env.get(&name, (0, 0)) {
+            Ok(var) => {
+                self.env.update(
+                    &Token { val: TokenType::Identifier(name), start: expr.start, end: expr.end },
+                    (var.0, true)
+                    ).unwrap();
+            },
+            Err(_) => {
+                self.errs.push(Error {
+                    msg: "Undeclared variable".to_string(),
+                    lines: vec![expr.loc()],
+                });
+            }
         }
-        let var = self.env.get(&name, expr.loc()).unwrap();
-        self.env.update(
-            &Token { val: TokenType::Identifier(name), start: expr.start, end: expr.end },
-            (var.0, true)
-        ).unwrap();
     }
     fn parens(&mut self, expr: Expr) {
         let ExprType::Parens(expr2) = expr.val else {
