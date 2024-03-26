@@ -1,26 +1,44 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*, value::*, located::Location};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*, located::Location};
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-pub fn varcheck(builtins: HashMap<String, ValueType>, stmt: &Vec<Stmt>) -> Result<(), Vec<Error>> {
+pub fn varcheck(builtins: HashMap<String, (Location, bool)>, stmt: &Vec<Stmt>) -> Result<(), (Vec<Error>, Vec<Error>)> {
     let mut var_check = VarCheck {
         env: Environment::new(builtins),
         errs: vec![],
+        warns: vec![],
     };
     var_check.check_block(stmt);
-    if !var_check.errs.is_empty() {
-        Err(var_check.errs)
+    if !var_check.errs.is_empty() || !var_check.warns.is_empty() {
+        Err((var_check.warns, var_check.errs))
     } else {
         Ok(())
     }
 }
 
 struct VarCheck {
-    env: Environment,
+    env: Environment<(Location, bool)>,
     errs: Vec<Error>,
+    warns: Vec<Error>,
 }
 
 impl VarCheck {
+    fn declare_item(&mut self, name: &String, loc: Location) {
+        match self.env.get(name) {
+            Some(val) => {
+                self.errs.push(Error {
+                    msg: "Already declared variable".to_string(),
+                    lines: vec![val.0, loc],
+                });
+            }
+            None => {
+                // we dont care about the error, we know it
+                // give dummy values
+                // it is always going to succeed (as I already check for the existence)
+                self.env.insert(name, (loc, false)).unwrap();
+            }
+        };
+    }
     fn check_block(&mut self, block: &Vec<Stmt>) {
         self.env.add_scope();
         for s in block {
@@ -32,39 +50,14 @@ impl VarCheck {
                     };
                     self.visit_expr(expr);
 
-                    if self.env.contains(name) {
-                        // TODO: functions behave weirdly
-                        // TODO: also add the first declaration
-                        self.errs.push(Error {
-                            msg: "Already declared variable".to_string(),
-                            lines: vec![s.loc],
-                        });
-                        continue;
-                    }
-                    // give dummy values
-                    // it is always going to succeed (as I already check for the existence)
-                    self.env.insert(
-                        &Token { val: TokenType::Identifier(name.to_string()), loc: Location { start: 0, end: 0 } },
-                        Value { val: ValueType::Unit, loc: Location { start: 0, end: 0 } }
-                    ).unwrap();
-                },
+                    self.declare_item(name, t.loc);
+                }
                 StmtType::FunDeclStmt(t, _, _) => {
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
                     };
 
-                    if self.env.contains(name) {
-                        self.errs.push(Error {
-                            msg: "Already declared variable".to_string(),
-                            lines: vec![s.loc],
-                        });
-                    }
-                    // give dummy values
-                    // it is always going to succeed (as I already check for the existence)
-                    self.env.insert(
-                        &Token { val: TokenType::Identifier(name.to_string()), loc: Location { start: 0, end: 0 } },
-                        Value { val: ValueType::Function(vec![], vec![]), loc: Location { start: 0, end: 0 } }
-                    ).unwrap();
+                    self.declare_item(name, t.loc);
 
                     self.visit_stmt(s);
                 }
@@ -98,6 +91,16 @@ impl VarCheck {
                 StmtType::ReturnStmt(..) => {
                     self.visit_stmt(s);
                 }
+            }
+        }
+        // TODO: no error positions existence
+        // idea - take the positions when declared as an option and none them when found
+        for (name, used) in self.env.scopes.last().unwrap() {
+            if !used.1 {
+                self.warns.push(Error {
+                    msg: format!("Variable \"{}\" not used.", name),
+                    lines: vec![used.0],
+                })
             }
         }
         self.env.remove_scope();
@@ -143,22 +146,24 @@ impl VarCheck {
         self.check_block(block);
     }
     fn fun(&mut self, _: Location, _: &Token, params: &Vec<Token>, block: &Vec<Stmt>) {
-        let mut params2 = HashSet::new();
-        for p in params {
+        let mut params2: HashMap<String, (Location, bool)> = HashMap::new();
+        for p in params.iter() {
             let TokenType::Identifier(name) = &p.val else {
                 unreachable!()
             };
-            if params2.contains(name) {
-                self.errs.push(Error {
-                    msg: format!("Found duplicate parameter: \"{}\"", p),
-                    lines: vec![p.loc],
-                });
+            match params2.get(name) {
+                Some(original) => {
+                    self.errs.push(Error {
+                        msg: format!("Duplicate parameter: \"{}\"", p),
+                        lines: vec![original.0, p.loc],
+                    });
+                }
+                None => {
+                    params2.insert(name.clone(), (p.loc, false));
+                }
             }
-            params2.insert(name.clone());
         }
-        self.env.add_scope_vars(
-            params2.iter().map(|p| { (p.clone(), ValueType::Unit) }).collect::<HashMap<_, _>>()
-        );
+        self.env.add_scope_vars(params2);
         self.check_block(block);
         self.env.remove_scope();
     }
@@ -198,11 +203,16 @@ impl VarCheck {
     fn bool(&mut self, _: Location, _: &bool) {
     }
     fn identifier(&mut self, loc: Location, ident: &String) {
-        if !self.env.contains(ident) {
-            self.errs.push(Error {
-                msg: "Undeclared variable".to_string(),
-                lines: vec![loc],
-            });
+        match self.env.get(ident) {
+            Some(var) => {
+                self.env.update(ident, (var.0, true)).unwrap();
+            }
+            None => {
+                self.errs.push(Error {
+                    msg: "Undeclared variable".to_string(),
+                    lines: vec![loc],
+                });
+            }
         }
     }
     fn parens(&mut self, _: Location, expr: &Expr) {

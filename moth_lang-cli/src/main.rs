@@ -3,10 +3,11 @@ use moth_lang::{
     interpreter::Interpreter,
     lexer, parser, reassoc,
     value::{get_builtins, NATIVE_OPERATORS},
-    varcheck,
+    varcheck, located::Location,
 };
 
 use std::{
+    collections::HashMap,
     env, fs,
     io::{self, Write},
     time::Instant,
@@ -93,13 +94,24 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: change back to reference, less cloning
-    match varcheck::varcheck(get_builtins(), &resassoc) {
+
+    let builtins = get_builtins()
+        .keys()
+        .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
+        .collect::<HashMap<_, _>>();
+    match varcheck::varcheck(builtins, &resassoc) {
         Ok(()) => {}
-        Err(errs) => {
+        Err((warns, errs)) => {
+            for w in warns {
+                println!("{}", w.format_message(&input));
+            }
+            let has_errors = !errs.is_empty();
             for e in errs {
                 println!("{}", e.format_message(&input));
             }
-            return Ok(());
+            if has_errors {
+                return Ok(());
+            }
         }
     }
 

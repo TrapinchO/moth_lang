@@ -1,62 +1,45 @@
 use std::collections::HashMap;
 
-use crate::{
-    error::Error,
-    token::{Token, TokenType},
-    value::{Value, ValueType}, located::Location,
-};
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct Environment {
-    scopes: Vec<HashMap<String, ValueType>>,
+pub struct Environment<T> {
+    pub scopes: Vec<HashMap<String, T>>,
 }
 
-impl Environment {
-    pub fn new(defaults: HashMap<String, ValueType>) -> Environment {
+// TODO: idk if I am happy with Option<T>, but imo it is better than a bool
+// for now.
+impl<T: Clone> Environment<T> {
+    pub fn new(defaults: HashMap<String, T>) -> Environment<T> {
         Environment { scopes: vec![defaults] }
     }
 
-    pub fn insert(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.val else {
-            unreachable!()
-        };
+    pub fn insert(&mut self, name: &String, val: T) -> Option<()> {
         let last_scope = self.scopes.last_mut().unwrap();
         if last_scope.contains_key(name) {
-            return Err(Error {
-                msg: format!("Name \"{}\" already exists", name),
-                lines: vec![ident.loc],
-            });
+            return None;
         }
-        last_scope.insert(name.clone(), val.val);
-        Ok(())
+        last_scope.insert(name.clone(), val);
+        Some(())
     }
 
-    pub fn get(&self, ident: &String, pos: Location) -> Result<ValueType, Error> {
+    pub fn get(&self, ident: &String) -> Option<T> {
         for scope in self.scopes.iter().rev() {
             if scope.contains_key(ident) {
-                return Ok(scope.get(ident).unwrap().clone());
+                return Some(scope.get(ident).unwrap().clone());
             }
         }
-        Err(Error {
-            msg: format!("Name not found: \"{}\"", ident),
-            lines: vec![pos],
-        })
+        None
     }
 
-    pub fn update(&mut self, ident: &Token, val: Value) -> Result<(), Error> {
-        let TokenType::Identifier(name) = &ident.val else {
-            unreachable!()
-        };
+    pub fn update(&mut self, name: &String, val: T) -> Option<()> {
         for scope in self.scopes.iter_mut().rev() {
             if scope.contains_key(name) {
-                *scope.get_mut(name).unwrap() = val.val;
-                return Ok(());
+                *scope.get_mut(name).unwrap() = val;
+                return Some(());
             }
         }
-        Err(Error {
-            msg: format!("Name not found: \"{}\"", name),
-            lines: vec![ident.loc],
-        })
+        None
+
     }
 
     pub fn contains(&self, name: &String) -> bool {
@@ -71,7 +54,7 @@ impl Environment {
     pub fn add_scope(&mut self) {
         self.scopes.push(HashMap::new())
     }
-    pub fn add_scope_vars(&mut self, vars: HashMap<String, ValueType>) {
+    pub fn add_scope_vars(&mut self, vars: HashMap<String, T>) {
         self.scopes.push(vars);
     }
 

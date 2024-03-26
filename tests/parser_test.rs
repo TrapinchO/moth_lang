@@ -95,6 +95,8 @@ fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     use moth_lang::{
         error::Error,
         exprstmt::*,
@@ -114,11 +116,19 @@ mod tests {
         let input = "let x = 10; x = 1;".to_string();
         let tokens = lex(&input)?;
         let ast = parse(tokens)?;
-        let checked = varcheck::varcheck(get_builtins(), &ast);
-        if let Ok(_) = checked {
-            return Ok(());
-        }
-        panic!("not ok {:?}", checked);
+        let builtins = get_builtins()
+            .keys()
+            .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
+            .collect::<HashMap<_, _>>();
+        let checked = varcheck::varcheck(builtins, &ast);
+        assert_eq!(
+            checked,
+            Err((vec![Error {
+                msg: "Variable \"x\" not used.".to_string(),
+                lines: vec![Location { start: 4, end: 4 }]
+            }], vec![]))
+        );
+        Ok(())
     }
 
     #[test]

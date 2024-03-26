@@ -13,7 +13,7 @@ pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Resu
 }
 
 pub struct Interpreter {
-    environment: Environment,
+    environment: Environment<ValueType>,
 }
 
 impl Interpreter {
@@ -87,8 +87,14 @@ impl Interpreter {
         let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
+        let TokenType::Identifier(name) = &ident.val else {
+            unreachable!()
+        };
         let val = self.visit_expr(expr)?;
-        self.environment.insert(&ident, val)?;
+        self.environment.insert(name, val.val).ok_or_else(|| Error {
+            msg: format!("Name \"{name}\" already exists"),
+            lines: vec![ident.loc],
+        })?;
         Ok(())
     }
 
@@ -96,8 +102,14 @@ impl Interpreter {
         let StmtType::AssignStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
+        let TokenType::Identifier(name) = &ident.val else {
+            unreachable!()
+        };
         let val = self.visit_expr(expr)?;
-        self.environment.update(&ident, val)?;
+        self.environment.update(name, val.val).ok_or_else(|| Error {
+            msg: format!("Name not found: \"{name}\""),
+            lines: vec![ident.loc],
+        })?;
         Ok(())
     }
 
@@ -160,6 +172,9 @@ impl Interpreter {
         let StmtType::FunDeclStmt(ident, params, block) = stmt.val else {
             unreachable!()
         };
+        let TokenType::Identifier(name) = &ident.val else {
+            unreachable!()
+        };
         let mut params2 = vec![];
         for p in params {
             let TokenType::Identifier(n) = &p.val else {
@@ -167,13 +182,12 @@ impl Interpreter {
             };
             params2.push(n.clone());
         }
-        self.environment.insert(
-            &ident,
-            Value {
-                val: ValueType::Function(params2, block),
-                loc: stmt.loc,
-            },
-        )?;
+        self.environment
+            .insert(name, ValueType::Function(params2, block))
+            .ok_or_else(|| Error {
+                msg: format!("Name \"{name}\" already exists"),
+                lines: vec![ident.loc],
+            })?;
         // TODO: nothing here yet
         Ok(())
     }
@@ -221,14 +235,17 @@ impl Interpreter {
     fn float(&mut self, n: f32) -> Result<ValueType, Error> {
         Ok(ValueType::Float(n))
     }
+    fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
+        self.environment.get(&ident).ok_or_else(|| Error {
+            msg: format!("Name not found: \"{ident}\""),
+            lines: vec![loc],
+        })
+    }
     fn string(&mut self, s: String) -> Result<ValueType, Error> {
         Ok(ValueType::String(s))
     }
     fn bool(&mut self, b: bool) -> Result<ValueType, Error> {
         Ok(ValueType::Bool(b))
-    }
-    fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
-        self.environment.get(&ident, loc)
     }
     fn parens(&mut self, expr: Expr) -> Result<ValueType, Error> {
         Ok(self.visit_expr(expr)?.val)
@@ -334,7 +351,11 @@ impl Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::NativeFunction(func) = self.environment.get(op_name, op.loc)? else {
+        let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or_else(|| Error {
+            msg: format!("Name not found: \"{op_name}\""),
+            lines: vec![op.loc],
+        })?
+        else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![op.loc],
