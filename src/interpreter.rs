@@ -39,7 +39,7 @@ impl Interpreter {
                     }.to_string();
                     return Err(Error {
                         msg,
-                        lines: vec![s.loc()] // TODO: add locations
+                        lines: vec![s.loc()], // TODO: add locations
                     });
                 }
             };
@@ -183,13 +183,12 @@ impl Interpreter {
             };
             params2.push(n.clone());
         }
-        self.environment.insert(
-            name,
-            ValueType::Function(params2, block)
-        ).ok_or_else(|| Error {
-            msg: format!("Name \"{name}\" already exists"),
-            lines: vec![ident.loc()],
-        })?;
+        self.environment
+            .insert(name, ValueType::Function(params2, block))
+            .ok_or_else(|| Error {
+                msg: format!("Name \"{name}\" already exists"),
+                lines: vec![ident.loc()],
+            })?;
         // TODO: nothing here yet
         Ok(())
     }
@@ -245,11 +244,9 @@ impl ExprVisitor<Value> for Interpreter {
             unreachable!()
         };
         Ok(Value {
-            val: self.environment.get(&name).ok_or_else(|| {
-                Error {
-                    msg: format!("Name not found: \"{name}\""),
-                    lines: vec![(expr.start, expr.end)],
-                }
+            val: self.environment.get(&name).ok_or_else(|| Error {
+                msg: format!("Name not found: \"{name}\""),
+                lines: vec![(expr.start, expr.end)],
             })?,
             start: expr.start,
             end: expr.end,
@@ -320,13 +317,13 @@ impl ExprVisitor<Value> for Interpreter {
                             return Err(Error {
                                 msg: "Cannot use break outside of loop".to_string(),
                                 lines: vec![expr.loc()], // TODO: add locations
-                            })
+                            });
                         }
                         ErrorType::Continue => {
                             return Err(Error {
                                 msg: "Cannot use break outside of loop".to_string(),
                                 lines: vec![expr.loc()], // TODO: add locations
-                            })
+                            });
                         }
                     },
                 };
@@ -394,7 +391,8 @@ impl ExprVisitor<Value> for Interpreter {
         let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or_else(|| Error {
             msg: format!("Name not found: \"{op_name}\""),
             lines: vec![(op.start, op.end)],
-        })? else {
+        })?
+        else {
             return Err(Error {
                 msg: format!("Symbol\"{}\" is not a function", op_name),
                 lines: vec![op.loc()],
