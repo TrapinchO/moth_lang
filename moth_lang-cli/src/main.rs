@@ -3,7 +3,7 @@ use moth_lang::{
     interpreter::Interpreter,
     lexer, parser, reassoc,
     value::{get_builtins, NATIVE_OPERATORS},
-    varcheck,
+    varcheck, located::Location,
 };
 
 use std::{
@@ -97,7 +97,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
 
     let builtins = get_builtins()
         .keys()
-        .map(|name| (name.clone(), ((0, 0), false)))
+        .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
         .collect::<HashMap<_, _>>();
     match varcheck::varcheck(builtins, &resassoc) {
         Ok(()) => {}

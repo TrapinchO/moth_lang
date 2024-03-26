@@ -93,7 +93,7 @@ impl Interpreter {
         let val = self.visit_expr(expr)?;
         self.environment.insert(name, val.val).ok_or_else(|| Error {
             msg: format!("Name \"{name}\" already exists"),
-            lines: vec![ident.loc()],
+            lines: vec![ident.loc],
         })?;
         Ok(())
     }
@@ -108,7 +108,7 @@ impl Interpreter {
         let val = self.visit_expr(expr)?;
         self.environment.update(name, val.val).ok_or_else(|| Error {
             msg: format!("Name not found: \"{name}\""),
-            lines: vec![ident.loc()],
+            lines: vec![ident.loc],
         })?;
         Ok(())
     }
@@ -235,15 +235,12 @@ impl Interpreter {
     fn float(&mut self, n: f32) -> Result<ValueType, Error> {
         Ok(ValueType::Float(n))
     }
-    fn identifier(&mut self, ident: String, loc: Location) -> Result<Value, Error> {
-        Ok(Value {
-            val: self.environment.get(&name).ok_or_else(|| Error {
-                msg: format!("Name not found: \"{name}\""),
-                lines: vec![loc],
-            })?,
-            start: expr.start,
-            end: expr.end,
+    fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
+        self.environment.get(&ident).ok_or_else(|| Error {
+            msg: format!("Name not found: \"{ident}\""),
+            lines: vec![loc],
         })
+    }
     fn string(&mut self, s: String) -> Result<ValueType, Error> {
         Ok(ValueType::String(s))
     }
@@ -356,7 +353,7 @@ impl Interpreter {
         };
         let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or_else(|| Error {
             msg: format!("Name not found: \"{op_name}\""),
-            lines: vec![(op.start, op.end)],
+            lines: vec![op.loc],
         })?
         else {
             return Err(Error {

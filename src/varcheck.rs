@@ -1,8 +1,8 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*};
+use crate::{environment::Environment, error::Error, exprstmt::*, token::*, located::Location};
 
 use std::collections::HashMap;
 
-pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stmt>) -> Result<(), (Vec<Error>, Vec<Error>)> {
+pub fn varcheck(builtins: HashMap<String, (Location, bool)>, stmt: &Vec<Stmt>) -> Result<(), (Vec<Error>, Vec<Error>)> {
     let mut var_check = VarCheck {
         env: Environment::new(builtins),
         errs: vec![],
@@ -17,13 +17,13 @@ pub fn varcheck(builtins: HashMap<String, ((usize, usize), bool)>, stmt: Vec<Stm
 }
 
 struct VarCheck {
-    env: Environment<((usize, usize), bool)>,
+    env: Environment<(Location, bool)>,
     errs: Vec<Error>,
     warns: Vec<Error>,
 }
 
 impl VarCheck {
-    fn declare_item(&mut self, name: &String, loc: (usize, usize)) {
+    fn declare_item(&mut self, name: &String, loc: Location) {
         match self.env.get(name) {
             Some(val) => {
                 self.errs.push(Error {
@@ -146,7 +146,7 @@ impl VarCheck {
         self.check_block(block);
     }
     fn fun(&mut self, _: Location, _: &Token, params: &Vec<Token>, block: &Vec<Stmt>) {
-        let mut params2: HashMap<String, ((usize, usize), bool)> = HashMap::new();
+        let mut params2: HashMap<String, (Location, bool)> = HashMap::new();
         for p in params.iter() {
             let TokenType::Identifier(name) = &p.val else {
                 unreachable!()
@@ -203,9 +203,9 @@ impl VarCheck {
     fn bool(&mut self, _: Location, _: &bool) {
     }
     fn identifier(&mut self, loc: Location, ident: &String) {
-        match self.env.get(&name) {
+        match self.env.get(ident) {
             Some(var) => {
-                self.env.update(&name, (var.0, true)).unwrap();
+                self.env.update(ident, (var.0, true)).unwrap();
             }
             None => {
                 self.errs.push(Error {
@@ -213,6 +213,7 @@ impl VarCheck {
                     lines: vec![loc],
                 });
             }
+        }
     }
     fn parens(&mut self, _: Location, expr: &Expr) {
         self.visit_expr(expr);
