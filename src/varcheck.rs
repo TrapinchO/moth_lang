@@ -24,21 +24,18 @@ struct VarCheck {
 
 impl VarCheck {
     fn declare_item(&mut self, name: &String, loc: (usize, usize)) {
-        match self.env.get(name, loc) {
-            Ok(val) => {
+        match self.env.get(name) {
+            Some(val) => {
                 self.errs.push(Error {
                     msg: "Already declared variable".to_string(),
                     lines: vec![val.0, loc],
                 });
             }
-            Err(_) => {
+            None => {
                 // we dont care about the error, we know it
                 // give dummy values
                 // it is always going to succeed (as I already check for the existence)
-                self.env.insert(
-                    &Token { val: TokenType::Identifier(name.to_string()), start: 0, end: 0 },
-                    (loc, false)
-                ).unwrap();
+                self.env.insert(name, (loc, false)).unwrap();
             }
         };
     }
@@ -226,14 +223,14 @@ impl VarCheck {
         let ExprType::Identifier(name) = expr.val.clone() else {
             unreachable!()
         };
-        match self.env.get(&name, (0, 0)) {
-            Ok(var) => {
+        match self.env.get(&name) {
+            Some(var) => {
                 self.env.update(
-                    &Token { val: TokenType::Identifier(name), start: expr.start, end: expr.end },
+                    &name,
                     (var.0, true)
                     ).unwrap();
             },
-            Err(_) => {
+            None => {
                 self.errs.push(Error {
                     msg: "Undeclared variable".to_string(),
                     lines: vec![expr.loc()],
