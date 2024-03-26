@@ -118,9 +118,9 @@ mod tests {
         let ast = parse(tokens)?;
         let builtins = get_builtins()
             .keys()
-            .map(|name| (name.clone(), ((0, 0), false)))
+            .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
             .collect::<HashMap<_, _>>();
-        let checked = varcheck::varcheck(builtins, ast);
+        let checked = varcheck::varcheck(builtins, &ast);
         assert_eq!(
             checked,
             Err((vec![Error {
