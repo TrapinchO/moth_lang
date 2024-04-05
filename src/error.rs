@@ -2,7 +2,7 @@
 
 use crate::{value::Value, located::Location};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct Pos {
     line: usize,
     col: usize,

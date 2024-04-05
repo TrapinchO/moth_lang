@@ -177,7 +177,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a != b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a != b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a != b),
-                (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
+                (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a != b),
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
         },

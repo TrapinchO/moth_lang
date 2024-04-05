@@ -91,7 +91,7 @@ impl Interpreter {
             unreachable!()
         };
         let val = self.visit_expr(expr)?;
-        self.environment.insert(name, val.val).ok_or_else(|| Error {
+        self.environment.insert(name, val.val).ok_or(Error {
             msg: format!("Name \"{name}\" already exists"),
             lines: vec![ident.loc],
         })?;
@@ -351,7 +351,7 @@ impl Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or_else(|| Error {
+        let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or(Error {
             msg: format!("Name not found: \"{op_name}\""),
             lines: vec![op.loc],
         })?
