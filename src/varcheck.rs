@@ -98,7 +98,7 @@ impl VarCheck {
         for (name, used) in self.env.scopes.last().unwrap() {
             if !used.1 {
                 self.warns.push(Error {
-                    msg: format!("Variable \"{}\" not used.", name),
+                    msg: format!("Variable \"{name}\" not used."),
                     lines: vec![used.0],
                 })
             }
@@ -154,7 +154,7 @@ impl VarCheck {
             match params2.get(name) {
                 Some(original) => {
                     self.errs.push(Error {
-                        msg: format!("Duplicate parameter: \"{}\"", p),
+                        msg: format!("Duplicate parameter: \"{p}\""),
                         lines: vec![original.0, p.loc],
                     });
                 }

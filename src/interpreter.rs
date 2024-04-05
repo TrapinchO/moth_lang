@@ -184,7 +184,7 @@ impl Interpreter {
         }
         self.environment
             .insert(name, ValueType::Function(params2, block))
-            .ok_or_else(|| Error {
+            .ok_or(Error {
                 msg: format!("Name \"{name}\" already exists"),
                 lines: vec![ident.loc],
             })?;
@@ -269,11 +269,11 @@ impl Interpreter {
                 if args2.len() != params.len() {
                     return Err(Error {
                         msg: format!(
-                                 "the number of arguments ({}) must match the number of parameters ({})",
-                                 args2.len(),
-                                 params.len()
-                                 ),
-                                 lines: vec![loc],
+                             "the number of arguments ({}) must match the number of parameters ({})",
+                             args2.len(),
+                             params.len()
+                        ),
+                        lines: vec![loc],
                     });
                 }
                 self.environment.add_scope_vars(
@@ -338,7 +338,7 @@ impl Interpreter {
                 }
             },
             sym => {
-                unreachable!("unknown binary operator interpreted: {}", sym);
+                unreachable!("unknown binary operator interpreted: {sym}");
             }
         };
 
@@ -357,7 +357,7 @@ impl Interpreter {
         })?
         else {
             return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function", op_name),
+                msg: format!("Symbol\"{op_name}\" is not a function"),
                 lines: vec![op.loc],
             });
         };

@@ -69,8 +69,7 @@ impl Error {
 
         assert!(
             last_line < code_lines.len(),
-            "Error's line ({}) is greater than that of the code ({})",
-            last_line,
+            "Error's line ({last_line}) is greater than that of the code ({})",
             code_lines.len()
         );
 
@@ -90,18 +89,18 @@ impl Error {
                     let mut s: Vec<String> = vec![];
                     let line = code_lines[start.line];
                     s.push(format!(
-                        "{:width$} | {}\n   {}{}",
+                        "{:width$} | {line}\n   {}{}",
                         start.line + 1,
-                        line, // line of the code
                         " ".repeat(width + start.col),
                         "^".repeat(line.len() - start.col),
                         width = width
                     ));
+                    // note to the future me:
+                    // the for highlights the ENTIRE LINE, when the error spans one the one line
                     for (i, line) in code_lines[start.line + 1..end.line].iter().enumerate() {
                         s.push(format!(
-                            "{:width$} | {}\n   {}{}",
+                            "{:width$} | {line}\n   {}{}",
                             i + 1,
-                            line, // line of the code
                             " ".repeat(width),
                             "^".repeat(line.len()),
                             width = width
@@ -109,9 +108,8 @@ impl Error {
                     }
                     let line = code_lines[end.line];
                     s.push(format!(
-                        "{:width$} | {}\n   {}{}",
+                        "{:width$} | {line}\n   {}{}",
                         end.line + 1,
-                        line, // line of the code
                         " ".repeat(width),
                         "^".repeat(end.col + 1),
                         width = width
@@ -129,8 +127,7 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let code = code.chars().collect::<Vec<_>>();
     assert!(
         idx <= code.len(),
-        "Index {} is higher than code length {}",
-        idx,
+        "Index {idx} is higher than code length {}",
         code.len()
     );
 

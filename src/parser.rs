@@ -57,7 +57,7 @@ impl Parser {
                 "Attempted to index token out ouf bounds: {} (length {})",
                 self.idx,
                 self.tokens.len()
-                );
+            );
         }
         &self.tokens[self.idx]
     }
@@ -260,6 +260,7 @@ impl Parser {
         let mut params = vec![];
         while !self.is_at_end() {
             params.push(check_variant!(self, Identifier(_), "Expected a parameter name")?);
+            // TODO: turn the condition around
             if is_typ!(self, RParen) {
                 self.advance();
                 //check_variant!(self, RParen, "");
@@ -310,7 +311,7 @@ impl Parser {
         };
         if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
-                msg: format!("Unknown operator: \"{}\"", sym),
+                msg: format!("Unknown operator: \"{sym}\""),
                 lines: vec![tok.loc],
             });
         }

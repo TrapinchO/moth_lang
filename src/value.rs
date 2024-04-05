@@ -308,7 +308,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
     ("print", |args| {
         println!(
             "{}",
-            args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" ")
+            args.iter().map(|a| { a.to_string() }).collect::<Vec<_>>().join(" ")
         );
         Ok(ValueType::Unit)
     }),

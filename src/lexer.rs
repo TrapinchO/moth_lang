@@ -128,7 +128,7 @@ impl Lexer {
                     }
                 }
                 '\"' => TokenType::String(self.lex_string()?),
-                unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
+                unknown => return Err(self.error(format!("Unknown character: \"{unknown}\""))),
             };
             tokens.push(Located { val: typ, loc: Location { start: self.start_idx, end: self.idx - 1 } });
         }
@@ -146,7 +146,7 @@ impl Lexer {
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
-                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)));
+                return Err(self.error(format!("Invalid digit: \"{cur_char}\"")));
             }
             // check if the number is a float
             else if self.is_char('.') {
