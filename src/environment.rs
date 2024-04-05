@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct Environment<T> {
     pub scopes: Vec<HashMap<String, T>>,
@@ -39,7 +38,6 @@ impl<T: Clone> Environment<T> {
             }
         }
         None
-
     }
 
     pub fn contains(&self, name: &String) -> bool {

@@ -101,12 +101,12 @@ mod tests {
         error::Error,
         exprstmt::*,
         lexer::lex,
+        located::Location,
         parser::parse,
         reassoc,
         token::{Token, TokenType},
         value::{get_builtins, NATIVE_OPERATORS},
         varcheck,
-        located::Location,
     };
 
     use crate::compare_elements;

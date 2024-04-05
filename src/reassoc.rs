@@ -1,10 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{
-    error::Error,
-    exprstmt::*,
-    token::*, visitor::ExprVisitor, visitor::StmtVisitor, located::Location,
-};
+use crate::{error::Error, exprstmt::*, located::Location, token::*, visitor::ExprVisitor, visitor::StmtVisitor};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Associativity {
@@ -45,7 +41,10 @@ impl Reassociate {
         // not a binary operation, no need to reassociate it
         let ExprType::BinaryOperation(left2, op2, right2) = right.val.clone() else {
             return Ok(Expr {
-                loc: Location { start: left.loc.start, end: right.loc.end },
+                loc: Location {
+                    start: left.loc.start,
+                    end: right.loc.end,
+                },
                 val: ExprType::BinaryOperation(left.into(), op1, right.into()),
             });
         };
@@ -76,7 +75,10 @@ impl Reassociate {
             }
 
             std::cmp::Ordering::Less => Ok(Expr {
-                loc: Location { start: left.loc.start, end: right.loc.end },
+                loc: Location {
+                    start: left.loc.start,
+                    end: right.loc.end,
+                },
                 val: ExprType::BinaryOperation(left.into(), op1, right.into()),
             }),
 
@@ -89,7 +91,10 @@ impl Reassociate {
                     })
                 }
                 (Associativity::Right, Associativity::Right) => Ok(Expr {
-                    loc: Location { start: left.loc.start, end: right.loc.end },
+                    loc: Location {
+                        start: left.loc.start,
+                        end: right.loc.end,
+                    },
                     val: ExprType::BinaryOperation(left.into(), op1, right.into()),
                 }),
                 _ => Err(Error {
@@ -124,50 +129,50 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<Stmt, Error> {
-                let mut block2: Vec<Stmt> = vec![];
-                for s in block {
-                    block2.push(self.visit_stmt(s)?)
-                }
-                Ok(Stmt {
-                    val: StmtType::BlockStmt(block2),
+        let mut block2: Vec<Stmt> = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?)
+        }
+        Ok(Stmt {
+            val: StmtType::BlockStmt(block2),
             loc,
-                })
+        })
     }
     fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
-                let mut blocks_result: Vec<(Expr, Block)> = vec![];
-                for (cond, stmts) in blocks {
-                    let mut block: Block = vec![];
-                    for s in stmts {
-                        block.push(self.visit_stmt(s)?)
-                    }
-                    blocks_result.push((self.visit_expr(cond)?, block))
-                }
+        let mut blocks_result: Vec<(Expr, Block)> = vec![];
+        for (cond, stmts) in blocks {
+            let mut block: Block = vec![];
+            for s in stmts {
+                block.push(self.visit_stmt(s)?)
+            }
+            blocks_result.push((self.visit_expr(cond)?, block))
+        }
 
-                Ok(Stmt {
-                    val: StmtType::IfStmt(blocks_result),
+        Ok(Stmt {
+            val: StmtType::IfStmt(blocks_result),
             loc,
-                })
+        })
     }
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<Stmt, Error> {
-                let cond = self.visit_expr(cond)?;
-                let mut block2: Block = vec![];
-                for s in block {
-                    block2.push(self.visit_stmt(s)?)
-                }
-                Ok(Stmt {
-                    val: StmtType::WhileStmt(cond, block2),
+        let cond = self.visit_expr(cond)?;
+        let mut block2: Block = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?)
+        }
+        Ok(Stmt {
+            val: StmtType::WhileStmt(cond, block2),
             loc,
-                })
+        })
     }
     fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<Stmt, Error> {
-                let mut block2: Block = vec![];
-                for s in block {
-                    block2.push(self.visit_stmt(s)?)
-                }
-                Ok(Stmt {
-                    val: StmtType::FunDeclStmt(name, params, block2),
+        let mut block2: Block = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?)
+        }
+        Ok(Stmt {
+            val: StmtType::FunDeclStmt(name, params, block2),
             loc,
-                })
+        })
     }
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {

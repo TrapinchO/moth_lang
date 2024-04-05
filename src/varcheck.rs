@@ -1,4 +1,4 @@
-use crate::{environment::Environment, error::Error, exprstmt::*, token::*, located::Location};
+use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, token::*};
 
 use std::collections::HashMap;
 
@@ -170,10 +170,8 @@ impl VarCheck {
     fn retur(&mut self, _: Location, expr: &Expr) {
         self.visit_expr(expr);
     }
-    fn brek(&mut self, _: Location) {
-    }
-    fn cont(&mut self, _: Location) {
-    }
+    fn brek(&mut self, _: Location) {}
+    fn cont(&mut self, _: Location) {}
 }
 impl VarCheck {
     fn visit_expr(&mut self, expr: &Expr) {
@@ -192,16 +190,11 @@ impl VarCheck {
         };
     }
     // nothing to check
-    fn unit(&mut self, _: Location) {
-    }
-    fn int(&mut self, _: Location, _: &i32) {
-    }
-    fn float(&mut self, _: Location, _: &f32) {
-    }
-    fn string(&mut self, _: Location, _: &String) {
-    }
-    fn bool(&mut self, _: Location, _: &bool) {
-    }
+    fn unit(&mut self, _: Location) {}
+    fn int(&mut self, _: Location, _: &i32) {}
+    fn float(&mut self, _: Location, _: &f32) {}
+    fn string(&mut self, _: Location, _: &String) {}
+    fn bool(&mut self, _: Location, _: &bool) {}
     fn identifier(&mut self, loc: Location, ident: &String) {
         match self.env.get(ident) {
             Some(var) => {

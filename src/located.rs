@@ -13,7 +13,6 @@ pub struct Located<T> {
     pub loc: Location,
 }
 
-
 impl<T: std::fmt::Display> Display for Located<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.val)

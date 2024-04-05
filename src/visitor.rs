@@ -1,4 +1,4 @@
-use crate::{error::Error, exprstmt::*, token::Token, located::Location};
+use crate::{error::Error, exprstmt::*, located::Location, token::Token};
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {

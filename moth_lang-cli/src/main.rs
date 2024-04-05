@@ -1,9 +1,11 @@
 use moth_lang::{
     error::Error,
     interpreter::Interpreter,
-    lexer, parser, reassoc,
+    lexer,
+    located::Location,
+    parser, reassoc,
     value::{get_builtins, NATIVE_OPERATORS},
-    varcheck, located::Location,
+    varcheck,
 };
 
 use std::{

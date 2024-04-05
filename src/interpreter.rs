@@ -4,8 +4,9 @@ use crate::{
     environment::Environment,
     error::{Error, ErrorType},
     exprstmt::{Expr, ExprType, Stmt, StmtType},
+    located::Location,
     token::*,
-    value::*, located::Location,
+    value::*,
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -35,10 +36,11 @@ impl Interpreter {
                         ErrorType::Return(_) => "Cannot use return outside of a function",
                         ErrorType::Break => "Cannot use break outside of a loop",
                         ErrorType::Continue => "Cannot use continue outside of a loop",
-                    }.to_string();
+                    }
+                    .to_string();
                     return Err(Error {
                         msg,
-                        lines: vec![s.loc] // TODO: add locations
+                        lines: vec![s.loc], // TODO: add locations
                     });
                 }
             };
@@ -221,10 +223,7 @@ impl Interpreter {
             ExprType::UnaryOperation(op, expr1) => self.unary(op, *expr1),
             ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right),
         }?;
-        Ok(Value {
-            val,
-            loc: expr.loc
-        })
+        Ok(Value { val, loc: expr.loc })
     }
     fn unit(&mut self) -> Result<ValueType, Error> {
         Ok(ValueType::Unit)
@@ -259,30 +258,25 @@ impl Interpreter {
         let callee = self.visit_expr(callee)?;
         match callee.val {
             // TODO: the ok and ? can be removed
-            ValueType::NativeFunction(func) => Ok(
-                func(args2).map_err(|msg| Error {
-                    msg,
-                    lines: vec![loc],
-                })?
-            ),
+            ValueType::NativeFunction(func) => Ok(func(args2).map_err(|msg| Error { msg, lines: vec![loc] })?),
             ValueType::Function(params, block) => {
                 if args2.len() != params.len() {
                     return Err(Error {
                         msg: format!(
-                             "the number of arguments ({}) must match the number of parameters ({})",
-                             args2.len(),
-                             params.len()
+                            "the number of arguments ({}) must match the number of parameters ({})",
+                            args2.len(),
+                            params.len()
                         ),
                         lines: vec![loc],
                     });
                 }
                 self.environment.add_scope_vars(
                     params
-                    .iter()
-                    .zip(args2)
-                    .map(|(n, v)| (n.clone(), v.val))
-                    .collect::<HashMap<_, _>>(),
-                    );
+                        .iter()
+                        .zip(args2)
+                        .map(|(n, v)| (n.clone(), v.val))
+                        .collect::<HashMap<_, _>>(),
+                );
                 let val = match self.interpret_block(block) {
                     Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
                     Err(err) => match err {
@@ -293,13 +287,13 @@ impl Interpreter {
                             return Err(Error {
                                 msg: "Cannot use break outside of loop".to_string(),
                                 lines: vec![loc], // TODO: add locations
-                            })
+                            });
                         }
                         ErrorType::Continue => {
                             return Err(Error {
                                 msg: "Cannot use break outside of loop".to_string(),
                                 lines: vec![loc], // TODO: add locations
-                            })
+                            });
                         }
                     },
                 };

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use moth_lang::{error::*, lexer::lex, token::*, located::Location};
+    use moth_lang::{error::*, lexer::lex, located::Location, token::*};
 
     #[test]
     fn lex_empty() {

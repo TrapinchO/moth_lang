@@ -53,4 +53,3 @@ impl Display for TokenType {
 }
 
 pub type Token = Located<TokenType>;
-

@@ -1,6 +1,6 @@
 //use crate::{token::{TokenType}, reassoc::Precedence};
 
-use crate::{value::Value, located::Location};
+use crate::{located::Location, value::Value};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Pos {
