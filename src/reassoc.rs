@@ -128,10 +128,11 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn assignindex(&mut self, loc: Location, expr: Expr, val: Expr) -> Result<Stmt, Error> {
+    fn assignindex(&mut self, loc: Location, ls: Expr, idx: Expr, val: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::AssignIndexStmt(
-                self.visit_expr(expr)?,
+                self.visit_expr(ls)?,
+                self.visit_expr(idx)?,
                 self.visit_expr(val)?
             ),
             loc,

@@ -175,7 +175,7 @@ impl Parser {
                                 val: StmtType::AssignStmt(Token { val: TokenType::Identifier(ident), loc: expr.loc }, val),
                             })
                         },
-                        ExprType::Index(_, _) => {
+                        ExprType::Index(ls, idx) => {
                             self.advance();
                             let val = self.parse_expression()?;
                             check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
@@ -184,7 +184,7 @@ impl Parser {
                                     start: loc.start,
                                     end: val.loc.end,
                                 },
-                                val: StmtType::AssignIndexStmt(expr, val),
+                                val: StmtType::AssignIndexStmt(*ls, *idx, val),
                             })
                         },
                         _ => { unreachable!() },
@@ -227,33 +227,6 @@ impl Parser {
                 end: expr.loc.end,
             },
             val: StmtType::VarDeclStmt(ident, expr),
-        })
-    }
-
-    fn parse_assign(&mut self) -> Result<Stmt, Error> {
-        // TODO: change so it doesnt backtrack
-        let ident = self.get_current().clone();
-        self.advance();
-
-        Ok(if is_typ!(self, Equals) {
-            self.advance();
-            let expr = self.parse_expression()?;
-            Stmt {
-                loc: Location {
-                    start: ident.loc.start,
-                    end: expr.loc.end,
-                },
-                val: StmtType::AssignStmt(ident, expr),
-            }
-        } else {
-            // since the identifier can be a part of an expression, it has to backtrack a little
-            // bit; and since we already moved at least once, it is safe
-            self.idx -= 1;
-            let expr = self.parse_expression()?;
-            Stmt {
-                loc: expr.loc,
-                val: StmtType::ExprStmt(expr),
-            }
         })
     }
 

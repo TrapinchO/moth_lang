@@ -76,8 +76,9 @@ impl VarCheck {
                         });
                     }
                 }
-                StmtType::AssignIndexStmt(expr, val) => {
-                    self.visit_expr(expr);
+                StmtType::AssignIndexStmt(ls, idx, val) => {
+                    self.visit_expr(ls);
+                    self.visit_expr(idx);
                     self.visit_expr(val);
                 }
                 StmtType::BlockStmt(..) => {
@@ -120,7 +121,7 @@ impl VarCheck {
             StmtType::ExprStmt(expr) => self.expr(loc, expr),
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
             StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
-            StmtType::AssignIndexStmt(expr, val) => self.assignindex(loc, expr, val),
+            StmtType::AssignIndexStmt(ls, idx, val) => self.assignindex(loc, ls, idx, val),
             StmtType::BlockStmt(block) => self.block(loc, block),
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
@@ -139,8 +140,9 @@ impl VarCheck {
     fn assignment(&mut self, _: Location, _: &Token, expr: &Expr) {
         self.visit_expr(expr);
     }
-    fn assignindex(&mut self, _: Location, expr: &Expr, val: &Expr) {
-        self.visit_expr(expr);
+    fn assignindex(&mut self, _: Location, ls: &Expr, idx: &Expr, val: &Expr) {
+        self.visit_expr(ls);
+        self.visit_expr(idx);
         self.visit_expr(val);
     }
     fn block(&mut self, _: Location, block: &Vec<Stmt>) {

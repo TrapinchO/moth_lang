@@ -1,3 +1,4 @@
+use core::panic;
 use std::{collections::HashMap, usize};
 
 use crate::{
@@ -77,7 +78,7 @@ impl Interpreter {
             StmtType::ExprStmt(expr) => self.expr(loc, expr),
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
             StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
-            StmtType::AssignIndexStmt(expr, val) => self.assignindex(loc, expr, val),
+            StmtType::AssignIndexStmt(ls, idx, val) => self.assignindex(loc, ls, idx, val),
             StmtType::BlockStmt(block) => self.block(loc, block),
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
@@ -111,8 +112,21 @@ impl Interpreter {
         Ok(())
     }
 
-    fn assignindex(&mut self, loc: Location, expr: Expr, val: Expr) -> Result<(), ErrorType> {
+    fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), ErrorType> {
         println!("IT HAPPENED");
+        let ValueType::List(mut ls2) = self.visit_expr(ls.clone())?.val else {
+            return Err(Error {
+                msg: "Expected a list index, found: {expr}".to_string(),
+                lines: vec![ls.loc],
+            }.into())
+        };
+        let ValueType::Int(n) = self.visit_expr(idx.clone())?.val else {
+            return Err(Error {
+                msg: "Expected an index".to_string(),
+                lines: vec![idx.loc],
+            }.into())
+        };
+        ls2[n as usize] = self.visit_expr(val)?;
         Ok(())
     }
 
