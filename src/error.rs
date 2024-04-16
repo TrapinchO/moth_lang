@@ -1,8 +1,8 @@
 //use crate::{token::{TokenType}, reassoc::Precedence};
 
-use crate::value::Value;
+use crate::{located::Location, value::Value};
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 struct Pos {
     line: usize,
     col: usize,
@@ -49,7 +49,7 @@ impl From<Error> for ErrorType {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Error {
     pub msg: String,
-    pub lines: Vec<(usize, usize)>, // start, end INDEXES
+    pub lines: Vec<Location>, // start, end INDEXES
 }
 
 impl Error {
@@ -58,19 +58,18 @@ impl Error {
         let lines = self
             .lines
             .iter()
-            .map(|(start_idx, end_idx)| (pos_from_idx(code, *start_idx), pos_from_idx(code, *end_idx)))
+            .map(|loc| (pos_from_idx(code, loc.start), pos_from_idx(code, loc.end)))
             .collect::<Vec<_>>();
         let last_line = lines
             .iter()
             .map(|x| x.0.line)
             .max()
-            .unwrap_or_else(|| panic!("Expected error position(s);\n{}", self.msg));
+            .unwrap_or_else(|| panic!("Expected error position(s);\nMessage: {}", self.msg));
         let width = last_line.to_string().len();
 
         assert!(
             last_line < code_lines.len(),
-            "Error's line ({}) is greater than that of the code ({})",
-            last_line,
+            "Error's line ({last_line}) is greater than that of the code ({})",
             code_lines.len()
         );
 
@@ -90,18 +89,18 @@ impl Error {
                     let mut s: Vec<String> = vec![];
                     let line = code_lines[start.line];
                     s.push(format!(
-                        "{:width$} | {}\n   {}{}",
+                        "{:width$} | {line}\n   {}{}",
                         start.line + 1,
-                        line, // line of the code
                         " ".repeat(width + start.col),
                         "^".repeat(line.len() - start.col),
                         width = width
                     ));
+                    // note to the future me:
+                    // the for highlights the ENTIRE LINE, when the error spans one the one line
                     for (i, line) in code_lines[start.line + 1..end.line].iter().enumerate() {
                         s.push(format!(
-                            "{:width$} | {}\n   {}{}",
+                            "{:width$} | {line}\n   {}{}",
                             i + 1,
-                            line, // line of the code
                             " ".repeat(width),
                             "^".repeat(line.len()),
                             width = width
@@ -109,9 +108,8 @@ impl Error {
                     }
                     let line = code_lines[end.line];
                     s.push(format!(
-                        "{:width$} | {}\n   {}{}",
+                        "{:width$} | {line}\n   {}{}",
                         end.line + 1,
-                        line, // line of the code
                         " ".repeat(width),
                         "^".repeat(end.col + 1),
                         width = width
@@ -129,8 +127,7 @@ fn pos_from_idx(code: &str, idx: usize) -> Pos {
     let code = code.chars().collect::<Vec<_>>();
     assert!(
         idx <= code.len(),
-        "Index {} is higher than code length {}",
-        idx,
+        "Index {idx} is higher than code length {}",
         code.len()
     );
 

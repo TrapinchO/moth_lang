@@ -1,13 +1,12 @@
 #[cfg(test)]
 mod tests {
-    use moth_lang::{error::*, lexer::lex, token::*};
+    use moth_lang::{error::*, lexer::lex, located::Location, token::*};
 
     #[test]
     fn lex_empty() {
         assert_eq!(
             vec![Token {
-                start: 0,
-                end: 0,
+                loc: Location { start: 0, end: 0 },
                 val: TokenType::Eof
             }],
             lex("").unwrap()
@@ -37,7 +36,7 @@ mod tests {
             lex("1.1.1"),
             Err(Error {
                 msg: "Found two floating point number delimiters".to_string(),
-                lines: vec![(0, 4)]
+                lines: vec![Location { start: 0, end: 4 }]
             })
         );
     }
@@ -48,7 +47,7 @@ mod tests {
             "1a",
             Error {
                 msg: "Invalid digit: \"a\"".to_string(),
-                lines: vec![(0, 1)],
+                lines: vec![Location { start: 0, end: 1 }],
             },
         )];
         for (n, r) in nums {
@@ -110,14 +109,14 @@ mod tests {
                 "\"",
                 Error {
                     msg: "EOF while parsing string".to_string(),
-                    lines: vec![(0, 1)],
+                    lines: vec![Location { start: 0, end: 1 }],
                 },
             ),
             (
                 "\"test\n\"",
                 Error {
                     msg: "EOL while parsing string".to_string(),
-                    lines: vec![(0, 5)],
+                    lines: vec![Location { start: 0, end: 5 }],
                 },
             ),
         ];
@@ -261,23 +260,19 @@ mod tests {
                 "1 + 12",
                 vec![
                     Token {
-                        start: 0,
-                        end: 0,
+                        loc: Location { start: 0, end: 0 },
                         val: TokenType::Int(1),
                     },
                     Token {
-                        start: 2,
-                        end: 2,
+                        loc: Location { start: 2, end: 2 },
                         val: TokenType::Symbol("+".to_string()),
                     },
                     Token {
-                        start: 4,
-                        end: 5,
+                        loc: Location { start: 4, end: 5 },
                         val: TokenType::Int(12),
                     },
                     Token {
-                        start: 6,
-                        end: 6,
+                        loc: Location { start: 6, end: 6 },
                         val: TokenType::Eof,
                     },
                 ],
@@ -286,23 +281,19 @@ mod tests {
                 "1+12",
                 vec![
                     Token {
-                        start: 0,
-                        end: 0,
+                        loc: Location { start: 0, end: 0 },
                         val: TokenType::Int(1),
                     },
                     Token {
-                        start: 1,
-                        end: 1,
+                        loc: Location { start: 1, end: 1 },
                         val: TokenType::Symbol("+".to_string()),
                     },
                     Token {
-                        start: 2,
-                        end: 3,
+                        loc: Location { start: 2, end: 3 },
                         val: TokenType::Int(12),
                     },
                     Token {
-                        start: 4,
-                        end: 4,
+                        loc: Location { start: 4, end: 4 },
                         val: TokenType::Eof,
                     },
                 ],
@@ -311,23 +302,19 @@ mod tests {
                 "test2+test",
                 vec![
                     Token {
-                        start: 0,
-                        end: 4,
+                        loc: Location { start: 0, end: 4 },
                         val: TokenType::Identifier("test2".to_string()),
                     },
                     Token {
-                        start: 5,
-                        end: 5,
+                        loc: Location { start: 5, end: 5 },
                         val: TokenType::Symbol("+".to_string()),
                     },
                     Token {
-                        start: 6,
-                        end: 9,
+                        loc: Location { start: 6, end: 9 },
                         val: TokenType::Identifier("test".to_string()),
                     },
                     Token {
-                        start: 10,
-                        end: 10,
+                        loc: Location { start: 10, end: 10 },
                         val: TokenType::Eof,
                     },
                 ],
@@ -336,23 +323,19 @@ mod tests {
                 "\"test\"+\"test\"",
                 vec![
                     Token {
-                        start: 0,
-                        end: 5,
+                        loc: Location { start: 0, end: 5 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 6,
-                        end: 6,
+                        loc: Location { start: 6, end: 6 },
                         val: TokenType::Symbol("+".to_string()),
                     },
                     Token {
-                        start: 7,
-                        end: 12,
+                        loc: Location { start: 7, end: 12 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 13,
-                        end: 13,
+                        loc: Location { start: 13, end: 13 },
                         val: TokenType::Eof,
                     },
                 ],
@@ -361,23 +344,19 @@ mod tests {
                 "\"test\"\n+\"test\"",
                 vec![
                     Token {
-                        start: 0,
-                        end: 5,
+                        loc: Location { start: 0, end: 5 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 7,
-                        end: 7,
+                        loc: Location { start: 7, end: 7 },
                         val: TokenType::Symbol("+".to_string()),
                     },
                     Token {
-                        start: 8,
-                        end: 13,
+                        loc: Location { start: 8, end: 13 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 14,
-                        end: 14,
+                        loc: Location { start: 14, end: 14 },
                         val: TokenType::Eof,
                     },
                 ],
@@ -386,18 +365,15 @@ mod tests {
                 "\"test\" /* test */ \"test\"",
                 vec![
                     Token {
-                        start: 0,
-                        end: 5,
+                        loc: Location { start: 0, end: 5 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 18,
-                        end: 23,
+                        loc: Location { start: 18, end: 23 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 24,
-                        end: 24,
+                        loc: Location { start: 24, end: 24 },
                         val: TokenType::Eof,
                     },
                 ],
@@ -406,18 +382,15 @@ mod tests {
                 "\"test\" /* test \ntest */ \"test\"",
                 vec![
                     Token {
-                        start: 0,
-                        end: 5,
+                        loc: Location { start: 0, end: 5 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 24,
-                        end: 29,
+                        loc: Location { start: 24, end: 29 },
                         val: TokenType::String("test".to_string()),
                     },
                     Token {
-                        start: 30,
-                        end: 30,
+                        loc: Location { start: 30, end: 30 },
                         val: TokenType::Eof,
                     },
                 ],

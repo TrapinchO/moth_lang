@@ -1,4 +1,8 @@
-use crate::{error::Error, located::Located, token::*};
+use crate::{
+    error::Error,
+    located::{Located, Location},
+    token::*,
+};
 
 use std::collections::HashMap;
 
@@ -75,7 +79,10 @@ impl Lexer {
     fn error(&self, msg: String) -> Error {
         Error {
             msg,
-            lines: vec![(self.start_idx, self.idx)],
+            lines: vec![Location {
+                start: self.start_idx,
+                end: self.idx,
+            }],
         }
     }
 
@@ -128,12 +135,24 @@ impl Lexer {
                     }
                 }
                 '\"' => TokenType::String(self.lex_string()?),
-                unknown => return Err(self.error(format!("Unknown character: \"{}\"", unknown))),
+                unknown => return Err(self.error(format!("Unknown character: \"{unknown}\""))),
             };
-            tokens.push(Located::new(typ, self.start_idx, self.idx - 1));
+            tokens.push(Located {
+                val: typ,
+                loc: Location {
+                    start: self.start_idx,
+                    end: self.idx - 1,
+                },
+            });
         }
 
-        tokens.push(Located::new(TokenType::Eof, self.idx, self.idx));
+        tokens.push(Located {
+            val: TokenType::Eof,
+            loc: Location {
+                start: self.idx,
+                end: self.idx,
+            },
+        });
         Ok(tokens)
     }
 
@@ -146,7 +165,7 @@ impl Lexer {
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
-                return Err(self.error(format!("Invalid digit: \"{}\"", cur_char)));
+                return Err(self.error(format!("Invalid digit: \"{cur_char}\"")));
             }
             // check if the number is a float
             else if self.is_char('.') {

@@ -24,17 +24,16 @@ impl ExprType {
             Self::Unit => "()".to_string(),
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
-            Self::String(s) => format!("\"{}\"", s),
+            Self::String(s) => format!("\"{s}\""),
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
-            Self::Parens(expr) => format!("({})", expr.val),
+            Self::Parens(expr) => format!("({expr})", expr = expr.val.format()),
+            Self::UnaryOperation(op, expr) => format!("({op} {expr})", op = op.val),
+            Self::BinaryOperation(left, op, right) => format!("({left} {op} {right})", op = op.val),
             Self::Call(callee, args) => format!(
-                "{}({})",
-                callee,
-                args.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
+                "{callee}({args})",
+                args = args.iter().map(|e| { format!("{e}") }).collect::<Vec<_>>().join(", ")
             ),
-            Self::UnaryOperation(op, expr) => format!("({} {})", op.val, expr),
-            Self::BinaryOperation(left, op, right) => format!("({} {} {})", left, op.val, right),
             Self::List(ls) => format!(
                 "[{}]",
                 ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
@@ -72,11 +71,11 @@ impl StmtType {
     fn format(&self) -> String {
         match self {
             Self::ExprStmt(expr) => expr.to_string() + ";",
-            Self::VarDeclStmt(ident, expr) => format!("let {} = {};", ident, expr),
-            Self::AssignStmt(ident, expr) => format!("{} = {};", ident, expr),
+            Self::VarDeclStmt(ident, expr) => format!("let {ident} = {expr};"),
+            Self::AssignStmt(ident, expr) => format!("{ident} = {expr};"),
             Self::BlockStmt(block) => format!(
-                "{{\n{}\n}}",
-                block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+                "{{\n{block}\n}}",
+                block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::IfStmt(blocks) => {
                 let first = blocks.first().unwrap(); // always present
@@ -84,31 +83,29 @@ impl StmtType {
                     .iter()
                     .map(|(cond, stmts)| {
                         format!(
-                            "else if {} {{\n{}\n}}",
-                            cond.val,
-                            stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+                            "else if {cond} {{\n{stmts}\n}}",
+                            cond = cond.val,
+                            stmts = stmts.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
                         )
                     })
                     .collect::<Vec<_>>();
                 format!(
-                    "if {} {{\n{}\n}} {}",
-                    first.0,
-                    first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
-                    rest.join("")
+                    "if {cond} {{\n{block}\n}} {rest}",
+                    cond = first.0,
+                    block = first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
+                    rest = rest.join("")
                 )
             }
             Self::WhileStmt(cond, block) => format!(
-                "while {} {{{}}}",
-                cond,
-                block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+                "while {cond} {{{block}}}",
+                block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::FunDeclStmt(ident, params, block) => format!(
-                "fun {}({}){}",
-                ident,
-                params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
-                block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+                "fun {ident}({params}){block}",
+                params = params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
+                block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::ReturnStmt(expr) => format!("return {};", expr),
+            Self::ReturnStmt(expr) => format!("return {expr};"),
             Self::BreakStmt => "break;".to_string(),
             Self::ContinueStmt => "continue;".to_string(),
         }

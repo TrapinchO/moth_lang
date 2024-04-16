@@ -4,9 +4,9 @@ use crate::{
     environment::Environment,
     error::{Error, ErrorType},
     exprstmt::{Expr, ExprType, Stmt, StmtType},
+    located::Location,
     token::*,
     value::*,
-    visitor::ExprVisitor,
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -14,7 +14,7 @@ pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Resu
 }
 
 pub struct Interpreter {
-    environment: Environment,
+    environment: Environment<ValueType>,
 }
 
 impl Interpreter {
@@ -36,10 +36,11 @@ impl Interpreter {
                         ErrorType::Return(_) => "Cannot use return outside of a function",
                         ErrorType::Break => "Cannot use break outside of a loop",
                         ErrorType::Continue => "Cannot use continue outside of a loop",
-                    }.to_string();
+                    }
+                    .to_string();
                     return Err(Error {
                         msg,
-                        lines: vec![s.loc()] // TODO: add locations
+                        lines: vec![s.loc], // TODO: add locations
                     });
                 }
             };
@@ -88,8 +89,14 @@ impl Interpreter {
         let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
+        let TokenType::Identifier(name) = &ident.val else {
+            unreachable!()
+        };
         let val = self.visit_expr(expr)?;
-        self.environment.insert(&ident, val)?;
+        self.environment.insert(name, val.val).ok_or(Error {
+            msg: format!("Name \"{name}\" already exists"),
+            lines: vec![ident.loc],
+        })?;
         Ok(())
     }
 
@@ -97,8 +104,14 @@ impl Interpreter {
         let StmtType::AssignStmt(ident, expr) = stmt.val else {
             unreachable!()
         };
+        let TokenType::Identifier(name) = &ident.val else {
+            unreachable!()
+        };
         let val = self.visit_expr(expr)?;
-        self.environment.update(&ident, val)?;
+        self.environment.update(name, val.val).ok_or_else(|| Error {
+            msg: format!("Name not found: \"{name}\""),
+            lines: vec![ident.loc],
+        })?;
         Ok(())
     }
 
@@ -118,7 +131,7 @@ impl Interpreter {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
                 return Err(ErrorType::Error(Error {
                     msg: format!("Expected bool, got {}", cond.val),
-                    lines: vec![cond.loc()],
+                    lines: vec![cond.loc],
                 }));
             };
             // do not continue
@@ -161,6 +174,9 @@ impl Interpreter {
         let StmtType::FunDeclStmt(ident, params, block) = stmt.val else {
             unreachable!()
         };
+        let TokenType::Identifier(name) = &ident.val else {
+            unreachable!()
+        };
         let mut params2 = vec![];
         for p in params {
             let TokenType::Identifier(n) = &p.val else {
@@ -168,14 +184,12 @@ impl Interpreter {
             };
             params2.push(n.clone());
         }
-        self.environment.insert(
-            &ident,
-            Value {
-                val: ValueType::Function(params2, block),
-                start: stmt.start,
-                end: stmt.end,
-            },
-        )?;
+        self.environment
+            .insert(name, ValueType::Function(params2, block))
+            .ok_or(Error {
+                msg: format!("Name \"{name}\" already exists"),
+                lines: vec![ident.loc],
+            })?;
         // TODO: nothing here yet
         Ok(())
     }
@@ -194,85 +208,57 @@ impl Interpreter {
     }
 }
 
-impl ExprVisitor<Value> for Interpreter {
-    fn unit(&mut self, expr: Expr) -> Result<Value, Error> {
-        Ok(Value {
-            val: ValueType::Unit,
-            start: expr.start,
-            end: expr.end,
+impl Interpreter {
+    fn visit_expr(&mut self, expr: Expr) -> Result<Value, Error> {
+        let loc = expr.loc;
+        let val = match expr.val {
+            ExprType::Unit => self.unit(),
+            ExprType::Int(n) => self.int(n),
+            ExprType::Float(n) => self.float(n),
+            ExprType::String(s) => self.string(s),
+            ExprType::Bool(b) => self.bool(b),
+            ExprType::Identifier(ident) => self.identifier(ident, loc),
+            ExprType::Parens(expr1) => self.parens(*expr1),
+            ExprType::Call(callee, args) => self.call(*callee, args, loc),
+            ExprType::UnaryOperation(op, expr1) => self.unary(op, *expr1),
+            ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right),
+        }?;
+        Ok(Value { val, loc: expr.loc })
+    }
+    fn unit(&mut self) -> Result<ValueType, Error> {
+        Ok(ValueType::Unit)
+    }
+    fn int(&mut self, n: i32) -> Result<ValueType, Error> {
+        Ok(ValueType::Int(n))
+    }
+    fn float(&mut self, n: f32) -> Result<ValueType, Error> {
+        Ok(ValueType::Float(n))
+    }
+    fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
+        self.environment.get(&ident).ok_or_else(|| Error {
+            msg: format!("Name not found: \"{ident}\""),
+            lines: vec![loc],
         })
     }
-    fn int(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Int(n) = expr.val else { unreachable!() };
-        Ok(Value {
-            val: ValueType::Int(n),
-            start: expr.start,
-            end: expr.end,
-        })
+    fn string(&mut self, s: String) -> Result<ValueType, Error> {
+        Ok(ValueType::String(s))
     }
-    fn float(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Float(f) = expr.val else { unreachable!() };
-        Ok(Value {
-            val: ValueType::Float(f),
-            start: expr.start,
-            end: expr.end,
-        })
+    fn bool(&mut self, b: bool) -> Result<ValueType, Error> {
+        Ok(ValueType::Bool(b))
     }
-    fn string(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::String(s) = expr.val else { unreachable!() };
-        Ok(Value {
-            val: ValueType::String(s),
-            start: expr.start,
-            end: expr.end,
-        })
+    fn parens(&mut self, expr: Expr) -> Result<ValueType, Error> {
+        Ok(self.visit_expr(expr)?.val)
     }
-    fn identifier(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Identifier(name) = expr.val else {
-            unreachable!()
-        };
-        Ok(Value {
-            val: self.environment.get(&name, (expr.start, expr.end))?,
-            start: expr.start,
-            end: expr.end,
-        })
-    }
-    fn bool(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Bool(b) = expr.val else { unreachable!() };
-        Ok(Value {
-            val: ValueType::Bool(b),
-            start: expr.start,
-            end: expr.end,
-        })
-    }
-    fn parens(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Parens(expr2) = expr.val else {
-            unreachable!()
-        };
-        Ok(Value {
-            start: expr.start,
-            end: expr.end,
-            val: self.visit_expr(*expr2)?.val,
-        })
-    }
-    fn call(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::Call(callee, args) = expr.val.clone() else {
-            unreachable!()
-        };
+    fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: Location) -> Result<ValueType, Error> {
         let mut args2 = vec![];
         for arg in args {
             args2.push(self.visit_expr(arg)?);
         }
 
-        let callee = self.visit_expr(*callee)?;
+        let callee = self.visit_expr(callee)?;
         match callee.val {
-            ValueType::NativeFunction(func) => Ok(Value {
-                val: func(args2).map_err(|msg| Error {
-                    msg,
-                    lines: vec![expr.loc()],
-                })?,
-                start: expr.start,
-                end: expr.end,
-            }),
+            // TODO: the ok and ? can be removed
+            ValueType::NativeFunction(func) => Ok(func(args2).map_err(|msg| Error { msg, lines: vec![loc] })?),
             ValueType::Function(params, block) => {
                 if args2.len() != params.len() {
                     return Err(Error {
@@ -281,7 +267,7 @@ impl ExprVisitor<Value> for Interpreter {
                             args2.len(),
                             params.len()
                         ),
-                        lines: vec![expr.loc()],
+                        lines: vec![loc],
                     });
                 }
                 self.environment.add_scope_vars(
@@ -300,35 +286,28 @@ impl ExprVisitor<Value> for Interpreter {
                         ErrorType::Break => {
                             return Err(Error {
                                 msg: "Cannot use break outside of loop".to_string(),
-                                lines: vec![expr.loc()], // TODO: add locations
-                            })
+                                lines: vec![loc], // TODO: add locations
+                            });
                         }
                         ErrorType::Continue => {
                             return Err(Error {
                                 msg: "Cannot use break outside of loop".to_string(),
-                                lines: vec![expr.loc()], // TODO: add locations
-                            })
+                                lines: vec![loc], // TODO: add locations
+                            });
                         }
                     },
                 };
                 self.remove_scope();
-                Ok(Value {
-                    val,
-                    start: expr.start,
-                    end: expr.end,
-                })
+                Ok(val)
             }
             _ => Err(Error {
                 msg: format!("\"{}\" is not calleable", callee.val),
-                lines: vec![callee.loc()],
+                lines: vec![callee.loc],
             }),
         }
     }
-    fn unary(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::UnaryOperation(op, expr2) = expr.val.clone() else {
-            unreachable!()
-        };
-        let val = self.visit_expr(*expr2)?;
+    fn unary(&mut self, op: Token, expr: Expr) -> Result<ValueType, Error> {
+        let val = self.visit_expr(expr)?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val);
         };
@@ -339,7 +318,7 @@ impl ExprVisitor<Value> for Interpreter {
                 _ => {
                     return Err(Error {
                         msg: format!("Incorrect type: {}", val.val),
-                        lines: vec![val.loc()],
+                        lines: vec![val.loc],
                     })
                 }
             },
@@ -348,43 +327,37 @@ impl ExprVisitor<Value> for Interpreter {
                 _ => {
                     return Err(Error {
                         msg: format!("Incorrect type: {}", val.val),
-                        lines: vec![val.loc()],
+                        lines: vec![val.loc],
                     })
                 }
             },
             sym => {
-                unreachable!("unknown binary operator interpreted: {}", sym);
+                unreachable!("unknown binary operator interpreted: {sym}");
             }
         };
 
-        Ok(Value {
-            val: new_val,
-            start: expr.start,
-            end: expr.end,
-        })
+        Ok(new_val)
     }
-    fn binary(&mut self, expr: Expr) -> Result<Value, Error> {
-        let ExprType::BinaryOperation(left, op, right) = expr.val else {
-            unreachable!()
-        };
-        let left2 = self.visit_expr(*left)?;
-        let right2 = self.visit_expr(*right.clone())?;
+    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<ValueType, Error> {
+        let right_loc = right.loc;
+        let left2 = self.visit_expr(left)?;
+        let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::NativeFunction(func) = self.environment.get(op_name, (op.start, op.end))? else {
+        let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or(Error {
+            msg: format!("Name not found: \"{op_name}\""),
+            lines: vec![op.loc],
+        })?
+        else {
             return Err(Error {
-                msg: format!("Symbol\"{}\" is not a function", op_name),
-                lines: vec![op.loc()],
+                msg: format!("Symbol\"{op_name}\" is not a function"),
+                lines: vec![op.loc],
             });
         };
-        Ok(Value {
-            start: left2.start,
-            end: right2.end,
-            val: func(vec![left2, right2]).map_err(|msg| Error {
-                msg,
-                lines: vec![right.loc()],
-            })?,
+        func(vec![left2, right2]).map_err(|msg| Error {
+            msg,
+            lines: vec![right_loc],
         })
     }
     fn list(&mut self, expr: Expr) -> Result<Value, Error> {

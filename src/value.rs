@@ -184,7 +184,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a != b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a != b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a != b),
-                (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
+                (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a != b),
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
         },
@@ -315,7 +315,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
     ("print", |args| {
         println!(
             "{}",
-            args.iter().map(|a| { format!("{}", a) }).collect::<Vec<_>>().join(" ")
+            args.iter().map(|a| { a.to_string() }).collect::<Vec<_>>().join(" ")
         );
         Ok(ValueType::Unit)
     }),
