@@ -256,30 +256,23 @@ impl ExprVisitor<Expr> for Reassociate {
     fn binary(&mut self, _: Location, left: Expr, op: Token, right: Expr) -> Result<Expr, Error> {
         self.reassoc(left, op, right)
     }
-    fn list(&mut self, expr: Expr) -> Result<Expr, Error> {
-        let ExprType::List(ls) = expr.val else {
-            unreachable!()
-        };
+    fn list(&mut self, loc: Location, ls: Vec<Expr>) -> Result<Expr, Error> {
         let mut ls2 = vec![];
         for e in ls {
             ls2.push(self.visit_expr(e)?);
         }
         Ok(Expr {
-            start: expr.start,
-            end: expr.end,
             val: ExprType::List(ls2),
+            loc,
         })
     }
-    fn index(&mut self, expr: Expr) -> Result<Expr, Error> {
-        let ExprType::Index(expr2, idx) = expr.val else {
-            unreachable!()
-        };
+    fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::Index(
-                 self.visit_expr(*expr2)?.into(),
-                 self.visit_expr(*idx)?.into()
+                 self.visit_expr(expr2)?.into(),
+                 self.visit_expr(idx)?.into()
             ),
-            ..expr
+            loc,
         })
     }
 }

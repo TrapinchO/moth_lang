@@ -87,7 +87,7 @@ impl Parser {
         let eof = self.get_current();
         Err(Error {
             msg: "Unexpected EOF while parsing function call".to_string(),
-            lines: vec![eof.loc()],
+            lines: vec![eof.loc],
         })
     }
 
@@ -384,16 +384,15 @@ impl Parser {
         if !is_typ!(self, LParen) {
             return Ok(expr);
         }
-        let start = check_variant!(self, LParen, "").start;
+        let start = check_variant!(self, LParen, "")?.loc.start;
         let args = self.sep(
             Parser::parse_expression,
             TokenType::RParen
         )?;
-        let end = check_variant!(self, RParen, "").end;
+        let end = check_variant!(self, RParen, "")?.loc.end;
         Ok(Expr {
-            start,
-            end,
-            val: ExprType::Call(expr.into(), args)
+            loc: Location { start, end, },
+            val: ExprType::Call(expr.into(), args),
         })
     }
 
@@ -402,12 +401,11 @@ impl Parser {
         if !is_typ!(self, LBracket) {
             return Ok(expr);
         }
-        let start = check_variant!(self, LBracket, "").start;
+        let start = check_variant!(self, LBracket, "")?.loc.start;
         let idx = self.parse_expression()?;
-        let end = check_variant!(self, RBracket, "Expected closing bracket.").end;
+        let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
         Ok(Expr {
-            start,
-            end,
+            loc: Location { start, end, },
             val: ExprType::Index(expr.into(), idx.into()),
         })
     }
@@ -462,16 +460,15 @@ impl Parser {
                 });
             }
             TokenType::LBracket => {
-                let start = tok.start;
+                let start = tok.loc.start;
                 self.advance();
                 let items = self.sep(
                     Parser::parse_expression,
                     TokenType::RBracket,
                 )?;
-                let end = check_variant!(self, RBracket, "").end;
+                let end = check_variant!(self, RBracket, "")?.loc.end;
                 return Ok(Expr {
-                    start,
-                    end,
+                    loc: Location { start, end, },
                     val: ExprType::List(items),
                 })
             }

@@ -44,7 +44,7 @@ pub trait ExprVisitor<T> {
             ExprType::UnaryOperation(op, expr1) => self.unary(loc, op, *expr1),
             ExprType::BinaryOperation(left, op, right) => self.binary(loc, *left, op, *right),
             ExprType::List(ls) => self.list(loc, ls),
-            ExprType::Index(expr2, idx) => self.index(loc, expr2, idx),
+            ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
         }
     }
     fn unit(&mut self, loc: Location) -> Result<T, Error>;
@@ -57,6 +57,6 @@ pub trait ExprVisitor<T> {
     fn call(&mut self, loc: Location, callee: Expr, args: Vec<Expr>) -> Result<T, Error>;
     fn unary(&mut self, loc: Location, op: Token, expr: Expr) -> Result<T, Error>;
     fn binary(&mut self, loc: Location, left: Expr, op: Token, right: Expr) -> Result<T, Error>;
-    fn list(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;
-    fn index(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;
+    fn list(&mut self, loc: Location, expr: Vec<Expr>) -> Result<T, Error>;
+    fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<T, Error>;
 }
