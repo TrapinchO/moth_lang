@@ -1,5 +1,5 @@
 use core::panic;
-use std::{collections::HashMap, usize};
+use std::collections::HashMap;
 
 use crate::{
     environment::Environment,
@@ -127,15 +127,11 @@ impl Interpreter {
         };
         unsafe {
             let length = (*ls2.get()).len();
-            if length as i32 <= n || n < -(length as i32) {
-                return Err(Error {
-                    msg: format!("Index out of range: {}", n),
-                    lines: vec![idx.loc]
-                }.into());
-            }
-            let n2 = if n < 0 { length as i32 + n } else { n };
-            // TODO: the n as usize IS NOT SAFE AND MUST BE HANDLED LIKE ALL INDICES
-            (*ls2.get())[n2 as usize] = self.visit_expr(val)?;
+            let n2 = MList::check_index(n, length).ok_or_else(|| Error {
+                msg: format!("Index out of range: {}", n),
+                lines: vec![idx.loc]
+            })?;
+            (*ls2.get())[n2] = self.visit_expr(val)?;
         }
         Ok(())
     }
@@ -148,10 +144,10 @@ impl Interpreter {
     fn if_else(&mut self, _: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<(), ErrorType> {
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
-                return Err(ErrorType::Error(Error {
+                return Err(Error {
                     msg: format!("Expected bool, got {}", cond.val),
                     lines: vec![cond.loc],
-                }));
+                }.into());
             };
             // do not continue
             if cond2 {
@@ -393,14 +389,11 @@ impl Interpreter {
         };
         unsafe {
             let length = (*ls.get()).len();
-            if length as i32 <= n || n < -(length as i32) {
-                return Err(Error {
-                    msg: format!("Index out of range: {}", n),
-                    lines: vec![loc]
-                });
-            }
-            Ok((*ls.get()).get(if n < 0 { length as i32 + n } else { n } as usize)
-               .unwrap().val.clone())
+            let n2 = MList::check_index(n, length).ok_or_else(|| Error {
+                msg: format!("Index out of range: {}", n),
+                lines: vec![loc]
+            })?;
+            Ok((*ls.get())[n2].val.clone())
         }
     }
 }

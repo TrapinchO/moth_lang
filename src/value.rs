@@ -16,8 +16,19 @@ impl MList {
     pub fn new(ls: Vec<Value>) -> Self {
         MList(Rc::new(UnsafeCell::new(ls)))
     }
+
     pub fn get(&self) -> *mut Vec<Value> {
         self.0.get()
+    }
+
+    // checks whether it is in the possible range (even if negative)
+    // and returns it as a positive index
+
+    pub fn check_index(idx: i32, length: usize) -> Option<usize> {
+        if length as i32 <= idx || idx < -(length as i32) {
+            return None;
+        }
+        Some(if idx < 0 { length as i32 + idx } else { idx } as usize)
     }
 }
 
