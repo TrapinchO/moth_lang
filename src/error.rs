@@ -32,7 +32,7 @@ enum ErrorType {
 }
 */
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum ErrorType {
     Error(Error),
     Return(Value),

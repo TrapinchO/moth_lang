@@ -113,10 +113,9 @@ impl Interpreter {
     }
 
     fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), ErrorType> {
-        println!("IT HAPPENED");
-        let ValueType::List(mut ls2) = self.visit_expr(ls.clone())?.val else {
+        let ValueType::List(ls2) = self.visit_expr(ls.clone())?.val else {
             return Err(Error {
-                msg: "Expected a list index, found: {expr}".to_string(),
+                msg: "Expected a list index".to_string(),
                 lines: vec![ls.loc],
             }.into())
         };
@@ -126,7 +125,18 @@ impl Interpreter {
                 lines: vec![idx.loc],
             }.into())
         };
-        ls2[n as usize] = self.visit_expr(val)?;
+        unsafe {
+            let length = (*ls2.get()).len();
+            if length as i32 <= n || n < -(length as i32) {
+                return Err(Error {
+                    msg: format!("Index out of range: {}", n),
+                    lines: vec![idx.loc]
+                }.into());
+            }
+            let n2 = if n < 0 { length as i32 + n } else { n };
+            // TODO: the n as usize IS NOT SAFE AND MUST BE HANDLED LIKE ALL INDICES
+            (*ls2.get())[n2 as usize] = self.visit_expr(val)?;
+        }
         Ok(())
     }
 
@@ -364,7 +374,7 @@ impl Interpreter {
         for e in ls {
             ls2.push(self.visit_expr(e)?);
         }
-        Ok(ValueType::List(ls2))
+        Ok(ValueType::List(ls2.into()))
     }
     fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<ValueType, Error> {
         let val = self.visit_expr(expr2)?;
@@ -381,13 +391,16 @@ impl Interpreter {
                 lines: vec![val.loc]
             })
         };
-        if n >= ls.len() as i32 || n < -(ls.len() as i32) {
-            return Err(Error {
-                msg: format!("Index out of range: {}", n),
-                lines: vec![loc]
-            });
+        unsafe {
+            let length = (*ls.get()).len();
+            if length as i32 <= n || n < -(length as i32) {
+                return Err(Error {
+                    msg: format!("Index out of range: {}", n),
+                    lines: vec![loc]
+                });
+            }
+            Ok((*ls.get()).get(if n < 0 { length as i32 + n } else { n } as usize)
+               .unwrap().val.clone())
         }
-        Ok(ls.get(if n < 0 { ls.len() as i32 + n } else { n } as usize)
-           .unwrap().val.clone())
     }
 }

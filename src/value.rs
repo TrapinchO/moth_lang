@@ -1,5 +1,7 @@
+use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::rc::Rc;
 use std::time::SystemTime;
 
 use crate::exprstmt::Stmt;
@@ -7,13 +9,39 @@ use crate::exprstmt::Stmt;
 use crate::located::Located;
 use crate::reassoc::{Associativity, Precedence};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Clone)]
+pub struct MList(Rc<UnsafeCell<Vec<Value>>>);
+
+impl MList {
+    pub fn new(ls: Vec<Value>) -> Self {
+        MList(Rc::new(UnsafeCell::new(ls)))
+    }
+    pub fn get(&self) -> *mut Vec<Value> {
+        self.0.get()
+    }
+}
+
+impl From<Vec<Value>> for MList {
+    fn from(value: Vec<Value>) -> Self {
+        MList::new(value)
+    }
+}
+
+impl PartialEq for MList {
+    fn eq(&self, other: &Self) -> bool {
+        unsafe {
+            *self.get() == *other.get()
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum ValueType {
     String(String),
     Bool(bool),
     Int(i32),
     Float(f32),
-    List(Vec<Value>),
+    List(MList),
     NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
     Function(Vec<String>, Vec<Stmt>),
     Unit,
@@ -25,7 +53,12 @@ impl ValueType {
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::List(ls) => format!("[{}]", ls.iter().map(|e| { e.val.format() }).collect::<Vec<_>>().join(", ")),
+            Self::List(ls) => unsafe {
+                format!("[{}]",
+                        (*ls.get()).iter()
+                        .map(|e| { e.val.format() })
+                        .collect::<Vec<_>>().join(", "))
+            }
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
             Self::Function(..) => "<function>".to_string(),
             Self::Unit => "()".to_string(),
@@ -65,9 +98,12 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
                 (ValueType::List(a), ValueType::List(b)) => {
-                    let mut res = a.clone();
-                    res.append(&mut b.clone());
-                    ValueType::List(res)
+                    unsafe {
+                        let mut res = vec![];
+                        for i in (*a.get()).iter() { res.push(i.clone()); }
+                        for i in (*b.get()).iter() { res.push(i.clone()); }
+                        ValueType::List(res.into())
+                    }
                 }
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
@@ -339,7 +375,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
         let val = &args.first().unwrap().val;
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
-            ValueType::List(ls) => ls.len() as i32,
+            ValueType::List(ls) => unsafe { (*ls.get()).len() as i32 },
             _ => return Err(format!("Invalid value: {}", val))
         }))
     })

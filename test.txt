@@ -20,7 +20,9 @@ fun modify(ls, i, idx) {
 //print(modify([1, 2, 3, 4, 5], 10, -1));
 //print([1, 2, 3][-2]);
 let x = [1, 2, 3, 4, 5];
-x[0] = 10;
+x[-2] = 10;
+x = modify(x, "aa", 2);
+x[0] = 1111;
 print(x);
 
 
