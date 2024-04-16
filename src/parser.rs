@@ -82,7 +82,7 @@ impl Parser {
             if cmp(&self.get_current().val, &end_tok) {
                 return Ok(items);
             }
-            check_variant!(self, Comma, "Expected a comma \",\" after an item");
+            check_variant!(self, Comma, "Expected a comma \",\" after an item")?;
         }
         let eof = self.get_current();
         Err(Error {

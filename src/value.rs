@@ -336,7 +336,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
         if args.len() != 1 {
             return Err(format!("Function takes exactly 1 argument, got: {}", args.len()))
         }
-        let val = &args.get(0).unwrap().val;
+        let val = &args.first().unwrap().val;
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
             ValueType::List(ls) => ls.len() as i32,

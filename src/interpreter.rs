@@ -362,7 +362,7 @@ impl Interpreter {
             lines: vec![right_loc],
         })
     }
-    fn list(&mut self, loc: Location, ls: Vec<Expr>) -> Result<ValueType, Error> {
+    fn list(&mut self, _: Location, ls: Vec<Expr>) -> Result<ValueType, Error> {
         let mut ls2 = vec![];
         for e in ls {
             ls2.push(self.visit_expr(e)?);
