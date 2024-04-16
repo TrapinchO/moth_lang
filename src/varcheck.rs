@@ -22,6 +22,8 @@ struct VarCheck {
     warns: Vec<Error>,
 }
 
+// TODO: because env.contains looks through ALL of the scopes,
+// shadowing in a different scope is not possible
 impl VarCheck {
     fn declare_item(&mut self, name: &String, loc: Location) {
         match self.env.get(name) {
@@ -187,6 +189,8 @@ impl VarCheck {
             ExprType::Call(callee, args) => self.call(loc, callee, args),
             ExprType::UnaryOperation(op, expr1) => self.unary(loc, op, expr1),
             ExprType::BinaryOperation(left, op, right) => self.binary(loc, left, op, right),
+            ExprType::List(ls) => self.list(loc, ls),
+            ExprType::Index(expr2, idx) => self.index(loc, expr2, idx),
         };
     }
     // nothing to check
@@ -223,5 +227,20 @@ impl VarCheck {
     fn binary(&mut self, _: Location, left: &Expr, _: &Token, right: &Expr) {
         self.visit_expr(left);
         self.visit_expr(right);
+    }
+    fn list(&mut self, expr: Expr) {
+        let ExprType::List(ls) = expr.val else {
+            unreachable!()
+        };
+        for e in ls {
+            self.visit_expr(e);
+        }
+    }
+    fn index(&mut self, expr: Expr) {
+        let ExprType::Index(expr2, idx) = expr.val else {
+            unreachable!()
+        };
+        self.visit_expr(*expr2);
+        self.visit_expr(*idx);
     }
 }

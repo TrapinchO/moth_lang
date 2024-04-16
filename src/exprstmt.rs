@@ -11,9 +11,11 @@ pub enum ExprType {
     Bool(bool),
     Identifier(String),
     Parens(Box<Expr>),
-    Call(Box<Expr>, Vec<Expr>), // calle, args (calle(arg1, arg2, arg3))
+    Call(Box<Expr>, Vec<Expr>), // calle(arg1, arg2, arg3)
     UnaryOperation(Token, Box<Expr>),
     BinaryOperation(Box<Expr>, Token, Box<Expr>),
+    List(Vec<Expr>),
+    Index(Box<Expr>, Box<Expr>),  // expr[idx]
 }
 
 impl ExprType {
@@ -26,12 +28,17 @@ impl ExprType {
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
             Self::Parens(expr) => format!("({expr})", expr = expr.val.format()),
+            Self::UnaryOperation(op, expr) => format!("({op} {expr})", op = op.val),
+            Self::BinaryOperation(left, op, right) => format!("({left} {op} {right})", op = op.val),
             Self::Call(callee, args) => format!(
                 "{callee}({args})",
                 args = args.iter().map(|e| { format!("{e}") }).collect::<Vec<_>>().join(", ")
             ),
-            Self::UnaryOperation(op, expr) => format!("({op} {expr})", op = op.val),
-            Self::BinaryOperation(left, op, right) => format!("({left} {op} {right})", op = op.val),
+            Self::List(ls) => format!(
+                "[{}]",
+                ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
+            ),
+            Self::Index(expr, idx) => format!("{}[{}]", expr.val, idx.val)
         }
     }
 }
@@ -49,6 +56,7 @@ pub enum StmtType {
     ExprStmt(Expr),
     // identifier, expression
     VarDeclStmt(Token, Expr),
+    //
     AssignStmt(Token, Expr),
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
@@ -112,3 +120,4 @@ impl Display for StmtType {
 
 pub type Stmt = Located<StmtType>;
 pub type Block = Vec<Stmt>;
+

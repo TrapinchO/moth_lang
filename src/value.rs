@@ -13,6 +13,7 @@ pub enum ValueType {
     Bool(bool),
     Int(i32),
     Float(f32),
+    List(Vec<Value>),
     NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
     Function(Vec<String>, Vec<Stmt>),
     Unit,
@@ -24,6 +25,7 @@ impl ValueType {
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
+            Self::List(ls) => format!("[{}]", ls.iter().map(|e| { e.val.format() }).collect::<Vec<_>>().join(", ")),
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
             Self::Function(..) => "<function>".to_string(),
             Self::Unit => "()".to_string(),
@@ -62,6 +64,11 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
+                (ValueType::List(a), ValueType::List(b)) => {
+                    let mut res = a.clone();
+                    res.append(&mut b.clone());
+                    ValueType::List(res)
+                }
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
         },
@@ -304,7 +311,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
     ),
 ];
 
-pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
+pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
     ("print", |args| {
         println!(
             "{}",
@@ -325,6 +332,17 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 2] = [
                 .unwrap(),
         ))
     }),
+    ("len", |args| {
+        if args.len() != 1 {
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()))
+        }
+        let val = &args.get(0).unwrap().val;
+        Ok(ValueType::Int(match val {
+            ValueType::String(s) => s.len() as i32,
+            ValueType::List(ls) => ls.len() as i32,
+            _ => return Err(format!("Invalid value: {}", val))
+        }))
+    })
 ];
 
 pub fn get_builtins() -> HashMap<String, ValueType> {

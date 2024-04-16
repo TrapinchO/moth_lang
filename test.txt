@@ -1,12 +1,48 @@
+fun append(ls, i) {
+    return ls + [i];
+}
+fun modify(ls, i, idx) {
+    let idx2 = 0;
+    let ls2 = [];
+    while idx2 < len(ls) {
+        if idx2 == idx {
+            ls2 = append(ls2, i);
+	} else {
+            ls2 = append(ls2, ls[idx2]);
+	}
+	    idx2 = idx2 + 1;
+    }
+    return ls2;
+}
+//print(modify([1, 2, 3, 4, 5], 10, -1));
+print([1, 2, 3][-2.5]);
+
+
+/*
+let y = 10;
+let x = [y, 2, 3, 4, 5];
+//let x = [];
+print(x[0]);
+{
+    //let x = 10;
+    print(x);
+    1 + 1;
+}
+let a = [1, 2];
+let b = [3, 4];
+let c = a + b;
+print(a, b, c);
+
+*/
 //highlights the entire function
 //let add = 10;
 //fun add(a, b) {
 //    return a + b;
 //}
 
-
-fun sub(z, x) {
-    return z - x;
+/*
+fun sub(z, y) {
+    return z - y;
 }
 fun add(x, y) {
     //return sub(x + y);
@@ -44,8 +80,8 @@ fun fn(a, b) {
 print(());
 */
 /*
-let g = 100;
-if n == 1 {
+let x = 100;
+if x == 1 {
     print("1z");
 } else if x < 10 {
     print("1-10");
@@ -55,7 +91,7 @@ if n == 1 {
 } else {
     print("too big");
 }
-// */
+*/
 
 
 
@@ -223,3 +259,4 @@ if x == 0 {
 /* this is a comment to make things less readable * /
 (1 - 1) + 1000;
 */
+

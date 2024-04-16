@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, usize};
 
 use crate::{
     environment::Environment,
@@ -358,6 +358,51 @@ impl Interpreter {
         func(vec![left2, right2]).map_err(|msg| Error {
             msg,
             lines: vec![right_loc],
+        })
+    }
+    fn list(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::List(ls) = expr.val else {
+            unreachable!()
+        };
+        let mut ls2 = vec![];
+        for e in ls {
+            ls2.push(self.visit_expr(e)?);
+        }
+        Ok(Value {
+            start: expr.start,
+            end: expr.end,
+            val: ValueType::List(ls2)
+        })
+    }
+    fn index(&mut self, expr: Expr) -> Result<Value, Error> {
+        let ExprType::Index(expr2, idx) = expr.val.clone() else {
+            unreachable!()
+        };
+        let val = self.visit_expr(*expr2)?;
+        let idx2 = self.visit_expr(*idx)?;
+        let ValueType::Int(n) = idx2.val else {
+            return Err(Error {
+                msg: format!("Expected an integer, got {}", idx2.val),
+                lines: vec![idx2.loc()]
+            })
+        };
+        let ValueType::List(ls) = val.val else {
+            return Err(Error {
+                msg: format!("Expected a list, got {}", val.val),
+                lines: vec![val.loc()]
+            })
+        };
+        if n >= ls.len() as i32 || n < -(ls.len() as i32) {
+            return Err(Error {
+                msg: format!("Index out of range: {}", n),
+                lines: vec![expr.loc()]
+            });
+        }
+        Ok(Value {
+            start: expr.start,
+            end: expr.end,
+            val: ls.get(if n < 0 { ls.len() as i32 + n } else { n } as usize)
+                .unwrap().val.clone(),
         })
     }
 }

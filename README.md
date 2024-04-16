@@ -12,9 +12,9 @@ When running the program without arguments it enters a repl mode, where a line o
 - features
   - [ ] type checking
   - [x] functions
-  - [ ] function definition
+  - [x] function definition
   - [ ] lambdas
-  - [ ] lists
+  - [x] lists
   - [ ] structs
   - [ ] enums
 

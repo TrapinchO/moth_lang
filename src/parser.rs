@@ -1,4 +1,4 @@
-use std::vec;
+use std::{vec, mem};
 
 use crate::{error::Error, exprstmt::*, located::Location, token::*};
 
@@ -62,6 +62,33 @@ impl Parser {
 
     fn advance(&mut self) {
         self.idx += 1;
+    }
+
+    // TODO: accept beginning and separator
+    // TODO: allow trailing separator
+    fn sep<F, R>(&mut self, f: F, end_tok: TokenType) -> Result<Vec<R>, Error>
+    where F: Fn(&mut Self) -> Result<R, Error>, {
+        // TODO: fix hack
+        // funnily enough, my new system with macros broke this one
+        fn cmp(this: &TokenType, other: &TokenType) -> bool {
+            mem::discriminant(this) == mem::discriminant(other)
+        }
+        let mut items = vec![];
+        if cmp(&self.get_current().val, &end_tok) {
+            return Ok(items);
+        }
+        while !self.is_at_end() {
+            items.push(f(self)?);
+            if cmp(&self.get_current().val, &end_tok) {
+                return Ok(items);
+            }
+            check_variant!(self, Comma, "Expected a comma \",\" after an item");
+        }
+        let eof = self.get_current();
+        Err(Error {
+            msg: "Unexpected EOF while parsing function call".to_string(),
+            lines: vec![eof.loc()],
+        })
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
@@ -129,6 +156,7 @@ impl Parser {
                     val: StmtType::ReturnStmt(val),
                 })
             }
+            TokenType::LBrace => self.parse_block(),
             _ => {
                 let expr = self.parse_expression()?;
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
@@ -352,37 +380,35 @@ impl Parser {
     }
 
     fn parse_call(&mut self) -> Result<Expr, Error> {
-        let expr = self.parse_primary()?;
+        let expr = self.parse_index()?;
         if !is_typ!(self, LParen) {
             return Ok(expr);
         }
-        let start = self.get_current().loc.start;
-        self.advance();
-        let mut args = vec![];
-        if is_typ!(self, RParen) {
-            let end = self.get_current().loc.end;
-            self.advance();
-            return Ok(Expr {
-                val: ExprType::Call(expr.into(), args),
-                loc: Location { start, end },
-            });
+        let start = check_variant!(self, LParen, "").start;
+        let args = self.sep(
+            Parser::parse_expression,
+            TokenType::RParen
+        )?;
+        let end = check_variant!(self, RParen, "").end;
+        Ok(Expr {
+            start,
+            end,
+            val: ExprType::Call(expr.into(), args)
+        })
+    }
+
+    fn parse_index(&mut self) -> Result<Expr, Error> {
+        let expr = self.parse_primary()?;
+        if !is_typ!(self, LBracket) {
+            return Ok(expr);
         }
-        while !self.is_at_end() {
-            args.push(self.parse_expression()?);
-            if is_typ!(self, RParen) {
-                let end = self.get_current().loc.end;
-                self.advance();
-                return Ok(Expr {
-                    val: ExprType::Call(expr.into(), args),
-                    loc: Location { start, end },
-                });
-            }
-            check_variant!(self, Comma, "Expected a comma \",\" after an argument")?;
-        }
-        let eof = self.get_current();
-        Err(Error {
-            msg: "Unexpected EOF while parsing function call".to_string(),
-            lines: vec![eof.loc],
+        let start = check_variant!(self, LBracket, "").start;
+        let idx = self.parse_expression()?;
+        let end = check_variant!(self, RBracket, "Expected closing bracket.").end;
+        Ok(Expr {
+            start,
+            end,
+            val: ExprType::Index(expr.into(), idx.into()),
         })
     }
 
@@ -434,6 +460,20 @@ impl Parser {
                         end,
                     },
                 });
+            }
+            TokenType::LBracket => {
+                let start = tok.start;
+                self.advance();
+                let items = self.sep(
+                    Parser::parse_expression,
+                    TokenType::RBracket,
+                )?;
+                let end = check_variant!(self, RBracket, "").end;
+                return Ok(Expr {
+                    start,
+                    end,
+                    val: ExprType::List(items),
+                })
             }
             TokenType::Eof => {
                 return Err(Error {

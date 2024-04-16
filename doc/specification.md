@@ -11,7 +11,6 @@ Floating point numbers are internally 32-bit (`f32`). Unlike many languages, bot
 0.0; 1.0; 0.1; 1.1;
 // invalid
 .1; 1.;
-
 ```
 
 ## Booleans
@@ -20,8 +19,16 @@ Like many other languages, the boolean values are `true` and `false`. Note that 
 ## Strings
 Strings are delmimited by double quotes (`"`). They cannot be multiline, not terminating on newline throws an error.
 
+Escape characters are not supported yet.
+
 Mothlang does not have a char type (yet).
 
+## Lists
+```rs
+[]; [1, 2, 3];  // valid
+[1, "hi", true, [1, 2], ()];  // also valid
+[1, 2,]  // invalid - trailing comma
+```
 ## Other types
 No other types are implemented so far.
 
@@ -33,12 +40,27 @@ true; false;  // bool
 "hello world!";  // string
 "hello world!
 "; // error! string not terminated before newline
+[1, 2, 3];
 ```
 
 # Operators:
-Mothlang supports custom operators with custom precendence for both unary and binary. (TBI)
+## Unary
+Mothlang supports the numeric negation operator `-` and logic negation `!`.
+```rs
+-1;
+- - 1;
+--1;  // error - "--" is interpeted as a single operator
+!true;
+!!true // error, see above
+```
 
-The current operators operating on the data types are `+`, `-` (both binary and unary), `*`, `/`, `%`, `==`, `!=`, `>`, `>=`, `<`, `<=`, `!` (unary), `&&`, `||`. `+` operator also supports string concatenation.
+## Binary
+Mothlang supports custom binary operators with custom precendence. (TBI)
+
+The current operators are `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `>=`, `<`, `<=`, `&&`, `||`.
+
+`+` operator also supports string concatenation.
+
 NOTE: integers and floats cannot be mixed and they return their respective type, i.e. `1 + 1.0` throws an error and `1 / 4` returns `0` (just like Rust).
 
 
@@ -60,10 +82,19 @@ x = 1000;
 x;  // returns 1000
 ```
 
+Variables cannot be redeclared (shadowed), even in different scopes.
+```rs
+let x = 10;
+let x = 10;  // error - already declared variable
+{
+    let x = 10; // error
+}
+```
+
 # Comments
 Line comments are made with double forward slash `//`. Multiline comments are made by surrounding the comment by `/*` and `*/`.
 <br>NOTE: line comment must not be immediately followed by a symbol, as that counts as an operator
-<BR>NOTE: like line comments, multiline comment beginning must contain only the leading slash and stars
+<br>NOTE: like line comments, multiline comment beginning must contain only the leading slash and stars
 <br>NOTE: as of now, the comments cannot be nested
 ```rs
 1+1;  // this comment is ignored
@@ -88,7 +119,7 @@ If statement is made using the keyword `if`, the condition (without parentheses,
 ```rs
 if 1 == 1 {
     let x = 10;
-    x;  // note that there is no print function yet, and this all expression statements are printed
+    print(x);
 }
 ```
 It can be also directly followed by `else`, which will be executed if the condition is false.
@@ -96,9 +127,9 @@ It can be also directly followed by `else`, which will be executed if the condit
 
 if 2 == 1 {
     let x = "true";
-    x;
+    print(x);
 } else {
-    "false"
+    print("false");
 }
 ```
 NOTE: a block must follow if/else, unlike languages like C or Java
@@ -107,13 +138,13 @@ Multiple conditions can be chained with `else if`. When one of the conditions is
 ```rs
 let x = 10;
 if x == 0 {
-    "x is zero";
+    print("x is zero");
 } else if x < 10 {
-    "x is smaller than ten";
+    print("x is smaller than ten");
 } else if x > 11 {
-    "x is greater than eleven";
+    print("x is greater than eleven");
 } else {
-    "x is either ten or eleven";
+    print("x is either ten or eleven");
 }
 ```
 
@@ -121,7 +152,21 @@ if x == 0 {
 While is made with `while` keyword (again, without parenthese) and a block of statements to repeat
 ```rs
 while true {
-    "Hello!";
+    print("Hello!");
+}
+```
+Continue and break statements are supported.
+```rs
+let i = 0;
+while true {
+    i = i + 1;
+    if i % 10 == 0 {
+        continue;
+    }
+    if i >= 100 {
+        break;
+    }
+    print(i);
 }
 ```
 
@@ -136,4 +181,22 @@ NOTE: not implemented yet
 }
 x;  // error, this no longer exists
 ```
+
+# Functions
+Functions are defined with the `fun` keyword, followed by the function name, a list of parameters and the body. If the function returns without the `return` statement or no value is provided, `unit` is returned.
+```kt
+fun test(a, b, s) {
+    print(a + b);
+    if s == true {
+        return;
+    }
+    return a / b;
+```
+
+Functions are called just like the C-style languages.
+```
+print(test(4, 2, false));  // prints 6, returns 2
+print(test(1, 2, true));  // prints 3, returns unit
+```
+
 
