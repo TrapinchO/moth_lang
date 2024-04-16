@@ -56,8 +56,8 @@ pub enum StmtType {
     ExprStmt(Expr),
     // identifier, expression
     VarDeclStmt(Token, Expr),
-    //
     AssignStmt(Token, Expr),
+    AssignIndexStmt(Expr, Expr), // expr = expr
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
@@ -73,6 +73,7 @@ impl StmtType {
             Self::ExprStmt(expr) => expr.to_string() + ";",
             Self::VarDeclStmt(ident, expr) => format!("let {ident} = {expr};"),
             Self::AssignStmt(ident, expr) => format!("{ident} = {expr};"),
+            Self::AssignIndexStmt(expr, val) => format!("{expr} = {val};"),
             Self::BlockStmt(block) => format!(
                 "{{\n{block}\n}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")

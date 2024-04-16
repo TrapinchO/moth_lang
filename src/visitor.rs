@@ -7,6 +7,7 @@ pub trait StmtVisitor<T> {
             StmtType::ExprStmt(expr) => self.expr(loc, expr),
             StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
             StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
+            StmtType::AssignIndexStmt(expr, val) => self.assignindex(loc, expr, val),
             StmtType::BlockStmt(block) => self.block(loc, block),
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
@@ -20,6 +21,7 @@ pub trait StmtVisitor<T> {
     fn expr(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;
     fn var_decl(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<T, Error>;
     fn assignment(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<T, Error>;
+    fn assignindex(&mut self, loc: Location, expr: Expr, val: Expr) -> Result<T, Error>;
     fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<T, Error>;
     fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<T, Error>;
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<T, Error>;

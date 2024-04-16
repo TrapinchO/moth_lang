@@ -2,6 +2,9 @@ fun append(ls, i) {
     return ls + [i];
 }
 fun modify(ls, i, idx) {
+    if idx < 0 {
+        idx = idx + len(ls);
+    }
     let idx2 = 0;
     let ls2 = [];
     while idx2 < len(ls) {
@@ -10,12 +13,14 @@ fun modify(ls, i, idx) {
 	} else {
             ls2 = append(ls2, ls[idx2]);
 	}
-	    idx2 = idx2 + 1;
+	idx2 = idx2 + 1;
     }
     return ls2;
 }
-//print(modify([1, 2, 3, 4, 5], 10, -1));
+print(modify([1, 2, 3, 4, 5], 10, -1));
 print([1, 2, 3][-2]);
+let x = [1, 2, 3, 4, 5];
+x[0] = 10;
 
 
 /*

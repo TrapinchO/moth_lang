@@ -128,6 +128,15 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
+    fn assignindex(&mut self, loc: Location, expr: Expr, val: Expr) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::AssignIndexStmt(
+                self.visit_expr(expr)?,
+                self.visit_expr(val)?
+            ),
+            loc,
+        })
+    }
     fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<Stmt, Error> {
         let mut block2: Vec<Stmt> = vec![];
         for s in block {

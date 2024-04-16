@@ -72,23 +72,22 @@ impl Interpreter {
 
 impl Interpreter {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
+        let loc = stmt.loc;
         match stmt.val {
-            StmtType::VarDeclStmt(..) => self.var_decl(stmt),
-            StmtType::AssignStmt(..) => self.assignment(stmt),
-            StmtType::ExprStmt(..) => self.expr(stmt),
-            StmtType::BlockStmt(..) => self.block(stmt),
-            StmtType::IfStmt(..) => self.if_else(stmt),
-            StmtType::WhileStmt(..) => self.whiles(stmt),
-            StmtType::FunDeclStmt(..) => self.fun(stmt),
-            StmtType::ContinueStmt => self.cont(stmt),
-            StmtType::BreakStmt => self.brek(stmt),
-            StmtType::ReturnStmt(..) => self.retur(stmt),
+            StmtType::ExprStmt(expr) => self.expr(loc, expr),
+            StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
+            StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
+            StmtType::AssignIndexStmt(expr, val) => self.assignindex(loc, expr, val),
+            StmtType::BlockStmt(block) => self.block(loc, block),
+            StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
+            StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
+            StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
+            StmtType::ReturnStmt(expr) => self.retur(loc, expr),
+            StmtType::BreakStmt => self.brek(loc),
+            StmtType::ContinueStmt => self.cont(loc),
         }
     }
-    fn var_decl(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::VarDeclStmt(ident, expr) = stmt.val else {
-            unreachable!()
-        };
+    fn var_decl(&mut self, _: Location, ident: Token, expr: Expr) -> Result<(), ErrorType> {
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
@@ -100,10 +99,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn assignment(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::AssignStmt(ident, expr) = stmt.val else {
-            unreachable!()
-        };
+    fn assignment(&mut self, _: Location, ident: Token, expr: Expr) -> Result<(), ErrorType> {
         let TokenType::Identifier(name) = &ident.val else {
             unreachable!()
         };
@@ -115,18 +111,17 @@ impl Interpreter {
         Ok(())
     }
 
-    fn block(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::BlockStmt(block) = stmt.val else {
-            unreachable!()
-        };
+    fn assignindex(&mut self, loc: Location, expr: Expr, val: Expr) -> Result<(), ErrorType> {
+        println!("IT HAPPENED");
+        Ok(())
+    }
+
+    fn block(&mut self, _: Location, block: Vec<Stmt>) -> Result<(), ErrorType> {
         self.interpret_block(block)?;
         Ok(())
     }
 
-    fn if_else(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::IfStmt(blocks) = stmt.val else {
-            unreachable!()
-        };
+    fn if_else(&mut self, _: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<(), ErrorType> {
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
                 return Err(ErrorType::Error(Error {
@@ -144,10 +139,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn whiles(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::WhileStmt(cond, block) = stmt.val else {
-            unreachable!()
-        };
+    fn whiles(&mut self, _: Location, cond: Expr, block: Vec<Stmt>) -> Result<(), ErrorType> {
         while let ValueType::Bool(true) = self.visit_expr(cond.clone())?.val {
             match self.interpret_block(block.clone()) {
                 Ok(_) => {}
@@ -162,19 +154,13 @@ impl Interpreter {
         Ok(())
     }
 
-    fn expr(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::ExprStmt(expr) = stmt.val else {
-            unreachable!()
-        };
+    fn expr(&mut self, _: Location, expr: Expr) -> Result<(), ErrorType> {
         // TODO: later check if it is not unit!
         let _ = self.visit_expr(expr)?;
         Ok(())
     }
-    fn fun(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::FunDeclStmt(ident, params, block) = stmt.val else {
-            unreachable!()
-        };
-        let TokenType::Identifier(name) = &ident.val else {
+    fn fun(&mut self, _: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<(), ErrorType> {
+        let TokenType::Identifier(name2) = &name.val else {
             unreachable!()
         };
         let mut params2 = vec![];
@@ -185,24 +171,21 @@ impl Interpreter {
             params2.push(n.clone());
         }
         self.environment
-            .insert(name, ValueType::Function(params2, block))
+            .insert(name2, ValueType::Function(params2, block))
             .ok_or(Error {
-                msg: format!("Name \"{name}\" already exists"),
-                lines: vec![ident.loc],
+                msg: format!("Name \"{name2}\" already exists"),
+                lines: vec![name.loc],
             })?;
         // TODO: nothing here yet
         Ok(())
     }
-    fn brek(&mut self, _stmt: Stmt) -> Result<(), ErrorType> {
+    fn brek(&mut self, _: Location) -> Result<(), ErrorType> {
         Err(ErrorType::Break)
     }
-    fn cont(&mut self, _stmt: Stmt) -> Result<(), ErrorType> {
+    fn cont(&mut self, _: Location) -> Result<(), ErrorType> {
         Err(ErrorType::Continue)
     }
-    fn retur(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
-        let StmtType::ReturnStmt(expr) = stmt.val else {
-            unreachable!()
-        };
+    fn retur(&mut self, _: Location, expr: Expr) -> Result<(), ErrorType> {
         let val = self.visit_expr(expr)?;
         Err(ErrorType::Return(val))
     }

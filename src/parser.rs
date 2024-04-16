@@ -112,11 +112,6 @@ impl Parser {
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(stmt)
             }
-            TokenType::Identifier(_) => {
-                let stmt = self.parse_assign()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                Ok(stmt)
-            }
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(),
@@ -159,11 +154,42 @@ impl Parser {
             TokenType::LBrace => self.parse_block(),
             _ => {
                 let expr = self.parse_expression()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                Ok(Stmt {
-                    loc: expr.loc,
-                    val: StmtType::ExprStmt(expr),
-                })
+                if !is_typ!(self, Equals) {
+                    check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+                    Ok(Stmt {
+                        loc: expr.loc,
+                        val: StmtType::ExprStmt(expr),
+                    })
+                } else {
+                    let loc = expr.loc;
+                    match expr.val.clone() {
+                        ExprType::Identifier(ident) => {
+                            self.advance();  // consume the equals
+                            let val = self.parse_expression()?;
+                            check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+                            Ok(Stmt {
+                                loc: Location {
+                                    start: loc.start,
+                                    end: val.loc.end,
+                                },
+                                val: StmtType::AssignStmt(Token { val: TokenType::Identifier(ident), loc: expr.loc }, val),
+                            })
+                        },
+                        ExprType::Index(_, _) => {
+                            self.advance();
+                            let val = self.parse_expression()?;
+                            check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+                            Ok(Stmt {
+                                loc: Location {
+                                    start: loc.start,
+                                    end: val.loc.end,
+                                },
+                                val: StmtType::AssignIndexStmt(expr, val),
+                            })
+                        },
+                        _ => { unreachable!() },
+                    }
+                }
             }
         }
     }
