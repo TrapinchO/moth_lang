@@ -299,6 +299,7 @@ impl Parser {
         let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
 
         check_variant!(self, LParen, "Expected an opening parenthesis")?;
+        // TODO: function with no parameters is a parser error
         let mut params = vec![];
         while !self.is_at_end() {
             params.push(check_variant!(self, Identifier(_), "Expected a parameter name")?);

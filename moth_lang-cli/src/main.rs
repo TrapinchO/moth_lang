@@ -34,8 +34,10 @@ fn main() {
         let mut interp = Interpreter::new(get_builtins());
         match run(&mut interp, src.to_string()) {
             Ok(_) => {}
-            Err(err) => {
-                println!("{}", err.format_message(&src));
+            Err(errs) => {
+                for e in errs {
+                    println!("{}", e.format_message(&src));
+                }
             }
         }
     } else {
@@ -54,18 +56,20 @@ fn repl() {
 
         match run(&mut interp, input.clone()) {
             Ok(_) => {}
-            Err(err) => {
-                println!("{}", err.format_message(&input.to_string()));
+            Err(errs) => {
+                for e in errs {
+                    println!("{}", e.format_message(&input));
+                }
             }
         }
     }
 }
 
-fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
+fn run(interp: &mut Interpreter, input: String) -> Result<(), Vec<Error>> {
     let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
-    let tokens = lexer::lex(&input)?;
+    let tokens = lexer::lex(&input).or_else(|e| Err(vec![e]))?;
     /*
     println!("===== lexing =====");
     for t in &tokens {
@@ -74,7 +78,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     */
 
     // TODO: unknown operator is not reported unless reassociated in binary operation
-    let ast = parser::parse(tokens)?;
+    let ast = parser::parse(tokens).or_else(|e| Err(vec![e]))?;
     /*
     println!("===== parsing =====");
     for s in &ast {
@@ -87,7 +91,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
             .map(|(name, assoc, _)| (name.to_string(), assoc))
             .into(),
         ast,
-    )?;
+    ).or_else(|e| Err(vec![e]))?;
     /*
     println!("===== reassociating =====");
     for s in &resassoc {
@@ -108,11 +112,8 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
                 println!("{}", w.format_message(&input));
             }
             let has_errors = !errs.is_empty();
-            for e in errs {
-                println!("{}", e.format_message(&input));
-            }
             if has_errors {
-                return Ok(());
+                return Err(errs);
             }
         }
     }
@@ -120,7 +121,7 @@ fn run(interp: &mut Interpreter, input: String) -> Result<(), Error> {
     let compile_end = compile_start.elapsed();
     let eval_time = Instant::now();
     //println!("===== evaluating =====");
-    interp.interpret(resassoc)?;
+    interp.interpret(resassoc).or_else(|e| Err(vec![e]))?;
     //interp.interpret(&resassoc)?;
 
     println!("Compiled in: {:?}", compile_end);
