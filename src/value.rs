@@ -5,25 +5,51 @@ use std::rc::Rc;
 use std::time::SystemTime;
 
 use crate::exprstmt::Stmt;
-// TODO: kinda circular import, but it should be fine
 use crate::located::Located;
 use crate::reassoc::{Associativity, Precedence};
 
 #[derive(Debug, Clone)]
-pub struct MList(Rc<UnsafeCell<Vec<Value>>>);
-
+pub struct MRef<T>(Rc<UnsafeCell<T>>);
+pub type MList = MRef<Vec<Value>>;
 impl MList {
-    pub fn new(ls: Vec<Value>) -> Self {
-        MList(Rc::new(UnsafeCell::new(ls)))
+    pub fn modify(&mut self, idx: usize, val: Value) {
+        unsafe {
+            let mut ls = (*self.0.get()).clone();
+            ls[idx] = val;
+            self.write(ls);
+        }
+    }
+}
+
+impl<T> MRef<T> {
+    pub fn new(val: T) -> Self {
+        MRef(Rc::new(UnsafeCell::new(val)))
     }
 
-    pub fn get(&self) -> *mut Vec<Value> {
+    pub fn getaaa(&self) -> *mut T {
         self.0.get()
+    }
+
+    pub fn readaaa(&self) -> &T {
+        unsafe {
+            &*self.0.get()
+        }
+    }
+
+    pub fn read2<V: 'static>(&self, f: impl FnOnce(&T) -> V) -> V {
+        unsafe {
+            f(&*self.0.get())
+        }
+    }
+
+    pub fn write(&mut self, val: T) {
+        unsafe {
+            *(self.0.get()) = val;
+        }
     }
 
     // checks whether it is in the possible range (even if negative)
     // and returns it as a positive index
-
     pub fn check_index(idx: i32, length: usize) -> Option<usize> {
         if length as i32 <= idx || idx < -(length as i32) {
             return None;
@@ -32,16 +58,16 @@ impl MList {
     }
 }
 
-impl From<Vec<Value>> for MList {
-    fn from(value: Vec<Value>) -> Self {
-        MList::new(value)
+impl<T> From<T> for MRef<T> {
+    fn from(value: T) -> Self {
+        MRef::new(value)
     }
 }
 
-impl PartialEq for MList {
+impl<T: PartialEq> PartialEq for MRef<T> {
     fn eq(&self, other: &Self) -> bool {
         unsafe {
-            *self.get() == *other.get()
+            *self.0.get() == *other.0.get()
         }
     }
 }
@@ -66,7 +92,7 @@ impl ValueType {
             Self::String(s) => format!("\"{}\"", s),
             Self::List(ls) => unsafe {
                 format!("[{}]",
-                        (*ls.get()).iter()
+                        ls.read2(|l| l.clone()).iter()
                         .map(|e| { e.val.format() })
                         .collect::<Vec<_>>().join(", "))
             }
@@ -101,7 +127,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             assoc: Associativity::Left,
         },
         |args| {
-            let [left, right] = &args[..] else {
+            let [left, right] = &*args else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
             Ok(match (&left.val, &right.val) {
@@ -109,12 +135,9 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
                 (ValueType::List(a), ValueType::List(b)) => {
-                    unsafe {
-                        let mut res = vec![];
-                        for i in (*a.get()).iter() { res.push(i.clone()); }
-                        for i in (*b.get()).iter() { res.push(i.clone()); }
-                        ValueType::List(res.into())
-                    }
+                    let mut res = a.read2(|l| l.clone());
+                    res.append(&mut b.read2(|l| l.clone()));
+                    ValueType::List(res.into())
                 }
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
             })
@@ -386,7 +409,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
         let val = &args.first().unwrap().val;
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
-            ValueType::List(ls) => unsafe { (*ls.get()).len() as i32 },
+            ValueType::List(ls) => ls.read2(|l| l.len()) as i32,
             _ => return Err(format!("Invalid value: {}", val))
         }))
     })

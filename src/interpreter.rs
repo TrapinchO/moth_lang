@@ -113,7 +113,7 @@ impl Interpreter {
     }
 
     fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), ErrorType> {
-        let ValueType::List(ls2) = self.visit_expr(ls.clone())?.val else {
+        let ValueType::List(mut ls2) = self.visit_expr(ls.clone())?.val else {
             return Err(Error {
                 msg: "Expected a list index".to_string(),
                 lines: vec![ls.loc],
@@ -125,14 +125,11 @@ impl Interpreter {
                 lines: vec![idx.loc],
             }.into())
         };
-        unsafe {
-            let length = (*ls2.get()).len();
-            let n2 = MList::check_index(n, length).ok_or_else(|| Error {
-                msg: format!("Index out of range: {}", n),
-                lines: vec![idx.loc]
-            })?;
-            (*ls2.get())[n2] = self.visit_expr(val)?;
-        }
+        let n2 = MList::check_index(n, ls2.read2(|l| l.len())).ok_or_else(|| Error {
+            msg: format!("Index out of range: {}", n),
+            lines: vec![idx.loc]
+        })?;
+        ls2.modify(n2, self.visit_expr(val)?);
         Ok(())
     }
 
@@ -387,13 +384,11 @@ impl Interpreter {
                 lines: vec![val.loc]
             })
         };
-        unsafe {
-            let length = (*ls.get()).len();
-            let n2 = MList::check_index(n, length).ok_or_else(|| Error {
-                msg: format!("Index out of range: {}", n),
-                lines: vec![loc]
-            })?;
-            Ok((*ls.get())[n2].val.clone())
-        }
+        let n2 = MList::check_index(n, ls.read2(|l| l.len())).ok_or_else(|| Error {
+            msg: format!("Index out of range: {}", n),
+            lines: vec![loc]
+        })?;
+        Ok(ls.read2(|l| l[n2].clone()).val)
+        //Ok(ls.read()[n2].val.clone())
     }
 }

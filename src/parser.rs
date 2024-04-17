@@ -378,6 +378,7 @@ impl Parser {
         })
     }
 
+    // TODO: allow nested calls
     fn parse_call(&mut self) -> Result<Expr, Error> {
         let expr = self.parse_index()?;
         if !is_typ!(self, LParen) {
@@ -395,6 +396,7 @@ impl Parser {
         })
     }
 
+    // TODO: allow nested indexing
     fn parse_index(&mut self) -> Result<Expr, Error> {
         let expr = self.parse_primary()?;
         if !is_typ!(self, LBracket) {
