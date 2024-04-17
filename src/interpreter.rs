@@ -125,7 +125,7 @@ impl Interpreter {
                 lines: vec![idx.loc],
             }.into())
         };
-        let n2 = MList::check_index(n, ls2.read2(|l| l.len())).ok_or_else(|| Error {
+        let n2 = MList::check_index(n, ls2.read(|l| l.len())).ok_or_else(|| Error {
             msg: format!("Index out of range: {}", n),
             lines: vec![idx.loc]
         })?;
@@ -384,11 +384,10 @@ impl Interpreter {
                 lines: vec![val.loc]
             })
         };
-        let n2 = MList::check_index(n, ls.read2(|l| l.len())).ok_or_else(|| Error {
+        let n2 = MList::check_index(n, ls.read(|l| l.len())).ok_or_else(|| Error {
             msg: format!("Index out of range: {}", n),
             lines: vec![loc]
         })?;
-        Ok(ls.read2(|l| l[n2].clone()).val)
-        //Ok(ls.read()[n2].val.clone())
+        Ok(ls.read(|l| l[n2].clone()).val)
     }
 }

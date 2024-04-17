@@ -8,35 +8,15 @@ use crate::exprstmt::Stmt;
 use crate::located::Located;
 use crate::reassoc::{Associativity, Precedence};
 
+// stands for MothReference
 #[derive(Debug, Clone)]
 pub struct MRef<T>(Rc<UnsafeCell<T>>);
-pub type MList = MRef<Vec<Value>>;
-impl MList {
-    pub fn modify(&mut self, idx: usize, val: Value) {
-        unsafe {
-            let mut ls = (*self.0.get()).clone();
-            ls[idx] = val;
-            self.write(ls);
-        }
-    }
-}
-
 impl<T> MRef<T> {
     pub fn new(val: T) -> Self {
         MRef(Rc::new(UnsafeCell::new(val)))
     }
 
-    pub fn getaaa(&self) -> *mut T {
-        self.0.get()
-    }
-
-    pub fn readaaa(&self) -> &T {
-        unsafe {
-            &*self.0.get()
-        }
-    }
-
-    pub fn read2<V: 'static>(&self, f: impl FnOnce(&T) -> V) -> V {
+    pub fn read<V: 'static>(&self, f: impl FnOnce(&T) -> V) -> V {
         unsafe {
             f(&*self.0.get())
         }
@@ -46,15 +26,6 @@ impl<T> MRef<T> {
         unsafe {
             *(self.0.get()) = val;
         }
-    }
-
-    // checks whether it is in the possible range (even if negative)
-    // and returns it as a positive index
-    pub fn check_index(idx: i32, length: usize) -> Option<usize> {
-        if length as i32 <= idx || idx < -(length as i32) {
-            return None;
-        }
-        Some(if idx < 0 { length as i32 + idx } else { idx } as usize)
     }
 }
 
@@ -71,6 +42,55 @@ impl<T: PartialEq> PartialEq for MRef<T> {
         }
     }
 }
+
+
+pub type MList = MRef<Vec<Value>>;
+impl MList {
+    pub fn modify(&mut self, idx: usize, val: Value) {
+        unsafe {
+            let ls = &mut *self.0.get();
+            ls[idx] = val;
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item=Value> {
+        MListIter::new(self.clone())
+    }
+
+    // checks whether it is in the possible range (even if negative)
+    // and returns it as a positive index
+    pub fn check_index(idx: i32, length: usize) -> Option<usize> {
+        if length as i32 <= idx || idx < -(length as i32) {
+            return None;
+        }
+        Some(if idx < 0 { length as i32 + idx } else { idx } as usize)
+    }
+}
+struct MListIter {
+    idx: usize,
+    len: usize,
+    ls: MList,
+}
+impl MListIter {
+    pub fn new(ls: MList) -> Self {
+        let len = ls.read(|l| l.len());
+        MListIter {
+            ls, len, idx: 0,
+        }
+    }
+}
+impl Iterator for MListIter {
+    type Item = Value;
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.idx >= self.len {
+            return None;
+        }
+        let item = self.ls.read(|l| l[self.idx].clone());
+        self.idx += 1;
+        Some(item)
+    }
+}
+
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueType {
@@ -90,12 +110,10 @@ impl ValueType {
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::List(ls) => unsafe {
-                format!("[{}]",
-                        ls.read2(|l| l.clone()).iter()
-                        .map(|e| { e.val.format() })
-                        .collect::<Vec<_>>().join(", "))
-            }
+            Self::List(ls) => format!("[{}]",
+                                      ls.read(|l| l.clone()).iter()
+                                      .map(|e| { e.val.format() })
+                                      .collect::<Vec<_>>().join(", ")),
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
             Self::Function(..) => "<function>".to_string(),
             Self::Unit => "()".to_string(),
@@ -135,8 +153,9 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
                 (ValueType::List(a), ValueType::List(b)) => {
-                    let mut res = a.read2(|l| l.clone());
-                    res.append(&mut b.read2(|l| l.clone()));
+                    let mut res = vec![];
+                    for i in a.iter() { res.push(i); }
+                    for i in b.iter() { res.push(i); }
                     ValueType::List(res.into())
                 }
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
@@ -409,7 +428,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
         let val = &args.first().unwrap().val;
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
-            ValueType::List(ls) => ls.read2(|l| l.len()) as i32,
+            ValueType::List(ls) => ls.read(|l| l.len()) as i32,
             _ => return Err(format!("Invalid value: {}", val))
         }))
     })
