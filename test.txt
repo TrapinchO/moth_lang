@@ -13,7 +13,7 @@ print(x, x[3], x + [3, 4]);
 fun f(a) {
     print("hello");
 }
-f();
+f(1);
 
 /*
 let y = 10;

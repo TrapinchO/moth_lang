@@ -5,7 +5,4 @@ edition = "2021"
 #license = "MIT"
 license-file = "LICENSE"
 
-[workspace]
-members = [ "moth_lang-cli" ]
-
 [dependencies]
