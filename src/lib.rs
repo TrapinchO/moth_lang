@@ -18,6 +18,9 @@ pub mod value;
 pub mod varcheck;
 mod visitor;
 
+#[cfg(test)]
+mod tests;
+
 
 pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Vec<Error>> {
     let compile_start = Instant::now();

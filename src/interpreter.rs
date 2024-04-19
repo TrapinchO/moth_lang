@@ -48,9 +48,16 @@ impl Interpreter {
         }
         Ok(())
     }
+
+    #[cfg(any(test))]
+    pub fn get_val(&self, name: String) -> Option<ValueType> {
+        self.environment.get(&name)
+    }
+
     fn add_scope(&mut self) {
         self.environment.add_scope()
     }
+
     fn remove_scope(&mut self) {
         self.environment.remove_scope();
     }
