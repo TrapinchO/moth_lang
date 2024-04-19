@@ -186,6 +186,7 @@ impl Parser {
                                 },
                                 val: StmtType::AssignIndexStmt(*ls, *idx, val),
                             })
+                        }
                         _ => { unreachable!() },
                     }
                 }

@@ -49,7 +49,7 @@ impl Interpreter {
         Ok(())
     }
 
-    #[cfg(any(test))]
+    #[cfg(test)]
     pub fn get_val(&self, name: String) -> Option<ValueType> {
         self.environment.get(&name)
     }

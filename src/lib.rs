@@ -25,7 +25,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
-    let tokens = lexer::lex(&input).or_else(|e| Err(vec![e]))?;
+    let tokens = lexer::lex(&input).map_err(|e| vec![e])?;
     /*
     println!("===== lexing =====");
     for t in &tokens {
@@ -34,7 +34,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     */
 
     // TODO: unknown operator is not reported unless reassociated in binary operation
-    let ast = parser::parse(tokens).or_else(|e| Err(vec![e]))?;
+    let ast = parser::parse(tokens).map_err(|e| vec![e])?;
     /*
     println!("===== parsing =====");
     for s in &ast {
@@ -47,7 +47,8 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
             .map(|(name, assoc, _)| (name.to_string(), assoc))
             .into(),
         ast,
-    ).or_else(|e| Err(vec![e]))?;
+    )
+    .map_err(|e| vec![e])?;
     /*
     println!("===== reassociating =====");
     for s in &resassoc {
@@ -56,7 +57,6 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     */
 
     // TODO: change back to reference, less cloning
-
     let builtins = get_builtins()
         .keys()
         .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
@@ -77,7 +77,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     let compile_end = compile_start.elapsed();
     let eval_time = Instant::now();
     //println!("===== evaluating =====");
-    interp.interpret(resassoc).or_else(|e| Err(vec![e]))?;
+    interp.interpret(resassoc).map_err(|e| vec![e])?;
     //interp.interpret(&resassoc)?;
 
     if time {
