@@ -1,18 +1,12 @@
 use moth_lang::{
-    error::Error,
     interpreter::Interpreter,
-    lexer,
-    located::Location,
-    parser, reassoc,
-    value::{get_builtins, NATIVE_OPERATORS},
-    varcheck,
+    value::get_builtins,
+    run,
 };
 
 use std::{
-    collections::HashMap,
     env, fs,
     io::{self, Write},
-    time::Instant,
 };
 
 fn main() {
@@ -32,7 +26,7 @@ fn main() {
         let src = src.trim_end().replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
 
         let mut interp = Interpreter::new(get_builtins());
-        match run(&mut interp, src.to_string()) {
+        match run(&mut interp, src.to_string(), true) {
             Ok(_) => {}
             Err(errs) => {
                 for e in errs {
@@ -45,16 +39,18 @@ fn main() {
     }
 }
 
+// TODO: declared things are not preserved between runs
+// caused by varcheck
 fn repl() {
     let mut interp = Interpreter::new(get_builtins());
     loop {
         print!(">>> ");
-        std::io::stdout().flush().unwrap(); // and  hope it never fails
+        io::stdout().flush().unwrap(); // and  hope it never fails
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
 
-        match run(&mut interp, input.clone()) {
+        match run(&mut interp, input.clone(), false) {
             Ok(_) => {}
             Err(errs) => {
                 for e in errs {
@@ -65,67 +61,3 @@ fn repl() {
     }
 }
 
-fn run(interp: &mut Interpreter, input: String) -> Result<(), Vec<Error>> {
-    let compile_start = Instant::now();
-    // the prints are commented in case I wanted to show them
-    //println!("===== source =====\n{:?}\n=====        =====", input);
-    let tokens = lexer::lex(&input).or_else(|e| Err(vec![e]))?;
-    /*
-    println!("===== lexing =====");
-    for t in &tokens {
-        println!("{:?}", t);
-    }
-    */
-
-    // TODO: unknown operator is not reported unless reassociated in binary operation
-    let ast = parser::parse(tokens).or_else(|e| Err(vec![e]))?;
-    /*
-    println!("===== parsing =====");
-    for s in &ast {
-        println!("{:?}", s);
-    }
-    */
-
-    let resassoc = reassoc::reassociate(
-        NATIVE_OPERATORS
-            .map(|(name, assoc, _)| (name.to_string(), assoc))
-            .into(),
-        ast,
-    ).or_else(|e| Err(vec![e]))?;
-    /*
-    println!("===== reassociating =====");
-    for s in &resassoc {
-        println!("{}", s);
-    }
-    */
-
-    // TODO: change back to reference, less cloning
-
-    let builtins = get_builtins()
-        .keys()
-        .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
-        .collect::<HashMap<_, _>>();
-    match varcheck::varcheck(builtins, &resassoc) {
-        Ok(()) => {}
-        Err((warns, errs)) => {
-            for w in warns {
-                println!("{}", w.format_message(&input));
-            }
-            let has_errors = !errs.is_empty();
-            if has_errors {
-                return Err(errs);
-            }
-        }
-    }
-
-    let compile_end = compile_start.elapsed();
-    let eval_time = Instant::now();
-    //println!("===== evaluating =====");
-    interp.interpret(resassoc).or_else(|e| Err(vec![e]))?;
-    //interp.interpret(&resassoc)?;
-
-    println!("Compiled in: {:?}", compile_end);
-    println!("Evaluated in: {:?}", eval_time.elapsed());
-
-    Ok(())
-}
