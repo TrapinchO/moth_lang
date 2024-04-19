@@ -1,6 +1,6 @@
 use crate::interpreter::Interpreter;
-use crate::value::{ValueType, get_builtins};
 use crate::run;
+use crate::value::{get_builtins, ValueType};
 
 fn run_code(code: String, val: String) -> Option<ValueType> {
     let mut interp = Interpreter::new(get_builtins());
@@ -20,5 +20,5 @@ fn t2() {
     assert_eq!(
         run_code("let x = 10 + 5;".to_string(), "x".to_string()).unwrap(),
         ValueType::Int(15)
-        );
+    );
 }

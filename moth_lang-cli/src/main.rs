@@ -1,8 +1,4 @@
-use moth_lang::{
-    interpreter::Interpreter,
-    value::get_builtins,
-    run,
-};
+use moth_lang::{interpreter::Interpreter, run, value::get_builtins};
 
 use std::{
     env, fs,
@@ -60,4 +56,3 @@ fn repl() {
         }
     }
 }
-

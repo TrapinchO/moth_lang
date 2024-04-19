@@ -17,9 +17,7 @@ impl<T> MRef<T> {
     }
 
     pub fn read<V: 'static>(&self, f: impl FnOnce(&T) -> V) -> V {
-        unsafe {
-            f(&*self.0.get())
-        }
+        unsafe { f(&*self.0.get()) }
     }
 
     pub fn write(&mut self, val: T) {
@@ -37,12 +35,9 @@ impl<T> From<T> for MRef<T> {
 
 impl<T: PartialEq> PartialEq for MRef<T> {
     fn eq(&self, other: &Self) -> bool {
-        unsafe {
-            *self.0.get() == *other.0.get()
-        }
+        unsafe { *self.0.get() == *other.0.get() }
     }
 }
-
 
 pub type MList = MRef<Vec<Value>>;
 impl MList {
@@ -53,7 +48,7 @@ impl MList {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item=Value> {
+    pub fn iter(&self) -> impl Iterator<Item = Value> {
         MListIter::new(self.clone())
     }
 
@@ -74,9 +69,7 @@ struct MListIter {
 impl MListIter {
     pub fn new(ls: MList) -> Self {
         let len = ls.read(|l| l.len());
-        MListIter {
-            ls, len, idx: 0,
-        }
+        MListIter { ls, len, idx: 0 }
     }
 }
 impl Iterator for MListIter {
@@ -90,7 +83,6 @@ impl Iterator for MListIter {
         Some(item)
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueType {
@@ -110,10 +102,14 @@ impl ValueType {
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
             Self::String(s) => format!("\"{}\"", s),
-            Self::List(ls) => format!("[{}]",
-                                      ls.read(|l| l.clone()).iter()
-                                      .map(|e| { e.val.format() })
-                                      .collect::<Vec<_>>().join(", ")),
+            Self::List(ls) => format!(
+                "[{}]",
+                ls.read(|l| l.clone())
+                    .iter()
+                    .map(|e| { e.val.format() })
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
             Self::Function(..) => "<function>".to_string(),
             Self::Unit => "()".to_string(),
@@ -154,8 +150,12 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
                 (ValueType::List(a), ValueType::List(b)) => {
                     let mut res = vec![];
-                    for i in a.iter() { res.push(i); }
-                    for i in b.iter() { res.push(i); }
+                    for i in a.iter() {
+                        res.push(i);
+                    }
+                    for i in b.iter() {
+                        res.push(i);
+                    }
                     ValueType::List(res.into())
                 }
                 _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
@@ -423,15 +423,15 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
     }),
     ("len", |args| {
         if args.len() != 1 {
-            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()))
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));
         }
         let val = &args.first().unwrap().val;
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
             ValueType::List(ls) => ls.read(|l| l.len()) as i32,
-            _ => return Err(format!("Invalid value: {}", val))
+            _ => return Err(format!("Invalid value: {}", val)),
         }))
-    })
+    }),
 ];
 
 pub fn get_builtins() -> HashMap<String, ValueType> {

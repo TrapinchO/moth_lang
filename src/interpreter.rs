@@ -124,7 +124,8 @@ impl Interpreter {
             return Err(Error {
                 msg: "Expected a list index".to_string(),
                 lines: vec![ls.loc],
-            }.into())
+            }
+            .into());
         };
         let ValueType::Int(n) = self.visit_expr(idx.clone())?.val else {
             return Err(Error {
@@ -134,7 +135,7 @@ impl Interpreter {
         };
         let n2 = MList::check_index(n, ls2.read(|l| l.len())).ok_or_else(|| Error {
             msg: format!("Index out of range: {}", n),
-            lines: vec![idx.loc]
+            lines: vec![idx.loc],
         })?;
         ls2.modify(n2, self.visit_expr(val)?);
         Ok(())
@@ -382,18 +383,18 @@ impl Interpreter {
         let ValueType::Int(n) = idx2.val else {
             return Err(Error {
                 msg: format!("Expected an integer, got {}", idx2.val),
-                lines: vec![idx2.loc]
-            })
+                lines: vec![idx2.loc],
+            });
         };
         let ValueType::List(ls) = val.val else {
             return Err(Error {
                 msg: format!("Expected a list, got {}", val.val),
-                lines: vec![val.loc]
-            })
+                lines: vec![val.loc],
+            });
         };
         let n2 = MList::check_index(n, ls.read(|l| l.len())).ok_or_else(|| Error {
             msg: format!("Index out of range: {}", n),
-            lines: vec![loc]
+            lines: vec![loc],
         })?;
         Ok(ls.read(|l| l[n2].clone()).val)
     }

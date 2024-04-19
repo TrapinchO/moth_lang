@@ -15,7 +15,7 @@ pub enum ExprType {
     UnaryOperation(Token, Box<Expr>),
     BinaryOperation(Box<Expr>, Token, Box<Expr>),
     List(Vec<Expr>),
-    Index(Box<Expr>, Box<Expr>),  // expr[idx]
+    Index(Box<Expr>, Box<Expr>), // expr[idx]
 }
 
 impl ExprType {
@@ -38,7 +38,7 @@ impl ExprType {
                 "[{}]",
                 ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
             ),
-            Self::Index(expr, idx) => format!("{}[{}]", expr.val, idx.val)
+            Self::Index(expr, idx) => format!("{}[{}]", expr.val, idx.val),
         }
     }
 }
@@ -121,4 +121,3 @@ impl Display for StmtType {
 
 pub type Stmt = Located<StmtType>;
 pub type Block = Vec<Stmt>;
-

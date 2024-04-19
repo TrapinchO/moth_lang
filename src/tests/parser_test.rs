@@ -17,7 +17,7 @@ macro_rules! binop {
                 loc: Location { start: 0, end: 0 },
             }
             .into(),
-            )
+        )
     };
 }
 
@@ -33,7 +33,7 @@ macro_rules! unop {
                 loc: Location { start: 0, end: 0 },
             }
             .into(),
-            )
+        )
     };
 }
 
@@ -45,7 +45,7 @@ macro_rules! parenop {
                 loc: Location { start: 0, end: 0 },
             }
             .into(),
-            )
+        )
     };
 }
 
@@ -118,11 +118,14 @@ fn test_varcheck() -> Result<(), Error> {
     let checked = varcheck::varcheck(builtins, &ast);
     assert_eq!(
         checked,
-        Err((vec![Error {
-            msg: "Variable \"x\" not used.".to_string(),
-            lines: vec![Location { start: 4, end: 4 }]
-        }], vec![]))
-        );
+        Err((
+            vec![Error {
+                msg: "Variable \"x\" not used.".to_string(),
+                lines: vec![Location { start: 4, end: 4 }]
+            }],
+            vec![]
+        ))
+    );
     Ok(())
 }
 
@@ -134,7 +137,7 @@ fn parse_empty() {
             val: TokenType::Eof
         }]),
         Ok(vec![])
-        );
+    );
     assert_eq!(parse(vec![]), Ok(vec![]));
 }
 
@@ -149,7 +152,7 @@ fn parse_int() {
             }),
             loc: Location { start: 0, end: 0 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -163,7 +166,7 @@ fn parse_float() {
             }),
             loc: Location { start: 0, end: 2 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -177,7 +180,7 @@ fn parse_string() {
             }),
             loc: Location { start: 0, end: 5 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -191,7 +194,7 @@ fn parse_bool() {
             }),
             loc: Location { start: 0, end: 3 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -205,7 +208,7 @@ fn parse_identifier() {
             }),
             loc: Location { start: 0, end: 3 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -215,17 +218,17 @@ fn parse_parens() {
         vec![Stmt {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::Parens(
-                         Expr {
-                             val: ExprType::Int(1),
-                             loc: Location { start: 1, end: 1 },
-                         }
-                         .into()
-                         ),
-                         loc: Location { start: 0, end: 2 },
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 1, end: 1 },
+                    }
+                    .into()
+                ),
+                loc: Location { start: 0, end: 2 },
             }),
             loc: Location { start: 0, end: 2 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -236,7 +239,7 @@ fn parse_parens_unclosed() {
             msg: "Expected closing parenthesis".to_string(),
             lines: vec![Location { start: 2, end: 2 }]
         })
-        );
+    );
 }
 
 #[test]
@@ -246,21 +249,21 @@ fn parse_unary() {
         vec![Stmt {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::UnaryOperation(
-                         Token {
-                             val: TokenType::Symbol("-".to_string()),
-                             loc: Location { start: 0, end: 0 },
-                         },
-                         Expr {
-                             val: ExprType::Int(1),
-                             loc: Location { start: 1, end: 1 },
-                         }
-                         .into()
-                         ),
-                         loc: Location { start: 0, end: 1 },
+                    Token {
+                        val: TokenType::Symbol("-".to_string()),
+                        loc: Location { start: 0, end: 0 },
+                    },
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 1, end: 1 },
+                    }
+                    .into()
+                ),
+                loc: Location { start: 0, end: 1 },
             }),
             loc: Location { start: 0, end: 1 },
         }]
-        );
+    );
 }
 
 #[test]
@@ -270,27 +273,27 @@ fn parse_unary_nested() {
         vec![Stmt {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::UnaryOperation(
-                         Token {
-                             val: TokenType::Symbol("-".to_string()),
-                             loc: Location { start: 0, end: 0 },
-                         },
-                         Expr {
-                             val: ExprType::UnaryOperation(
-                                      Token {
-                                          val: TokenType::Symbol("-".to_string()),
-                                          loc: Location { start: 2, end: 2 },
-                                      },
-                                      Expr {
-                                          val: ExprType::Int(1),
-                                          loc: Location { start: 3, end: 3 },
-                                      }
-                                      .into()
-                                      ),
-                                      loc: Location { start: 2, end: 3 },
-                         }
-                         .into()
-                         ),
-                         loc: Location { start: 0, end: 3 },
+                    Token {
+                        val: TokenType::Symbol("-".to_string()),
+                        loc: Location { start: 0, end: 0 },
+                    },
+                    Expr {
+                        val: ExprType::UnaryOperation(
+                            Token {
+                                val: TokenType::Symbol("-".to_string()),
+                                loc: Location { start: 2, end: 2 },
+                            },
+                            Expr {
+                                val: ExprType::Int(1),
+                                loc: Location { start: 3, end: 3 },
+                            }
+                            .into()
+                        ),
+                        loc: Location { start: 2, end: 3 },
+                    }
+                    .into()
+                ),
+                loc: Location { start: 0, end: 3 },
             }),
             loc: Location { start: 0, end: 3 },
         }]
@@ -304,22 +307,22 @@ fn parse_binary() {
         vec![Stmt {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::BinaryOperation(
-                         Expr {
-                             val: ExprType::Int(1),
-                             loc: Location { start: 0, end: 0 },
-                         }
-                         .into(),
-                         Token {
-                             val: TokenType::Symbol("+".to_string()),
-                             loc: Location { start: 2, end: 2 },
-                         },
-                         Expr {
-                             val: ExprType::Int(1),
-                             loc: Location { start: 4, end: 4 },
-                         }
-                         .into()
-                         ),
-                         loc: Location { start: 0, end: 4 },
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 0, end: 0 },
+                    }
+                    .into(),
+                    Token {
+                        val: TokenType::Symbol("+".to_string()),
+                        loc: Location { start: 2, end: 2 },
+                    },
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 4, end: 4 },
+                    }
+                    .into()
+                ),
+                loc: Location { start: 0, end: 4 },
             }),
             loc: Location { start: 0, end: 4 },
         }]
@@ -346,13 +349,13 @@ fn parse_binary2() {
         (
             "1+1+1",
             binop!(ExprType::Int(1), "+", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
-            ),
+        ),
     ];
     for (s, op) in ops {
         assert!(compare_elements(
-                &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
-                &stmt!(StmtType::ExprStmt(expr!(op)))
-                ));
+            &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
+            &stmt!(StmtType::ExprStmt(expr!(op)))
+        ));
     }
 }
 
@@ -364,9 +367,9 @@ fn parse_unary2() {
     ];
     for (s, op) in ops {
         assert!(compare_elements(
-                &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
-                &stmt!(StmtType::ExprStmt(expr!(op)))
-                ));
+            &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
+            &stmt!(StmtType::ExprStmt(expr!(op)))
+        ));
     }
 }
 
@@ -376,26 +379,26 @@ fn test_reassoc() {
         (
             "1 - 1 - 1",
             binop!(binop!(ExprType::Int(1), "-", ExprType::Int(1)), "-", ExprType::Int(1)),
-            ),
-            (
-                "-(1 - 1 - 1)",
-                unop!(
+        ),
+        (
+            "-(1 - 1 - 1)",
+            unop!(
+                "-",
+                parenop!(binop!(
+                    binop!(ExprType::Int(1), "-", ExprType::Int(1)),
                     "-",
-                    parenop!(binop!(
-                            binop!(ExprType::Int(1), "-", ExprType::Int(1)),
-                            "-",
-                            ExprType::Int(1)
-                            ))
-                    ),
-                    ),
+                    ExprType::Int(1)
+                ))
+            ),
+        ),
     ];
     let symbols: std::collections::HashMap<String, reassoc::Precedence> = NATIVE_OPERATORS
         .map(|(name, assoc, _)| (name.to_string(), assoc))
         .into();
     for (s, op) in ops {
         assert!(compare_elements(
-                &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()[0],
-                &stmt!(StmtType::ExprStmt(expr!(op)))
-                ));
+            &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()[0],
+            &stmt!(StmtType::ExprStmt(expr!(op)))
+        ));
     }
 }

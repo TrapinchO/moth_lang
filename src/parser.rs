@@ -1,4 +1,4 @@
-use std::{vec, mem};
+use std::{mem, vec};
 
 use crate::{error::Error, exprstmt::*, located::Location, token::*};
 
@@ -164,7 +164,7 @@ impl Parser {
                     let loc = expr.loc;
                     match expr.val.clone() {
                         ExprType::Identifier(ident) => {
-                            self.advance();  // consume the equals
+                            self.advance(); // consume the equals
                             let val = self.parse_expression()?;
                             check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                             Ok(Stmt {
@@ -174,7 +174,7 @@ impl Parser {
                                 },
                                 val: StmtType::AssignStmt(Token { val: TokenType::Identifier(ident), loc: expr.loc }, val),
                             })
-                        },
+                        }
                         ExprType::Index(ls, idx) => {
                             self.advance();
                             let val = self.parse_expression()?;
@@ -186,7 +186,6 @@ impl Parser {
                                 },
                                 val: StmtType::AssignIndexStmt(*ls, *idx, val),
                             })
-                        },
                         _ => { unreachable!() },
                     }
                 }
@@ -386,13 +385,10 @@ impl Parser {
             return Ok(expr);
         }
         let start = check_variant!(self, LParen, "")?.loc.start;
-        let args = self.sep(
-            Parser::parse_expression,
-            TokenType::RParen
-        )?;
+        let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
         let end = check_variant!(self, RParen, "")?.loc.end;
         Ok(Expr {
-            loc: Location { start, end, },
+            loc: Location { start, end },
             val: ExprType::Call(expr.into(), args),
         })
     }
@@ -407,7 +403,7 @@ impl Parser {
         let idx = self.parse_expression()?;
         let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
         Ok(Expr {
-            loc: Location { start, end, },
+            loc: Location { start, end },
             val: ExprType::Index(expr.into(), idx.into()),
         })
     }
@@ -464,15 +460,12 @@ impl Parser {
             TokenType::LBracket => {
                 let start = tok.loc.start;
                 self.advance();
-                let items = self.sep(
-                    Parser::parse_expression,
-                    TokenType::RBracket,
-                )?;
+                let items = self.sep(Parser::parse_expression, TokenType::RBracket)?;
                 let end = check_variant!(self, RBracket, "")?.loc.end;
                 return Ok(Expr {
-                    loc: Location { start, end, },
+                    loc: Location { start, end },
                     val: ExprType::List(items),
-                })
+                });
             }
             TokenType::Eof => {
                 return Err(Error {

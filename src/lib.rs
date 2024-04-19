@@ -1,9 +1,9 @@
-use std::{time::Instant, collections::HashMap};
+use std::{collections::HashMap, time::Instant};
 
 use error::Error;
 use interpreter::Interpreter;
 use located::Location;
-use value::{NATIVE_OPERATORS, get_builtins};
+use value::{get_builtins, NATIVE_OPERATORS};
 
 pub mod environment;
 pub mod error;
@@ -20,7 +20,6 @@ mod visitor;
 
 #[cfg(test)]
 mod tests;
-
 
 pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Vec<Error>> {
     let compile_start = Instant::now();

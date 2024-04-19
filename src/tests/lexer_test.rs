@@ -8,7 +8,7 @@ fn lex_empty() {
             val: TokenType::Eof
         }],
         lex("").unwrap()
-        );
+    );
 }
 
 #[test]
@@ -36,7 +36,7 @@ fn lex_float_error() {
             msg: "Found two floating point number delimiters".to_string(),
             lines: vec![Location { start: 0, end: 4 }]
         })
-        );
+    );
 }
 
 #[test]
@@ -47,7 +47,7 @@ fn lex_number_err() {
             msg: "Invalid digit: \"a\"".to_string(),
             lines: vec![Location { start: 0, end: 1 }],
         },
-        )];
+    )];
     for (n, r) in nums {
         let tok = lex(n);
         assert_eq!(Err(r), tok);
@@ -109,14 +109,14 @@ fn lex_string_err() {
                 msg: "EOF while parsing string".to_string(),
                 lines: vec![Location { start: 0, end: 1 }],
             },
-            ),
-            (
-                "\"test\n\"",
-                Error {
-                    msg: "EOL while parsing string".to_string(),
-                    lines: vec![Location { start: 0, end: 5 }],
-                },
-                ),
+        ),
+        (
+            "\"test\n\"",
+            Error {
+                msg: "EOL while parsing string".to_string(),
+                lines: vec![Location { start: 0, end: 5 }],
+            },
+        ),
     ];
     for (s, e) in strings {
         let tok = lex(s);
@@ -195,23 +195,23 @@ fn lex_line_comment() {
         (
             "//-test",
             vec![
-            TokenType::Symbol("//-".to_string()),
-            TokenType::Identifier("test".to_string()),
-            TokenType::Eof,
+                TokenType::Symbol("//-".to_string()),
+                TokenType::Identifier("test".to_string()),
+                TokenType::Eof,
             ],
-            ),
-            ("// test", vec![TokenType::Eof]),
-            ("/// test", vec![TokenType::Eof]),
-            ("// -test", vec![TokenType::Eof]),
-            (
-                "// test \ntest",
-                vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
-                ),
-                (
-                    "/// test\ntest",
-                    vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
-                    ),
-                ];
+        ),
+        ("// test", vec![TokenType::Eof]),
+        ("/// test", vec![TokenType::Eof]),
+        ("// -test", vec![TokenType::Eof]),
+        (
+            "// test \ntest",
+            vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+        ),
+        (
+            "/// test\ntest",
+            vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+        ),
+    ];
 
     for (c, r) in coms {
         let lexed = lex(c).unwrap().iter().map(|t| t.val.clone()).collect::<Vec<_>>();
@@ -229,20 +229,20 @@ fn lex_block_comment() {
         (
             "test /* test */",
             vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
-            ),
-            (
-                "/* test */ test",
-                vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
-                ),
-                (
-                    "test /* test */ test",
-                    vec![
-                    TokenType::Identifier("test".to_string()),
-                    TokenType::Identifier("test".to_string()),
-                    TokenType::Eof,
-                    ],
-                    ),
-                ];
+        ),
+        (
+            "/* test */ test",
+            vec![TokenType::Identifier("test".to_string()), TokenType::Eof],
+        ),
+        (
+            "test /* test */ test",
+            vec![
+                TokenType::Identifier("test".to_string()),
+                TokenType::Identifier("test".to_string()),
+                TokenType::Eof,
+            ],
+        ),
+    ];
 
     for (c, r) in comms {
         let lexed = lex(c).unwrap().iter().map(|t| t.val.clone()).collect::<Vec<_>>();
@@ -257,27 +257,27 @@ fn lex_example() {
         (
             "1 + 12",
             vec![
-            Token {
-                loc: Location { start: 0, end: 0 },
-                val: TokenType::Int(1),
-            },
-            Token {
-                loc: Location { start: 2, end: 2 },
-                val: TokenType::Symbol("+".to_string()),
-            },
-            Token {
-                loc: Location { start: 4, end: 5 },
-                val: TokenType::Int(12),
-            },
-            Token {
-                loc: Location { start: 6, end: 6 },
-                val: TokenType::Eof,
-            },
+                Token {
+                    loc: Location { start: 0, end: 0 },
+                    val: TokenType::Int(1),
+                },
+                Token {
+                    loc: Location { start: 2, end: 2 },
+                    val: TokenType::Symbol("+".to_string()),
+                },
+                Token {
+                    loc: Location { start: 4, end: 5 },
+                    val: TokenType::Int(12),
+                },
+                Token {
+                    loc: Location { start: 6, end: 6 },
+                    val: TokenType::Eof,
+                },
             ],
-            ),
-            (
-                "1+12",
-                vec![
+        ),
+        (
+            "1+12",
+            vec![
                 Token {
                     loc: Location { start: 0, end: 0 },
                     val: TokenType::Int(1),
@@ -294,106 +294,106 @@ fn lex_example() {
                     loc: Location { start: 4, end: 4 },
                     val: TokenType::Eof,
                 },
-                ],
-                ),
-                (
-                    "test2+test",
-                    vec![
-                    Token {
-                        loc: Location { start: 0, end: 4 },
-                        val: TokenType::Identifier("test2".to_string()),
-                    },
-                    Token {
-                        loc: Location { start: 5, end: 5 },
-                        val: TokenType::Symbol("+".to_string()),
-                    },
-                    Token {
-                        loc: Location { start: 6, end: 9 },
-                        val: TokenType::Identifier("test".to_string()),
-                    },
-                    Token {
-                        loc: Location { start: 10, end: 10 },
-                        val: TokenType::Eof,
-                    },
-                    ],
-                    ),
-                    (
-                        "\"test\"+\"test\"",
-                        vec![
-                        Token {
-                            loc: Location { start: 0, end: 5 },
-                            val: TokenType::String("test".to_string()),
-                        },
-                        Token {
-                            loc: Location { start: 6, end: 6 },
-                            val: TokenType::Symbol("+".to_string()),
-                        },
-                        Token {
-                            loc: Location { start: 7, end: 12 },
-                            val: TokenType::String("test".to_string()),
-                        },
-                        Token {
-                            loc: Location { start: 13, end: 13 },
-                            val: TokenType::Eof,
-                        },
-                        ],
-                        ),
-                        (
-                            "\"test\"\n+\"test\"",
-                            vec![
-                            Token {
-                                loc: Location { start: 0, end: 5 },
-                                val: TokenType::String("test".to_string()),
-                            },
-                            Token {
-                                loc: Location { start: 7, end: 7 },
-                                val: TokenType::Symbol("+".to_string()),
-                            },
-                            Token {
-                                loc: Location { start: 8, end: 13 },
-                                val: TokenType::String("test".to_string()),
-                            },
-                            Token {
-                                loc: Location { start: 14, end: 14 },
-                                val: TokenType::Eof,
-                            },
-                            ],
-                            ),
-                            (
-                                "\"test\" /* test */ \"test\"",
-                                vec![
-                                Token {
-                                    loc: Location { start: 0, end: 5 },
-                                    val: TokenType::String("test".to_string()),
-                                },
-                                Token {
-                                    loc: Location { start: 18, end: 23 },
-                                    val: TokenType::String("test".to_string()),
-                                },
-                                Token {
-                                    loc: Location { start: 24, end: 24 },
-                                    val: TokenType::Eof,
-                                },
-                                ],
-                                ),
-                                (
-                                    "\"test\" /* test \ntest */ \"test\"",
-                                    vec![
-                                    Token {
-                                        loc: Location { start: 0, end: 5 },
-                                        val: TokenType::String("test".to_string()),
-                                    },
-                                    Token {
-                                        loc: Location { start: 24, end: 29 },
-                                        val: TokenType::String("test".to_string()),
-                                    },
-                                    Token {
-                                        loc: Location { start: 30, end: 30 },
-                                        val: TokenType::Eof,
-                                    },
-                                    ],
-                                    ),
-                                ];
+            ],
+        ),
+        (
+            "test2+test",
+            vec![
+                Token {
+                    loc: Location { start: 0, end: 4 },
+                    val: TokenType::Identifier("test2".to_string()),
+                },
+                Token {
+                    loc: Location { start: 5, end: 5 },
+                    val: TokenType::Symbol("+".to_string()),
+                },
+                Token {
+                    loc: Location { start: 6, end: 9 },
+                    val: TokenType::Identifier("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 10, end: 10 },
+                    val: TokenType::Eof,
+                },
+            ],
+        ),
+        (
+            "\"test\"+\"test\"",
+            vec![
+                Token {
+                    loc: Location { start: 0, end: 5 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 6, end: 6 },
+                    val: TokenType::Symbol("+".to_string()),
+                },
+                Token {
+                    loc: Location { start: 7, end: 12 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 13, end: 13 },
+                    val: TokenType::Eof,
+                },
+            ],
+        ),
+        (
+            "\"test\"\n+\"test\"",
+            vec![
+                Token {
+                    loc: Location { start: 0, end: 5 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 7, end: 7 },
+                    val: TokenType::Symbol("+".to_string()),
+                },
+                Token {
+                    loc: Location { start: 8, end: 13 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 14, end: 14 },
+                    val: TokenType::Eof,
+                },
+            ],
+        ),
+        (
+            "\"test\" /* test */ \"test\"",
+            vec![
+                Token {
+                    loc: Location { start: 0, end: 5 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 18, end: 23 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 24, end: 24 },
+                    val: TokenType::Eof,
+                },
+            ],
+        ),
+        (
+            "\"test\" /* test \ntest */ \"test\"",
+            vec![
+                Token {
+                    loc: Location { start: 0, end: 5 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 24, end: 29 },
+                    val: TokenType::String("test".to_string()),
+                },
+                Token {
+                    loc: Location { start: 30, end: 30 },
+                    val: TokenType::Eof,
+                },
+            ],
+        ),
+    ];
 
     for (ex, tok) in exprs {
         let lexed = lex(ex).unwrap();
