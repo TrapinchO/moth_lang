@@ -20,4 +20,5 @@ When running the program without arguments it enters a repl mode, where a line o
 
 
 # Building and running
-Make sure you have rust (and cargo) installed and run `cargo rr <filename>` or `cargo rr` for file and repl modes respectively.
+Make sure you have rust (and cargo) installed and run `cargo r <filename>` or `cargo r` for file and repl modes respectively.
+(NOTE: currently no vaariables or functions can be preserved between repl inputs)

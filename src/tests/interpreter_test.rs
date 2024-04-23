@@ -1,0 +1,54 @@
+use crate::interpreter::Interpreter;
+use crate::run;
+use crate::value::{get_builtins, ValueType};
+
+fn run_code(code: &str, val: &str) -> Option<ValueType> {
+    let mut interp = Interpreter::new(get_builtins());
+    run(&mut interp, code.to_string(), false).ok()?;
+    interp.get_val(val.to_string())
+}
+
+#[test]
+fn blank() {
+    let mut interp = Interpreter::new(get_builtins());
+    let res = run(&mut interp, "".to_string(), false);
+    assert_eq!(res.is_ok(), true);
+}
+
+#[test]
+fn unit() {
+    assert_eq!(
+        run_code("let x = ();", "x"),
+        Some(ValueType::Unit)
+    );
+}
+#[test]
+fn expr() {
+    assert_eq!(
+        run_code("let x = 1 + 2 * 2 - 6 / 3;", "x"),
+        Some(ValueType::Int(3))
+    );
+}
+
+#[test]
+fn list() {
+    assert_eq!(
+        run_code("let x = [1, 2, 3]; x[1] = 1.1; let y = x[1];", "y"),
+        Some(ValueType::Float(1.1))
+    );
+}
+
+#[test]
+fn t() {
+    let mut interp = Interpreter::new(get_builtins());
+    run(&mut interp, "let x = 2;".to_string(), false).unwrap();
+    assert_eq!(ValueType::Int(2), interp.get_val("x".to_string()).unwrap());
+}
+
+#[test]
+fn t2() {
+    assert_eq!(
+        run_code("let x = 10 + 5;", "x").unwrap(),
+        ValueType::Int(15)
+    );
+}
