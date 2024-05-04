@@ -185,9 +185,15 @@ impl Interpreter {
         Ok(())
     }
     fn fun(&mut self, _: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<(), ErrorType> {
+        let name2 = match &name.val {
+            TokenType::Identifier(n) | TokenType::Symbol(n) => { n },
+            _ => unreachable!(),
+        };
+        /*
         let TokenType::Identifier(name2) = &name.val else {
             unreachable!()
         };
+        */
         let mut params2 = vec![];
         for p in params {
             let TokenType::Identifier(n) = &p.val else {
@@ -355,20 +361,52 @@ impl Interpreter {
         let TokenType::Symbol(op_name) = &op.val else {
             panic!("Expected a symbol, found {}", op.val)
         };
-        let ValueType::NativeFunction(func) = self.environment.get(op_name).ok_or(Error {
+        match self.environment.get(op_name).ok_or(Error {
             msg: format!("Name not found: \"{op_name}\""),
             lines: vec![op.loc],
-        })?
-        else {
-            return Err(Error {
-                msg: format!("Symbol\"{op_name}\" is not a function"),
+        })? {
+            ValueType::NativeFunction(func) => {
+                func(vec![left2, right2]).map_err(|msg| Error {
+                    msg,
+                    lines: vec![right_loc],
+                })
+            },
+            ValueType::Function(params, block) => {
+                self.environment.add_scope_vars(
+                    params
+                        .iter()
+                        .zip(vec![left2, right2])
+                        .map(|(n, v)| (n.clone(), v.val))
+                        .collect::<HashMap<_, _>>(),
+                );
+                let val = match self.interpret_block(block) {
+                    Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
+                    Err(err) => match err {
+                        // TODO: ERRORRRRRR
+                        ErrorType::Error(err) => return Err(err),
+                        ErrorType::Return(val) => val.val,
+                        ErrorType::Break => {
+                            return Err(Error {
+                                msg: "Cannot use break outside of loop".to_string(),
+                                lines: vec![], // TODO: add locations
+                            });
+                        }
+                        ErrorType::Continue => {
+                            return Err(Error {
+                                msg: "Cannot use break outside of loop".to_string(),
+                                lines: vec![], // TODO: add locations
+                            });
+                        }
+                    },
+                };
+                self.remove_scope();
+                Ok(val)
+            },
+            _ => return Err(Error {
+                msg: format!("Symbol \"{op_name}\" is not a native function"),
                 lines: vec![op.loc],
-            });
-        };
-        func(vec![left2, right2]).map_err(|msg| Error {
-            msg,
-            lines: vec![right_loc],
-        })
+            }),
+        }
     }
     fn list(&mut self, _: Location, ls: Vec<Expr>) -> Result<ValueType, Error> {
         let mut ls2 = vec![];

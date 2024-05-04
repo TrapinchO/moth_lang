@@ -294,8 +294,17 @@ impl Parser {
     fn parse_fun(&mut self) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
         self.advance();
-
-        let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
+        let tok = self.get_current().clone();
+        let ident = match tok.val {
+            TokenType::Identifier(_) | TokenType::Symbol(_) => { tok },
+            _ => return Err(Error {
+                msg: "Expected an identifier or a valid symbol.".to_string(),
+                lines: vec![tok.loc],
+            }),
+        };
+        self.advance();
+        
+        //let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
 
         check_variant!(self, LParen, "Expected an opening parenthesis")?;
 

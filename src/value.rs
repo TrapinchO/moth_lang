@@ -92,7 +92,7 @@ pub enum ValueType {
     Float(f32),
     List(MList),
     NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
-    Function(Vec<String>, Vec<Stmt>),
+    Function(Vec<String>, Vec<Stmt>),  // fn(params) { block }
     Unit,
 }
 impl ValueType {

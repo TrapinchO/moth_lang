@@ -1,7 +1,9 @@
-fun f() { return [1]; }
-let x = [f];
-x[0]();
-f()[0];
+fun f(x, y) { return x + y; }
+fun >>(x, y) { return x + y; }
+//fun 1(x, y) { return x + y; }
+print(f(1, 2), 1 >> 2);
+print(4 * 2 >> 3);
+
 
 // FUN FACT:
 // the following code runs FASTER then the one below it

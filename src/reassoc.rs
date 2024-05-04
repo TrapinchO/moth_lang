@@ -175,6 +175,12 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<Stmt, Error> {
+        if let TokenType::Symbol(s) = &name.val {
+            self.ops.insert(s.clone(), Precedence {
+                prec: 0,
+                assoc: Associativity::Left,
+            });
+        }
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
