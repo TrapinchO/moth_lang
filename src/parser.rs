@@ -66,8 +66,7 @@ impl Parser {
 
     // TODO: accept beginning and separator
     // TODO: allow trailing separator
-    fn sep<F, R>(&mut self, f: F, end_tok: TokenType) -> Result<Vec<R>, Error>
-    where F: Fn(&mut Self) -> Result<R, Error>, {
+    fn sep<R>(&mut self, f: fn(&mut Self) -> Result<R, Error>, end_tok: TokenType) -> Result<Vec<R>, Error> {
         // TODO: fix hack
         // funnily enough, my new system with macros broke this one
         fn cmp(this: &TokenType, other: &TokenType) -> bool {
@@ -299,7 +298,20 @@ impl Parser {
         let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
 
         check_variant!(self, LParen, "Expected an opening parenthesis")?;
-        // TODO: function with no parameters is a parser error
+
+        // TODO: monstrosity, but checks out
+        if is_typ!(self, RParen) {
+            self.advance();
+            let block = self.parse_block()?;
+            // TODO: horrible cheating, but eh
+            let StmtType::BlockStmt(bl) = block.val else {
+                unreachable!();
+            };
+            return Ok(Stmt {
+                val: StmtType::FunDeclStmt(ident, vec![], bl),
+                loc: Location { start, end: block.loc.end },
+            })
+        }
         let mut params = vec![];
         while !self.is_at_end() {
             params.push(check_variant!(self, Identifier(_), "Expected a parameter name")?);
@@ -357,7 +369,7 @@ impl Parser {
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
         let tok @ Token { val: TokenType::Symbol(_), .. } = self.get_current().clone() else {
-            return self.parse_call()
+            return self.parse_suffix()
         };
         let TokenType::Symbol(sym) = &tok.val else {
             unreachable!()
@@ -379,34 +391,37 @@ impl Parser {
         })
     }
 
-    // TODO: allow nested calls
-    fn parse_call(&mut self) -> Result<Expr, Error> {
-        let expr = self.parse_index()?;
-        if !is_typ!(self, LParen) {
-            return Ok(expr);
-        }
-        let start = check_variant!(self, LParen, "")?.loc.start;
-        let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
-        let end = check_variant!(self, RParen, "")?.loc.end;
-        Ok(Expr {
-            loc: Location { start, end },
-            val: ExprType::Call(expr.into(), args),
-        })
-    }
+    fn parse_suffix(&mut self) -> Result<Expr, Error> {
+        let mut expr = self.parse_primary()?;
+        // a condition is not actually needed
+        // the parser should figure out by itself
+        loop {
+            match self.get_current().val {
+                TokenType::LParen => {
+            self.advance();  // move past the paren
+            let start = expr.loc.start;
+            let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
+            let end = check_variant!(self, RParen, "")?.loc.end;
+            expr = Expr {
+                loc: Location { start, end },
+                val: ExprType::Call(expr.into(), args),
+            };
+                },
+                TokenType::LBracket => {
 
-    // TODO: allow nested indexing
-    fn parse_index(&mut self) -> Result<Expr, Error> {
-        let expr = self.parse_primary()?;
-        if !is_typ!(self, LBracket) {
-            return Ok(expr);
-        }
-        let start = check_variant!(self, LBracket, "")?.loc.start;
-        let idx = self.parse_expression()?;
-        let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
-        Ok(Expr {
-            loc: Location { start, end },
-            val: ExprType::Index(expr.into(), idx.into()),
-        })
+            self.advance();  // move past the bracket
+            let start = expr.loc.start;
+            let idx = self.parse_expression()?;
+            let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
+            expr = Expr {
+                loc: Location { start, end },
+                val: ExprType::Index(expr.into(), idx.into()),
+            };
+                },
+                _ => { break; }
+            }
+        };
+        Ok(expr)
     }
 
     fn parse_primary(&mut self) -> Result<Expr, Error> {

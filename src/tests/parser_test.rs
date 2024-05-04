@@ -93,7 +93,7 @@ fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
     }
 }
 
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
 use crate::{
     error::Error,
@@ -401,4 +401,136 @@ fn test_reassoc() {
             &stmt!(StmtType::ExprStmt(expr!(op)))
         ));
     }
+}
+
+#[test]
+fn test_nested_call() {
+    let src = parse(lex("f()();").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Call(Expr {
+                    val: ExprType::Call(Expr {
+                        val: ExprType::Identifier("f".to_string()),
+                        loc: Location { start: 0, end: 0 },
+                    }.into(), vec![]),
+                    loc: Location { start: 0, end: 2 },
+                }.into(), vec![]),
+                loc: Location { start: 0, end: 4 },
+            }.into()),
+            loc: Location { start: 0, end: 4 },
+        }])
+    )
+}
+
+
+#[test]
+fn test_nested_index() {
+    let src = parse(lex("x[1][1];").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Index(Expr {
+                    val: ExprType::Index(Expr {
+                        val: ExprType::Identifier("x".to_string()),
+                        loc: Location { start: 0, end: 0 },
+                    }.into(),
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 2, end: 2 },
+                    }.into()),
+                    loc: Location { start: 0, end: 3 },
+                }.into(),
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 5, end: 5 },
+                    }.into()),
+                loc: Location { start: 0, end: 6 },
+            }.into()),
+            loc: Location { start: 0, end: 6 },
+        }])
+    )
+}
+
+#[test]
+fn test_no_params() {
+    let src = parse(lex("fun f() {}").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![
+           Stmt {
+               val: StmtType::FunDeclStmt(
+                    Token {
+                        val: TokenType::Identifier("f".to_string()),
+                        loc: Location { start: 4, end: 4 },
+                    },
+                    vec![],  // NO PARAMS
+                    vec![],
+               ),
+               loc: Location { start: 0, end: 9 },
+           }
+        ])
+    );
+}
+
+#[test]
+fn test_index_call() {
+    let src = parse(lex("[print][0]();").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Call(
+                    Expr {
+                        val: ExprType::Index(
+                            Expr {
+                                val: ExprType::List(vec![Expr {
+                                    val: ExprType::Identifier("print".to_string()),
+                                    loc: Location { start: 1, end: 5 }, }]),
+                                loc: Location { start: 0, end: 6 },
+                                }.into(),
+                            Expr {
+                                val: ExprType::Int(0),
+                                loc: Location { start: 8, end: 8 },
+                            }.into()),
+                        loc: Location { start: 0, end: 9 },
+                    }.into(),
+                    vec![]),
+                loc: Location { start: 0, end: 11 },
+            }),
+            loc: Location { start: 0, end: 11 },
+        }]),
+    );
+}
+
+#[test]
+fn test_call_index() {
+    let src = parse(lex("[print]()[0];").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Index(
+                    Expr {
+                        val: ExprType::Call(
+                            Expr {
+                                val: ExprType::List(vec![Expr {
+                                    val: ExprType::Identifier("print".to_string()),
+                                    loc: Location { start: 1, end: 5 }, }]),
+                                loc: Location { start: 0, end: 6 },
+                                }.into(),
+                            vec![],),
+                        loc: Location { start: 0, end: 8 },
+                    }.into(),
+                    Expr {
+                        val: ExprType::Int(0),
+                        loc: Location { start: 10, end: 10 },
+                    }.into()),
+                loc: Location { start: 0, end: 11 },
+            }),
+            loc: Location { start: 0, end: 11 },
+        }]),
+    );
 }
