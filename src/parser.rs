@@ -295,6 +295,7 @@ impl Parser {
         let start = self.get_current().loc.start;
         self.advance();
         let tok = self.get_current().clone();
+        // TODO: possibly use matches! macro
         let ident = match tok.val {
             TokenType::Identifier(_) | TokenType::Symbol(_) => { tok },
             _ => return Err(Error {

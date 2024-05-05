@@ -111,8 +111,7 @@ impl Lexer {
                 }
                 s if SPECIAL_SYMBOLS.map(|x| x.0).contains(&s) => {
                     self.advance();
-                    let special_symbols = HashMap::from(SPECIAL_SYMBOLS);
-                    special_symbols.get(&s).unwrap().clone()
+                    SPECIAL_SYMBOLS.iter().find(|x| x.0 == s).unwrap().clone().1
                 }
                 sym if SYMBOLS.contains(sym) => {
                     let sym = self.lex_symbol();
