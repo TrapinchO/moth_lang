@@ -4,8 +4,6 @@ use crate::{
     token::*,
 };
 
-use std::collections::HashMap;
-
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
 const KEYWORDS: [(&str, TokenType); 10] = [
@@ -30,7 +28,6 @@ const SPECIAL_SYMBOLS: [(char, TokenType); 8] = [
     ('}', TokenType::RBrace),
     (';', TokenType::Semicolon),
     (',', TokenType::Comma),
-    // TODO: what with Dot?
 ];
 
 pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
@@ -96,6 +93,7 @@ impl Lexer {
                     self.advance();
                     continue;
                 }
+                '\"' => TokenType::String(self.lex_string()?),
                 num if num.is_ascii_digit() => {
                     // floats: should be anything that matches <number>.<number>
                     // no spaces, missing whole/decimal part
@@ -103,11 +101,8 @@ impl Lexer {
                 }
                 ident if ident.is_alphabetic() || ident == '_' => {
                     let ident = self.lex_identifier();
-                    let keywords = HashMap::from(KEYWORDS);
-                    match keywords.get(ident.as_str()) {
-                        Some(kw) => kw.clone(),
-                        None => TokenType::Identifier(ident),
-                    }
+                    KEYWORDS.iter().find(|x| x.0 == ident)
+                        .unwrap_or(&("", TokenType::Identifier(ident))).clone().1
                 }
                 s if SPECIAL_SYMBOLS.map(|x| x.0).contains(&s) => {
                     self.advance();
@@ -126,14 +121,13 @@ impl Lexer {
                         }
                         // ignore comments
                         // IMPLEMENTATION DETAIL: "//-" is an operator, not a comment
-                        _ if sym.chars().all(|s| s == '/') && sym.len() >= 2 => {
+                        _ if sym.len() >= 2 && sym.chars().all(|s| s == '/') => {
                             self.lex_line_comment();
                             continue;
                         }
                         _ => TokenType::Symbol(sym),
                     }
                 }
-                '\"' => TokenType::String(self.lex_string()?),
                 unknown => return Err(self.error(format!("Unknown character: \"{unknown}\""))),
             };
             tokens.push(Located {

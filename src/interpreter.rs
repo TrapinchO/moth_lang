@@ -402,7 +402,7 @@ impl Interpreter {
                 self.remove_scope();
                 Ok(val)
             },
-            _ => return Err(Error {
+            _ => Err(Error {
                 msg: format!("Symbol \"{op_name}\" is not a native function"),
                 lines: vec![op.loc],
             }),

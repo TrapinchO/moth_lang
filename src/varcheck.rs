@@ -1,3 +1,4 @@
+#![allow(clippy::ptr_arg)]
 use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, token::*};
 
 use std::collections::HashMap;
