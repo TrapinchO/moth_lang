@@ -75,3 +75,25 @@ let x = (fact << len)([1, 2, 3, 4]);", "x"),
         Some(ValueType::Int(24))
     );
 }
+
+#[test]
+fn closure() {
+    assert_eq!(
+        run_code("
+fun n() {
+    let x = 0;
+    fun g() {
+        x = x + 1;
+        return x;
+    }
+    return g;
+}
+let f = n();
+f();
+f();
+f();
+f();
+let x = f();", "x"),
+        Some(ValueType::Int(5))
+    )
+}

@@ -23,7 +23,7 @@ fun n() {
     let x = 0;
     fun g() {
         x = x + 1;
-        print(x);
+        return x;
     }
     return g;
 }
@@ -31,6 +31,8 @@ let f = n();
 f();
 f();
 f();
+f();
+print(f());
 // */
 
 
