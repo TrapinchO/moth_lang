@@ -65,13 +65,13 @@ fun fact(n) {
     }
     return total;
 }
-fun <<(f, n) {
+fun <<(f, g) {
     fun a(x) {
-        return n(f(x));
+        return f(g(x));
     }
     return a;
 }
 let x = (fact << len)([1, 2, 3, 4]);", "x"),
-        Some(ValueType::Int(12))
+        Some(ValueType::Int(24))
     );
 }

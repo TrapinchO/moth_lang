@@ -7,7 +7,8 @@ use crate::located::Located;
 use crate::mref::{MList, MRef};
 use crate::reassoc::{Associativity, Precedence};
 
-
+pub type NativeFunction = fn(Vec<Value>) -> Result<ValueType, String>;
+pub type Closure = Vec<MRef<HashMap<String, ValueType>>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueType {
@@ -16,8 +17,8 @@ pub enum ValueType {
     Int(i32),
     Float(f32),
     List(MList),
-    NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
-    Function(Vec<String>, Vec<Stmt>, Vec<MRef<HashMap<String, ValueType>>>),  // fn(params) { block }, closure
+    NativeFunction(NativeFunction),
+    Function(Vec<String>, Vec<Stmt>, Closure),  // fn(params) { block }, closure
     Unit,
 }
 impl ValueType {
@@ -60,7 +61,6 @@ pub type Value = Located<ValueType>;
 // TODO: this is very smart, as it can currently hold only Functions
 // TODO: fix the precedence mess
 // PIE anyone?
-type NativeFunction = fn(Vec<Value>) -> Result<ValueType, String>;
 pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
     (
         "+",

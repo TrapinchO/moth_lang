@@ -16,8 +16,21 @@ fun fact(n) {
     }
     return total;
 }
-//print(fact(3), fact(6), fact(8));
-//print((fact << len)([1, 2, 3, 4]));
+print(fact(3), fact(6), fact(8));
+print((fact << len)([1, 2, 3, 4]));
+
+fun n() {
+    let x = 0;
+    fun g() {
+        x = x + 1;
+        print(x);
+    }
+    return g;
+}
+let f = n();
+f();
+f();
+f();
 // */
 
 

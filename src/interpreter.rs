@@ -197,7 +197,7 @@ impl Interpreter {
             params2.push(n.clone());
         }
         self.environment
-            .insert(name2, ValueType::Function(params2, block, vec![]))
+            .insert(name2, ValueType::Function(params2, block, self.environment.scopes.clone()))
             .ok_or(Error {
                 msg: format!("Name \"{name2}\" already exists"),
                 lines: vec![name.loc],
@@ -269,55 +269,9 @@ impl Interpreter {
         let callee = self.visit_expr(callee)?;
         match callee.val {
             // TODO: the ok and ? can be removed
-            ValueType::NativeFunction(func) => Ok(func(args2).map_err(|msg| Error { msg, lines: vec![loc] })?),
-            ValueType::Function(params, block, _) => {
-                if args2.len() != params.len() {
-                    return Err(Error {
-                        msg: format!(
-                            "the number of arguments ({}) must match the number of parameters ({})",
-                            args2.len(),
-                            params.len()
-                        ),
-                        lines: vec![loc],
-                    });
-                }
-                self.environment.add_scope_vars(
-                    params
-                        .iter()
-                        .zip(args2)
-                        .map(|(n, v)| (n.clone(), v.val))
-                        .collect::<HashMap<_, _>>(),
-                );
-                println!("////////////////////////");
-                for i in self.environment.scopes.iter() {
-                    println!("{i:?}");
-                    //for (k, j) in i.read(|i| i.iter()) {
-                    //    println!("{k}: {}", j);
-                    //}
-                    println!("#####");
-                }
-                let val = match self.interpret_block(block) {
-                    Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
-                    Err(err) => match err {
-                        // TODO: ERRORRRRRR
-                        ErrorType::Error(err) => return Err(err),
-                        ErrorType::Return(val) => val.val,
-                        ErrorType::Break => {
-                            return Err(Error {
-                                msg: "Cannot use break outside of loop".to_string(),
-                                lines: vec![loc], // TODO: add locations
-                            });
-                        }
-                        ErrorType::Continue => {
-                            return Err(Error {
-                                msg: "Cannot use break outside of loop".to_string(),
-                                lines: vec![loc], // TODO: add locations
-                            });
-                        }
-                    },
-                };
-                self.remove_scope();
-                Ok(val)
+            ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
+            ValueType::Function(params, body, closure) => {
+                self.call_fn(params, body, closure, args2, loc)
             }
             _ => Err(Error {
                 msg: format!("\"{}\" is not calleable", callee.val),
@@ -362,48 +316,18 @@ impl Interpreter {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let TokenType::Symbol(op_name) = &op.val else {
-            panic!("Expected a symbol, found {}", op.val)
+            unreachable!("Expected a symbol, found {}", op.val)
         };
-        match self.environment.get(op_name).ok_or(Error {
+        let val = self.environment.get(op_name).ok_or(Error {
             msg: format!("Name not found: \"{op_name}\""),
             lines: vec![op.loc],
-        })? {
+        })?;
+        match val {
             ValueType::NativeFunction(func) => {
-                func(vec![left2, right2]).map_err(|msg| Error {
-                    msg,
-                    lines: vec![right_loc],
-                })
+                self.call_fn_native(func, vec![left2, right2], right_loc)
             },
-            ValueType::Function(params, block, _) => {
-                self.environment.add_scope_vars(
-                    params
-                        .iter()
-                        .zip(vec![left2, right2])
-                        .map(|(n, v)| (n.clone(), v.val))
-                        .collect::<HashMap<_, _>>(),
-                );
-                let val = match self.interpret_block(block) {
-                    Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
-                    Err(err) => match err {
-                        // TODO: ERRORRRRRR
-                        ErrorType::Error(err) => return Err(err),
-                        ErrorType::Return(val) => val.val,
-                        ErrorType::Break => {
-                            return Err(Error {
-                                msg: "Cannot use break outside of loop".to_string(),
-                                lines: vec![], // TODO: add locations
-                            });
-                        }
-                        ErrorType::Continue => {
-                            return Err(Error {
-                                msg: "Cannot use break outside of loop".to_string(),
-                                lines: vec![], // TODO: add locations
-                            });
-                        }
-                    },
-                };
-                self.remove_scope();
-                Ok(val)
+            ValueType::Function(params, body, closure) => {
+                return self.call_fn(params, body, closure, vec![left2, right2], right_loc);
             },
             _ => Err(Error {
                 msg: format!("Symbol \"{op_name}\" is not a native function"),
@@ -438,5 +362,69 @@ impl Interpreter {
             lines: vec![loc],
         })?;
         Ok(ls.read(|l| l[n2].clone()).val)
+    }
+
+    fn call_fn(&mut self, params: Vec<String>, body: Vec<Stmt>, closure: Closure, args: Vec<Value>, loc: Location) -> Result<ValueType, Error> {
+        if args.len() != params.len() {
+            return Err(Error {
+                msg: format!(
+                    "the number of arguments ({}) must match the number of parameters ({})",
+                    args.len(),
+                    params.len()
+                ),
+                lines: vec![loc],
+            });
+        }
+        // craftinginterpreters seem to do it
+        let env = self.environment.clone();
+        self.environment = Environment { scopes: closure };
+        self.environment.add_scope_vars(
+            params
+            .iter()
+            .zip(args)
+            .map(|(n, v)| (n.clone(), v.val))
+            .collect::<HashMap<_, _>>(),
+        );
+        /*
+           println!("////////////////////////");
+           for i in self.environment.scopes.iter() {
+        //println!("{i:?}");
+        for (k, j) in i.iter() {
+        println!("{k}: {}", j);
+        }
+        println!("#####");
+        }
+        */
+        let val = match self.interpret_block(body) {
+            Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
+            Err(err) => match err {
+                // TODO: ERRORRRRRR
+                ErrorType::Error(err) => return Err(err),
+                ErrorType::Return(val) => val.val,
+                ErrorType::Break => {
+                    return Err(Error {
+                        msg: "Cannot use break outside of loop".to_string(),
+                        lines: vec![loc], // TODO: add locations
+                    });
+                }
+                ErrorType::Continue => {
+                    return Err(Error {
+                        msg: "Cannot use break outside of loop".to_string(),
+                        lines: vec![loc], // TODO: add locations
+                    });
+                }
+            },
+        };
+        self.remove_scope();
+        self.environment = env;
+        Ok(val)
+    }
+
+    fn call_fn_native(&mut self, func: NativeFunction, args: Vec<Value>, loc: Location) -> Result<ValueType, Error> {
+
+        func(args).map_err(|msg| Error {
+            msg,
+            lines: vec![loc],
+        })
     }
 }
