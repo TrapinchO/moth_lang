@@ -52,3 +52,26 @@ fn t2() {
         ValueType::Int(15)
     );
 }
+
+#[test]
+fn apply_fun() {
+    assert_eq!(
+        run_code("
+fun fact(n) {
+    let total = 1;
+    while n > 1 {
+        total = total * n;
+        n = n - 1;
+    }
+    return total;
+}
+fun <<(f, n) {
+    fun a(x) {
+        return n(f(x));
+    }
+    return a;
+}
+let x = (fact << len)([1, 2, 3, 4]);", "x"),
+        Some(ValueType::Int(12))
+    );
+}

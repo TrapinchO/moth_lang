@@ -9,6 +9,7 @@ pub mod environment;
 pub mod error;
 pub mod exprstmt;
 pub mod interpreter;
+pub mod mref;
 pub mod lexer;
 pub mod located;
 pub mod parser;

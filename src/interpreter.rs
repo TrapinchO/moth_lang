@@ -2,12 +2,7 @@ use core::panic;
 use std::collections::HashMap;
 
 use crate::{
-    environment::Environment,
-    error::{Error, ErrorType},
-    exprstmt::{Expr, ExprType, Stmt, StmtType},
-    located::Location,
-    token::*,
-    value::*,
+    environment::Environment, error::{Error, ErrorType}, exprstmt::{Expr, ExprType, Stmt, StmtType}, located::Location, mref::MList, token::*, value::*
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -202,7 +197,7 @@ impl Interpreter {
             params2.push(n.clone());
         }
         self.environment
-            .insert(name2, ValueType::Function(params2, block))
+            .insert(name2, ValueType::Function(params2, block, vec![]))
             .ok_or(Error {
                 msg: format!("Name \"{name2}\" already exists"),
                 lines: vec![name.loc],
@@ -275,7 +270,7 @@ impl Interpreter {
         match callee.val {
             // TODO: the ok and ? can be removed
             ValueType::NativeFunction(func) => Ok(func(args2).map_err(|msg| Error { msg, lines: vec![loc] })?),
-            ValueType::Function(params, block) => {
+            ValueType::Function(params, block, _) => {
                 if args2.len() != params.len() {
                     return Err(Error {
                         msg: format!(
@@ -293,6 +288,14 @@ impl Interpreter {
                         .map(|(n, v)| (n.clone(), v.val))
                         .collect::<HashMap<_, _>>(),
                 );
+                println!("////////////////////////");
+                for i in self.environment.scopes.iter() {
+                    println!("{i:?}");
+                    //for (k, j) in i.read(|i| i.iter()) {
+                    //    println!("{k}: {}", j);
+                    //}
+                    println!("#####");
+                }
                 let val = match self.interpret_block(block) {
                     Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
                     Err(err) => match err {
@@ -371,7 +374,7 @@ impl Interpreter {
                     lines: vec![right_loc],
                 })
             },
-            ValueType::Function(params, block) => {
+            ValueType::Function(params, block, _) => {
                 self.environment.add_scope_vars(
                     params
                         .iter()

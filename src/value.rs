@@ -1,88 +1,13 @@
-use std::cell::UnsafeCell;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::rc::Rc;
 use std::time::SystemTime;
 
 use crate::exprstmt::Stmt;
 use crate::located::Located;
+use crate::mref::{MList, MRef};
 use crate::reassoc::{Associativity, Precedence};
 
-// stands for MothReference
-#[derive(Debug, Clone)]
-pub struct MRef<T>(Rc<UnsafeCell<T>>);
-impl<T> MRef<T> {
-    pub fn new(val: T) -> Self {
-        MRef(Rc::new(UnsafeCell::new(val)))
-    }
 
-    pub fn read<V: 'static>(&self, f: impl FnOnce(&T) -> V) -> V {
-        unsafe { f(&*self.0.get()) }
-    }
-
-    pub fn write(&mut self, val: T) {
-        unsafe {
-            *(self.0.get()) = val;
-        }
-    }
-}
-
-impl<T> From<T> for MRef<T> {
-    fn from(value: T) -> Self {
-        MRef::new(value)
-    }
-}
-
-impl<T: PartialEq> PartialEq for MRef<T> {
-    fn eq(&self, other: &Self) -> bool {
-        unsafe { *self.0.get() == *other.0.get() }
-    }
-}
-
-pub type MList = MRef<Vec<Value>>;
-impl MList {
-    pub fn modify(&mut self, idx: usize, val: Value) {
-        unsafe {
-            let ls = &mut *self.0.get();
-            ls[idx] = val;
-        }
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = Value> {
-        MListIter::new(self.clone())
-    }
-
-    // checks whether it is in the possible range (even if negative)
-    // and returns it as a positive index
-    pub fn check_index(idx: i32, length: usize) -> Option<usize> {
-        if length as i32 <= idx || idx < -(length as i32) {
-            return None;
-        }
-        Some(if idx < 0 { length as i32 + idx } else { idx } as usize)
-    }
-}
-struct MListIter {
-    idx: usize,
-    len: usize,
-    ls: MList,
-}
-impl MListIter {
-    pub fn new(ls: MList) -> Self {
-        let len = ls.read(|l| l.len());
-        MListIter { ls, len, idx: 0 }
-    }
-}
-impl Iterator for MListIter {
-    type Item = Value;
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.idx >= self.len {
-            return None;
-        }
-        let item = self.ls.read(|l| l[self.idx].clone());
-        self.idx += 1;
-        Some(item)
-    }
-}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueType {
@@ -92,7 +17,7 @@ pub enum ValueType {
     Float(f32),
     List(MList),
     NativeFunction(fn(Vec<Value>) -> Result<ValueType, String>),
-    Function(Vec<String>, Vec<Stmt>),  // fn(params) { block }
+    Function(Vec<String>, Vec<Stmt>, Vec<MRef<HashMap<String, ValueType>>>),  // fn(params) { block }, closure
     Unit,
 }
 impl ValueType {
@@ -111,7 +36,10 @@ impl ValueType {
                     .join(", ")
             ),
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
-            Self::Function(..) => "<function>".to_string(),
+            Self::Function(params, body, _) => format!(
+                "fun({}) {{ {} }}",
+                params.join(", "), body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
+            ),
             Self::Unit => "()".to_string(),
         }
     }

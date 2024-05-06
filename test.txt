@@ -1,8 +1,12 @@
-fun f(x, y) { return x + y; }
-fun >>(x, y) { return x + y; }
-//fun 1(x, y) { return x + y; }
-print(f(1, 2), 1 >> 2);
-print(4 * 2 >> 3);
+// /*
+// CLOSURES
+fun <<(f, g) {
+    fun a(x) {
+        return f(g(x));
+    }
+    return a;
+}
+(print << len)([1, 2]);
 
 fun fact(n) {
     let total = 1;
@@ -12,8 +16,38 @@ fun fact(n) {
     }
     return total;
 }
+//print(fact(3), fact(6), fact(8));
+//print((fact << len)([1, 2, 3, 4]));
+// */
 
-print(fact(3), fact(6), fact(8));
+
+// TODO: some fun with operators later
+// precedence and associativity cannot be customized
+/*
+fun <$>(f, ls) {
+    let idx = 0;
+    let ls2 = [];
+    while idx < len(ls) {
+        ls2 = ls2 + [f(ls[idx])];
+        idx = idx + 1;
+    }
+    return ls2;
+}
+fun $(f, x) {
+    return f(x);
+}
+fun a(x) {
+    return x * 2;
+}
+print $ a <$> [1, 2, 3];
+*/
+
+
+
+
+
+
+
 
 // FUN FACT:
 // the following code runs FASTER then the one below it
