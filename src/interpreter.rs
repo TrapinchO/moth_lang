@@ -385,16 +385,7 @@ impl Interpreter {
             .map(|(n, v)| (n.clone(), v.val))
             .collect::<HashMap<_, _>>(),
         );
-        /*
-           println!("////////////////////////");
-           for i in self.environment.scopes.iter() {
-        //println!("{i:?}");
-        for (k, j) in i.iter() {
-        println!("{k}: {}", j);
-        }
-        println!("#####");
-        }
-        */
+
         let val = match self.interpret_block(body) {
             Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
             Err(err) => match err {

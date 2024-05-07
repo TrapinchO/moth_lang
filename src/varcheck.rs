@@ -107,8 +107,7 @@ impl VarCheck {
                 }
             }
         }
-        // TODO: no error positions existence
-        // idea - take the positions when declared as an option and none them when found
+        
         for (name, used) in self.env.scopes.last().unwrap().iter() {
             if !used.1 {
                 self.warns.push(Error {

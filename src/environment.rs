@@ -6,7 +6,7 @@ use crate::mref::MMap;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Environment<T> {
-    pub scopes: Vec<MMap<String, T>>,
+    pub scopes: Vec<MMap<T>>,
 }
 
 // TODO: idk if I am happy with Option<T>, but imo it is better than a bool
