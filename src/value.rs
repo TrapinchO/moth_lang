@@ -18,7 +18,7 @@ pub enum ValueType {
     Float(f32),
     List(MList),
     NativeFunction(NativeFunction),
-    Function(Vec<String>, Vec<Stmt>, Closure),  // fn(params) { block }, closure
+    Function(Vec<String>, Vec<Stmt>, Closure), // fn(params) { block }, closure
     Unit,
 }
 impl ValueType {
@@ -39,7 +39,8 @@ impl ValueType {
             Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
             Self::Function(params, body, _) => format!(
                 "fun({}) {{ {} }}",
-                params.join(", "), body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
+                params.join(", "),
+                body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
         }

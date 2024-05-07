@@ -101,8 +101,12 @@ impl Lexer {
                 }
                 ident if ident.is_alphabetic() || ident == '_' => {
                     let ident = self.lex_identifier();
-                    KEYWORDS.iter().find(|x| x.0 == ident)
-                        .unwrap_or(&("", TokenType::Identifier(ident))).clone().1
+                    KEYWORDS
+                        .iter()
+                        .find(|x| x.0 == ident)
+                        .unwrap_or(&("", TokenType::Identifier(ident)))
+                        .clone()
+                        .1
                 }
                 s if SPECIAL_SYMBOLS.map(|x| x.0).contains(&s) => {
                     self.advance();

@@ -38,12 +38,9 @@ impl<T: PartialEq> PartialEq for MRef<T> {
 
 impl<T: Debug> Debug for MRef<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        unsafe {
-            write!(f, "Mref({:?})", &*self.0.get())
-        }
+        unsafe { write!(f, "Mref({:?})", &*self.0.get()) }
     }
 }
-
 
 pub type MMap<T> = MRef<HashMap<String, T>>;
 impl<T: Clone> MMap<T> {
@@ -94,7 +91,6 @@ impl<T: Clone> Iterator for MMapIter<T> {
     }
 }
 // */
-
 pub type MList = MRef<Vec<Value>>;
 impl MList {
     pub fn modify(&mut self, idx: usize, val: Value) {

@@ -2,8 +2,6 @@ use std::collections::HashMap;
 
 use crate::mref::MMap;
 
-
-
 #[derive(Debug, PartialEq, Clone)]
 pub struct Environment<T> {
     pub scopes: Vec<MMap<T>>,
@@ -13,7 +11,9 @@ pub struct Environment<T> {
 // for now.
 impl<T: Clone> Environment<T> {
     pub fn new(defaults: HashMap<String, T>) -> Environment<T> {
-        Environment { scopes: vec![defaults.into()] }
+        Environment {
+            scopes: vec![defaults.into()],
+        }
     }
 
     pub fn insert(&mut self, name: &String, val: T) -> Option<()> {

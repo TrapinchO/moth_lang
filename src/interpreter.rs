@@ -2,7 +2,13 @@ use core::panic;
 use std::collections::HashMap;
 
 use crate::{
-    environment::Environment, error::{Error, ErrorType}, exprstmt::{Expr, ExprType, Stmt, StmtType}, located::Location, mref::MList, token::*, value::*
+    environment::Environment,
+    error::{Error, ErrorType},
+    exprstmt::{Expr, ExprType, Stmt, StmtType},
+    located::Location,
+    mref::MList,
+    token::*,
+    value::*,
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -181,7 +187,7 @@ impl Interpreter {
     }
     fn fun(&mut self, _: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<(), ErrorType> {
         let name2 = match &name.val {
-            TokenType::Identifier(n) | TokenType::Symbol(n) => { n },
+            TokenType::Identifier(n) | TokenType::Symbol(n) => n,
             _ => unreachable!(),
         };
         /*
@@ -197,7 +203,10 @@ impl Interpreter {
             params2.push(n.clone());
         }
         self.environment
-            .insert(name2, ValueType::Function(params2, block, self.environment.scopes.clone()))
+            .insert(
+                name2,
+                ValueType::Function(params2, block, self.environment.scopes.clone()),
+            )
             .ok_or(Error {
                 msg: format!("Name \"{name2}\" already exists"),
                 lines: vec![name.loc],
@@ -270,9 +279,7 @@ impl Interpreter {
         match callee.val {
             // TODO: the ok and ? can be removed
             ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
-            ValueType::Function(params, body, closure) => {
-                self.call_fn(params, body, closure, args2, loc)
-            }
+            ValueType::Function(params, body, closure) => self.call_fn(params, body, closure, args2, loc),
             _ => Err(Error {
                 msg: format!("\"{}\" is not calleable", callee.val),
                 lines: vec![callee.loc],
@@ -323,12 +330,10 @@ impl Interpreter {
             lines: vec![op.loc],
         })?;
         match val {
-            ValueType::NativeFunction(func) => {
-                self.call_fn_native(func, vec![left2, right2], right_loc)
-            },
+            ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2, right2], right_loc),
             ValueType::Function(params, body, closure) => {
                 self.call_fn(params, body, closure, vec![left2, right2], right_loc)
-            },
+            }
             _ => Err(Error {
                 msg: format!("Symbol \"{op_name}\" is not a native function"),
                 lines: vec![op.loc],
@@ -364,7 +369,14 @@ impl Interpreter {
         Ok(ls.read(|l| l[n2].clone()).val)
     }
 
-    fn call_fn(&mut self, params: Vec<String>, body: Vec<Stmt>, closure: Closure, args: Vec<Value>, loc: Location) -> Result<ValueType, Error> {
+    fn call_fn(
+        &mut self,
+        params: Vec<String>,
+        body: Vec<Stmt>,
+        closure: Closure,
+        args: Vec<Value>,
+        loc: Location,
+    ) -> Result<ValueType, Error> {
         if args.len() != params.len() {
             return Err(Error {
                 msg: format!(
@@ -380,10 +392,10 @@ impl Interpreter {
         self.environment = Environment { scopes: closure };
         self.environment.add_scope_vars(
             params
-            .iter()
-            .zip(args)
-            .map(|(n, v)| (n.clone(), v.val))
-            .collect::<HashMap<_, _>>(),
+                .iter()
+                .zip(args)
+                .map(|(n, v)| (n.clone(), v.val))
+                .collect::<HashMap<_, _>>(),
         );
 
         let val = match self.interpret_block(body) {
@@ -412,10 +424,6 @@ impl Interpreter {
     }
 
     fn call_fn_native(&mut self, func: NativeFunction, args: Vec<Value>, loc: Location) -> Result<ValueType, Error> {
-
-        func(args).map_err(|msg| Error {
-            msg,
-            lines: vec![loc],
-        })
+        func(args).map_err(|msg| Error { msg, lines: vec![loc] })
     }
 }

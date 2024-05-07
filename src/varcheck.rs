@@ -57,7 +57,7 @@ impl VarCheck {
                 }
                 StmtType::FunDeclStmt(t, _, _) => {
                     let name = match &t.val {
-                        TokenType::Identifier(n) | TokenType::Symbol(n) => { n },
+                        TokenType::Identifier(n) | TokenType::Symbol(n) => n,
                         _ => unreachable!(),
                     };
                     /*
@@ -107,7 +107,7 @@ impl VarCheck {
                 }
             }
         }
-        
+
         for (name, used) in self.env.scopes.last().unwrap().iter() {
             if !used.1 {
                 self.warns.push(Error {
@@ -243,19 +243,15 @@ impl VarCheck {
     }
     fn binary(&mut self, loc: Location, left: &Expr, op: &Token, right: &Expr) {
         self.visit_expr(left);
-        let TokenType::Symbol(s) = &op.val else {
-            unreachable!()
-        };
+        let TokenType::Symbol(s) = &op.val else { unreachable!() };
         match self.env.get(s) {
             Some(var) => {
                 self.env.update(s, (var.0, true)).unwrap();
-            },
-            None => {
-                self.errs.push(Error {
-                    msg: "Undeclared variable".to_string(),
-                    lines: vec![loc],
-                })
             }
+            None => self.errs.push(Error {
+                msg: "Undeclared variable".to_string(),
+                lines: vec![loc],
+            }),
         }
         self.visit_expr(right);
     }

@@ -47,10 +47,7 @@ fn t() {
 
 #[test]
 fn t2() {
-    assert_eq!(
-        run_code("let x = 10 + 5;", "x").unwrap(),
-        ValueType::Int(15)
-    );
+    assert_eq!(run_code("let x = 10 + 5;", "x").unwrap(), ValueType::Int(15));
 }
 
 #[test]
@@ -71,7 +68,9 @@ fun <<(f, g) {
     }
     return a;
 }
-let x = (fact << len)([1, 2, 3, 4]);", "x"),
+let x = (fact << len)([1, 2, 3, 4]);",
+            "x"
+        ),
         Some(ValueType::Int(24))
     );
 }
