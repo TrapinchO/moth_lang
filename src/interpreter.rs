@@ -327,7 +327,7 @@ impl Interpreter {
                 self.call_fn_native(func, vec![left2, right2], right_loc)
             },
             ValueType::Function(params, body, closure) => {
-                return self.call_fn(params, body, closure, vec![left2, right2], right_loc);
+                self.call_fn(params, body, closure, vec![left2, right2], right_loc)
             },
             _ => Err(Error {
                 msg: format!("Symbol \"{op_name}\" is not a native function"),
