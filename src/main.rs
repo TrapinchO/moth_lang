@@ -7,7 +7,7 @@ use std::{
 
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
-    // provides a backtace in case of error
+    // provides a backtrace in case of error
     env::set_var("RUST_BACKTRACE", "1");
 
     let args = env::args().collect::<Vec<_>>();

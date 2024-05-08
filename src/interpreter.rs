@@ -272,7 +272,7 @@ impl Interpreter {
     fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: Location) -> Result<ValueType, Error> {
         let mut args2 = vec![];
         for arg in args {
-            args2.push(self.visit_expr(arg)?);
+            args2.push(self.visit_expr(arg)?.val);
         }
 
         let callee = self.visit_expr(callee)?;
@@ -297,7 +297,7 @@ impl Interpreter {
                 ValueType::Float(n) => ValueType::Float(-n),
                 _ => {
                     return Err(Error {
-                        msg: format!("Incorrect type: {}", val.val),
+                        msg: format!("Expected a number, got: {}", val.val),
                         lines: vec![val.loc],
                     })
                 }
@@ -306,7 +306,7 @@ impl Interpreter {
                 ValueType::Bool(b) => ValueType::Bool(!b),
                 _ => {
                     return Err(Error {
-                        msg: format!("Incorrect type: {}", val.val),
+                        msg: format!("Expected a bool, got: {}", val.val),
                         lines: vec![val.loc],
                     })
                 }
@@ -330,9 +330,9 @@ impl Interpreter {
             lines: vec![op.loc],
         })?;
         match val {
-            ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2, right2], right_loc),
+            ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2.val, right2.val], right_loc),
             ValueType::Function(params, body, closure) => {
-                self.call_fn(params, body, closure, vec![left2, right2], right_loc)
+                self.call_fn(params, body, closure, vec![left2.val, right2.val], right_loc)
             }
             _ => Err(Error {
                 msg: format!("Symbol \"{op_name}\" is not a native function"),
@@ -352,21 +352,32 @@ impl Interpreter {
         let idx2 = self.visit_expr(idx)?;
         let ValueType::Int(n) = idx2.val else {
             return Err(Error {
-                msg: format!("Expected an integer, got {}", idx2.val),
+                msg: format!("Expected an integer, got: {}", idx2.val),
                 lines: vec![idx2.loc],
             });
         };
-        let ValueType::List(ls) = val.val else {
-            return Err(Error {
-                msg: format!("Expected a list, got {}", val.val),
-                lines: vec![val.loc],
-            });
-        };
-        let n2 = MList::check_index(n, ls.read(|l| l.len())).ok_or_else(|| Error {
-            msg: format!("Index out of range: {}", n),
-            lines: vec![loc],
-        })?;
-        Ok(ls.read(|l| l[n2].clone()).val)
+        match val.val {
+            ValueType::List(ls) => {
+                let n2 = MList::check_index(n, ls.read(|l| l.len())).ok_or_else(|| Error {
+                    msg: format!("Index out of range: {}", n),
+                    lines: vec![loc],
+                })?;
+                Ok(ls.read(|l| l[n2].clone()).val)
+            },
+            ValueType::String(s) => {
+                let n2 = MList::check_index(n, s.len()).ok_or_else(|| Error {
+                    msg: format!("Index out of range: {}", n),
+                    lines: vec![loc],
+                })?;
+                Ok(ValueType::String(s.chars().nth(n2).unwrap().to_string()))
+            },
+            _ => {
+                Err(Error {
+                    msg: format!("Expected a list or string, got {}", val.val),
+                    lines: vec![val.loc],
+                })
+            }
+        }
     }
 
     fn call_fn(
@@ -374,7 +385,7 @@ impl Interpreter {
         params: Vec<String>,
         body: Vec<Stmt>,
         closure: Closure,
-        args: Vec<Value>,
+        args: Vec<ValueType>,
         loc: Location,
     ) -> Result<ValueType, Error> {
         if args.len() != params.len() {
@@ -394,7 +405,7 @@ impl Interpreter {
             params
                 .iter()
                 .zip(args)
-                .map(|(n, v)| (n.clone(), v.val))
+                .map(|(n, v)| (n.clone(), v))
                 .collect::<HashMap<_, _>>(),
         );
 
@@ -412,7 +423,7 @@ impl Interpreter {
                 }
                 ErrorType::Continue => {
                     return Err(Error {
-                        msg: "Cannot use break outside of loop".to_string(),
+                        msg: "Cannot use continue outside of loop".to_string(),
                         lines: vec![loc], // TODO: add locations
                     });
                 }
@@ -423,7 +434,7 @@ impl Interpreter {
         Ok(val)
     }
 
-    fn call_fn_native(&mut self, func: NativeFunction, args: Vec<Value>, loc: Location) -> Result<ValueType, Error> {
+    fn call_fn_native(&mut self, func: NativeFunction, args: Vec<ValueType>, loc: Location) -> Result<ValueType, Error> {
         func(args).map_err(|msg| Error { msg, lines: vec![loc] })
     }
 }

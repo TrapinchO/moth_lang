@@ -1,3 +1,9 @@
+let z = 1 + 2 * 3 / 6 - 1 - -1 + 2 + 100 * 3 +5;
+let y = true && false || false || true && false;
+print("abcde"[2]);
+
+
+
 // /*
 // CLOSURES
 fun <<(f, g) {

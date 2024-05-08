@@ -7,7 +7,7 @@ use crate::located::Located;
 use crate::mref::{MList, MRef};
 use crate::reassoc::{Associativity, Precedence};
 
-pub type NativeFunction = fn(Vec<Value>) -> Result<ValueType, String>;
+pub type NativeFunction = fn(Vec<ValueType>) -> Result<ValueType, String>;
 pub type Closure = Vec<MRef<HashMap<String, ValueType>>>;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -62,7 +62,7 @@ pub type Value = Located<ValueType>;
 // TODO: this is very smart, as it can currently hold only Functions
 // TODO: fix the precedence mess
 // PIE anyone?
-pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
+pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
     (
         "+",
         Precedence {
@@ -73,7 +73,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &*args else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a + b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a + b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::String(a.clone() + b),
@@ -87,7 +87,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                     }
                     ValueType::List(res.into())
                 }
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -98,18 +98,13 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             assoc: Associativity::Left,
         },
         |args| {
-            Ok(match &args[..] {
-                [expr] => match &expr.val {
-                    ValueType::Int(n) => ValueType::Int(-n),
-                    ValueType::Float(n) => ValueType::Float(-n),
-                    _ => return Err(format!("Invalid value: \"{}\"", expr.val)),
-                },
-                [left, right] => match (&left.val, &right.val) {
-                    (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
-                    (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
-                    _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
-                },
-                _ => return Err(format!("Wrong number of arguments: {}", args.len())),
+            let [left, right] = &args[..] else {
+                return Err(format!("Wrong number of arguments: {}", args.len()));
+            };
+            Ok(match (left, right) {
+                (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
+                (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -123,10 +118,10 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a * b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a * b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -140,7 +135,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => {
                     if *b == 0 {
                         return Err("Attempted division by zero".to_string());
@@ -148,7 +143,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
                     ValueType::Int(a / b)
                 }
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -162,10 +157,10 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a % b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a % b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -179,12 +174,12 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a == b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a == b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a == b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -198,12 +193,12 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a != b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a != b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a != b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a != b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -217,11 +212,11 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a >= b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a >= b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a >= b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -235,11 +230,11 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a <= b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a <= b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a <= b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -253,11 +248,11 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a > b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a > b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a > b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -271,27 +266,11 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a < b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a < b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a < b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
-            })
-        },
-    ),
-    (
-        "!",
-        Precedence {
-            prec: 0,
-            assoc: Associativity::Left,
-        },
-        |args| {
-            let [expr] = &args[..] else {
-                return Err(format!("Wrong number of arguments: {}", args.len()));
-            };
-            Ok(match &expr.val {
-                ValueType::Bool(val) => ValueType::Bool(!*val),
-                _ => return Err(format!("Invalid value: \"{}\"", expr.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -305,9 +284,9 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a || *b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -321,9 +300,9 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 14] = [
             let [left, right] = &args[..] else {
                 return Err(format!("Wrong number of arguments: {}", args.len()));
             };
-            Ok(match (&left.val, &right.val) {
+            Ok(match (left, right) {
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a && *b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left.val, right.val)),
+                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
             })
         },
     ),
@@ -354,7 +333,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
         if args.len() != 1 {
             return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));
         }
-        let val = &args.first().unwrap().val;
+        let val = &args.first().unwrap();
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
             ValueType::List(ls) => ls.read(|l| l.len()) as i32,
