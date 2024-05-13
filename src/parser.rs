@@ -471,6 +471,18 @@ impl Parser {
                 self.advance();
                 let val = if is_typ!(self, RParen) {
                     ExprType::Unit
+                } else if is_typ!(self, Symbol(_)) {
+                    let TokenType::Symbol(sym) = self.get_current().clone().val else {
+                        unreachable!()
+                    };
+                    self.advance();
+                    if is_typ!(self, RParen) {
+                        ExprType::Identifier(sym)
+                    } else {
+                        self.idx -= 1;  // return to "unmatch" the symbol
+                        let expr = self.parse_unary()?;
+                        ExprType::Parens(expr.into())
+                    }
                 } else {
                     ExprType::Parens(self.parse_expression()?.into())
                 };

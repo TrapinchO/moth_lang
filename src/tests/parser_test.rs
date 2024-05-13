@@ -364,6 +364,7 @@ fn parse_unary2() {
     let ops = [
         ("-1", unop!("-", ExprType::Int(1))),
         ("- - !1", unop!("-", unop!("-", unop!("!", ExprType::Int(1))))),
+        ("(-1)", parenop!(unop!("-", ExprType::Int(1)))),
     ];
     for (s, op) in ops {
         assert!(compare_elements(
@@ -533,4 +534,47 @@ fn test_call_index() {
             loc: Location { start: 0, end: 11 },
         }]),
     );
+}
+
+
+#[test]
+fn test_symbol_ident() {
+    let src = parse(lex("(-);").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Identifier("-".to_string()),
+                loc: Location { start: 0, end: 2 },
+            }),
+            loc: Location { start: 0, end: 2 },
+        }]),
+    )
+}
+
+#[test]
+fn test_paren_unary() {
+    let src = parse(lex("(-1);").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Parens(Expr {
+                    val: ExprType::UnaryOperation(
+                        Token {
+                            val: TokenType::Symbol("-".to_string()),
+                            loc: Location { start: 1, end: 1 }
+                        },
+                        Expr {
+                            val: ExprType::Int(1),
+                            loc: Location { start: 2, end: 2 },
+                        }.into(),
+                    ),
+                    loc: Location { start: 1, end: 2 },
+                }.into()),
+                loc: Location { start: 0, end: 3 },
+            }),
+            loc: Location { start: 0, end: 3 },
+        }]),
+    )
 }

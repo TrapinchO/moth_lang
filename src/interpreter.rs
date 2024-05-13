@@ -239,7 +239,7 @@ impl Interpreter {
             ExprType::Parens(expr1) => self.parens(*expr1),
             ExprType::Call(callee, args) => self.call(*callee, args, loc),
             ExprType::UnaryOperation(op, expr1) => self.unary(op, *expr1),
-            ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right),
+            ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right, loc),
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
         }?;
@@ -318,7 +318,7 @@ impl Interpreter {
 
         Ok(new_val)
     }
-    fn binary(&mut self, left: Expr, op: Token, right: Expr) -> Result<ValueType, Error> {
+    fn binary(&mut self, left: Expr, op: Token, right: Expr, loc: Location) -> Result<ValueType, Error> {
         let right_loc = right.loc;
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
@@ -332,7 +332,7 @@ impl Interpreter {
         match val {
             ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2.val, right2.val], right_loc),
             ValueType::Function(params, body, closure) => {
-                self.call_fn(params, body, closure, vec![left2.val, right2.val], right_loc)
+                self.call_fn(params, body, closure, vec![left2.val, right2.val], loc)
             }
             _ => Err(Error {
                 msg: format!("Symbol \"{op_name}\" is not a native function"),
