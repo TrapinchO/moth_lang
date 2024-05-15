@@ -1,4 +1,4 @@
-use crate::{error::Error, exprstmt::*, located::Location, token::Token};
+use crate::{error::Error, exprstmt::*, located::Location, reassoc::Precedence, token::Token};
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
@@ -12,6 +12,7 @@ pub trait StmtVisitor<T> {
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
             StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
+            StmtType::OperatorDeclStmt(name, params, block, prec) => self.operator(loc, name, params, block, prec),
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
@@ -26,6 +27,7 @@ pub trait StmtVisitor<T> {
     fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<T, Error>;
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<T, Error>;
     fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<T, Error>;
+    fn operator(&mut self, loc: Location, name: Token, params: (Token, Token), block: Vec<Stmt>, prec: Precedence) -> Result<T, Error>;
     fn cont(&mut self, loc: Location) -> Result<T, Error>;
     fn brek(&mut self, loc: Location) -> Result<T, Error>;
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;

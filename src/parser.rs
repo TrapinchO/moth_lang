@@ -1,6 +1,6 @@
 use std::{mem, vec};
 
-use crate::{error::Error, exprstmt::*, located::Location, token::*};
+use crate::{error::Error, exprstmt::*, located::Location, reassoc::{Associativity, Precedence}, token::*};
 
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
@@ -114,6 +114,7 @@ impl Parser {
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(),
+            TokenType::Infixl | TokenType::Infixr => self.parse_operator(),
             TokenType::Continue => {
                 self.advance();
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
@@ -296,8 +297,9 @@ impl Parser {
         self.advance();
         let tok = self.get_current().clone();
         // TODO: possibly use matches! macro
-        let ident = match tok.val {
-            TokenType::Identifier(_) | TokenType::Symbol(_) => { tok },
+        let (op, ident) = match tok.val {
+            TokenType::Identifier(_) => { (false, tok) },
+                TokenType::Symbol(_) => { (true, tok) },
             _ => return Err(Error {
                 msg: "Expected an identifier or a valid symbol.".to_string(),
                 lines: vec![tok.loc],
@@ -335,7 +337,17 @@ impl Parser {
                     unreachable!();
                 };
                 return Ok(Stmt {
-                    val: StmtType::FunDeclStmt(ident, params, bl),
+                    val: if !op {
+                        StmtType::FunDeclStmt(ident, params, bl)
+                    } else {
+                        let [param1, param2] = &*params else {
+                            return Err(Error {
+                                msg: "Operators must have exactly two arguments".to_string(),
+                                lines: vec![ident.loc],
+                            })
+                        };
+                        StmtType::OperatorDeclStmt(ident, (param1.clone(), param2.clone()), bl, Precedence { prec: 0, assoc: Associativity::Left })
+                    },
                     loc: Location {
                         start,
                         end: block.loc.end,
@@ -347,6 +359,46 @@ impl Parser {
         Err(Error {
             msg: "Reached EOF".to_string(), // TODO: idk yet how
             lines: vec![self.get_current().loc],
+        })
+    }
+
+    fn parse_operator(&mut self) -> Result<Stmt, Error> {
+        let kw = self.get_current().clone();
+        let assoc = match kw.val {
+            TokenType::Infixr => Associativity::Right,
+            TokenType::Infixl => Associativity::Left,
+            _ => unreachable!()
+        };
+        self.advance();
+        // TODO: better matching for errors
+        let prec = self.get_current().clone();
+        let prec2 = match prec.val {
+            TokenType::Int(n @ 0..=10) => { n },
+            TokenType::Int(n) => return Err(Error {
+                msg: format!("Expected an integer between 0 and 10, found: {}", n),
+                lines: vec![prec.loc],
+            }),
+            _ => return Err(Error {
+                msg: "Expected an integer".to_string(),
+                lines: vec![prec.loc],
+            })
+        };
+        self.advance();
+        check_variant!(self, Fun, "Expected a function declaration")?;
+        let sym = check_variant!(self, Symbol(_), "Expected an operator symbol")?;
+        check_variant!(self, LParen, "Expected an opening parenthesis")?;
+        let param1 = check_variant!(self, Identifier(_), "Expected a parameter")?;
+        check_variant!(self, Comma, "Expected a comma after a parameter")?;
+        let param2 = check_variant!(self, Identifier(_), "Expected a parameter")?;
+        check_variant!(self, RParen, "Expected a closing parenthesis")?;
+        let block = self.parse_block()?;
+        let StmtType::BlockStmt(block2) = block.val else {
+            unreachable!()
+        };
+
+        Ok(Stmt {
+            loc: Location { start: kw.loc.start, end: block.loc.end },
+            val: StmtType::OperatorDeclStmt(sym, (param1, param2), block2, Precedence { prec: prec2 as usize, assoc }),
         })
     }
 
@@ -472,16 +524,22 @@ impl Parser {
                 let val = if is_typ!(self, RParen) {
                     ExprType::Unit
                 } else if is_typ!(self, Symbol(_)) {
-                    let TokenType::Symbol(sym) = self.get_current().clone().val else {
+                    let sym = self.get_current().clone();
+                    let TokenType::Symbol(sym_name) = sym.val.clone() else {
                         unreachable!()
                     };
                     self.advance();
+                    // either a symbol reference or unary operation
                     if is_typ!(self, RParen) {
-                        ExprType::Identifier(sym)
+                        ExprType::Identifier(sym_name)
                     } else {
-                        self.idx -= 1;  // return to "unmatch" the symbol
                         let expr = self.parse_unary()?;
-                        ExprType::Parens(expr.into())
+                        ExprType::Parens(
+                            Expr {
+                                loc: Location { start: sym.loc.start, end: expr.loc.end },
+                                val: ExprType::UnaryOperation(sym, expr.into()),
+                            }.into()
+                        )
                     }
                 } else {
                     ExprType::Parens(self.parse_expression()?.into())

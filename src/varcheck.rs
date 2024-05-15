@@ -1,5 +1,5 @@
 #![allow(clippy::ptr_arg)]
-use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, token::*};
+use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, reassoc::Precedence, token::*};
 
 use std::collections::HashMap;
 
@@ -56,20 +56,24 @@ impl VarCheck {
                     self.declare_item(name, t.loc);
                 }
                 StmtType::FunDeclStmt(t, _, _) => {
-                    let name = match &t.val {
-                        TokenType::Identifier(n) | TokenType::Symbol(n) => n,
-                        _ => unreachable!(),
-                    };
-                    /*
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
                     };
-                    */
 
                     self.declare_item(name, t.loc);
 
                     self.visit_stmt(s);
                 }
+                StmtType::OperatorDeclStmt(t, _, _, _) => {
+                    let Token { val: TokenType::Symbol(name), .. } = t else {
+                        unreachable!();
+                    };
+
+                    self.declare_item(name, t.loc);
+
+                    self.visit_stmt(s);
+                }
+
                 StmtType::AssignStmt(t, expr) => {
                     let Token { val: TokenType::Identifier(name), .. } = t else {
                         unreachable!();
@@ -132,6 +136,7 @@ impl VarCheck {
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
             StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
+            StmtType::OperatorDeclStmt(name, params, block, prec) => self.operator(loc, name, params, block, prec),
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
@@ -185,6 +190,9 @@ impl VarCheck {
         self.env.add_scope_vars(params2);
         self.check_block(block);
         self.env.remove_scope();
+    }
+    fn operator(&mut self, location: Location, name: &Token, params: &(Token, Token), block: &Vec<Stmt>, _: &Precedence) {
+        self.fun(location, name, &vec![params.0.clone(), params.1.clone()], block)
     }
     fn retur(&mut self, _: Location, expr: &Expr) {
         self.visit_expr(expr);

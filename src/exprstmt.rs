@@ -1,4 +1,4 @@
-use crate::{located::Located, token::Token};
+use crate::{located::Located, reassoc::Precedence, token::Token};
 
 use std::fmt::Display;
 
@@ -63,6 +63,7 @@ pub enum StmtType {
     WhileStmt(Expr, Vec<Stmt>),
     // name, parameters, body
     FunDeclStmt(Token, Vec<Token>, Vec<Stmt>),
+    OperatorDeclStmt(Token, (Token, Token), Vec<Stmt>, Precedence),
     ReturnStmt(Expr),
     BreakStmt,
     ContinueStmt,
@@ -104,6 +105,11 @@ impl StmtType {
             Self::FunDeclStmt(ident, params, block) => format!(
                 "fun {ident}({params}){block}",
                 params = params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
+                block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+            ),
+            Self::OperatorDeclStmt(ident, params, block, _) => format!(
+                "fun {ident}({params}){block}",
+                params = format!("{}, {}", params.0, params.1),
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::ReturnStmt(expr) => format!("return {expr};"),

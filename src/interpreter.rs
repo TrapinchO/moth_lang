@@ -2,13 +2,7 @@ use core::panic;
 use std::collections::HashMap;
 
 use crate::{
-    environment::Environment,
-    error::{Error, ErrorType},
-    exprstmt::{Expr, ExprType, Stmt, StmtType},
-    located::Location,
-    mref::MList,
-    token::*,
-    value::*,
+    environment::Environment, error::{Error, ErrorType}, exprstmt::{Expr, ExprType, Stmt, StmtType}, located::Location, mref::MList, reassoc::Precedence, token::*, value::*
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -91,6 +85,7 @@ impl Interpreter {
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
             StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
+            StmtType::OperatorDeclStmt(name, params, block, prec) => self.operator(loc, name, params, block, prec),
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
@@ -197,6 +192,29 @@ impl Interpreter {
         */
         let mut params2 = vec![];
         for p in params {
+            let TokenType::Identifier(n) = &p.val else {
+                unreachable!()
+            };
+            params2.push(n.clone());
+        }
+        self.environment
+            .insert(
+                name2,
+                ValueType::Function(params2, block, self.environment.scopes.clone()),
+            )
+            .ok_or(Error {
+                msg: format!("Name \"{name2}\" already exists"),
+                lines: vec![name.loc],
+            })?;
+        // TODO: nothing here yet
+        Ok(())
+    }
+    fn operator(&mut self, _: Location, name: Token, params: (Token, Token), block: Vec<Stmt>, _: Precedence) -> Result<(), ErrorType> {
+        let TokenType::Symbol(name2) = &name.val else {
+            unreachable!()
+        };
+        let mut params2 = vec![];
+        for p in vec![params.0, params.1] {
             let TokenType::Identifier(n) = &p.val else {
                 unreachable!()
             };

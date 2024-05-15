@@ -1,13 +1,35 @@
+infixl 1
+fun <<(a, b) {
+    return a - b;
+}
+print(5 << 1 << 2 + 3);
+
+fun --(a, b) {
+    return a - b - b;
+}
+print( 1 << 1 -- 2);
+print( 1 << (1 -- 2));
+
+/*
+// TODO: weird positions on error
+fun ---(a, b) {
+    return a - 2*b;
+}
+print(a --- b);
+*/
+
+
+/*
 let z = 1 + 2 * 3 / 6 - 1 - -1 + 2 + 100 * 3 +5;
 let y = true && false || false || true && false;
 //print("abcde"[2]);
 print((&&)(true, false));
 print((+)(1, 2));
+*/
 
-
-// /*
+/*
 // CLOSURES
-fun <<(f, g, b) {
+fun <<(f, g) {
     fun a(x) {
         return f(g(x));
     }
@@ -40,7 +62,7 @@ f();
 f();
 f();
 print(f());
-// */
+*/
 
 
 // TODO: some fun with operators later

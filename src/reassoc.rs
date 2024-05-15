@@ -175,18 +175,26 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<Stmt, Error> {
-        if let TokenType::Symbol(s) = &name.val {
-            self.ops.insert(s.clone(), Precedence {
-                prec: 0,
-                assoc: Associativity::Left,
-            });
-        }
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
         }
         Ok(Stmt {
             val: StmtType::FunDeclStmt(name, params, block2),
+            loc,
+        })
+    }
+    fn operator(&mut self, loc: Location, name: Token, params: (Token, Token), block: Vec<Stmt>, prec: Precedence) -> Result<Stmt, Error> {
+        let TokenType::Symbol(s) = &name.val else {
+            unreachable!()
+        };
+        self.ops.insert(s.clone(), prec);
+        let mut block2: Block = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?)
+        }
+        Ok(Stmt {
+            val: StmtType::OperatorDeclStmt(name, params, block2, prec),
             loc,
         })
     }

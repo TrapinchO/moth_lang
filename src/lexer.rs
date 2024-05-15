@@ -6,7 +6,7 @@ use crate::{
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
-const KEYWORDS: [(&str, TokenType); 10] = [
+const KEYWORDS: [(&str, TokenType); 12] = [
     ("let", TokenType::Let),
     ("fun", TokenType::Fun),
     ("true", TokenType::True),
@@ -17,6 +17,8 @@ const KEYWORDS: [(&str, TokenType); 10] = [
     ("return", TokenType::Return),
     ("break", TokenType::Break),
     ("continue", TokenType::Continue),
+    ("infixr", TokenType::Infixr),
+    ("infixl", TokenType::Infixl),
 ];
 
 const SPECIAL_SYMBOLS: [(char, TokenType); 8] = [

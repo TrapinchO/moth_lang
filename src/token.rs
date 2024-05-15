@@ -17,6 +17,8 @@ pub enum TokenType {
     While,
     Break,
     Continue,
+    Infixl,
+    Infixr,
     String(String),
     Eof,
     Symbol(String),
