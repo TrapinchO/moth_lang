@@ -153,43 +153,7 @@ impl Parser {
             }
             TokenType::LBrace => self.parse_block(),
             _ => {
-                let expr = self.parse_expression()?;
-                if !is_typ!(self, Equals) {
-                    check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                    Ok(Stmt {
-                        loc: expr.loc,
-                        val: StmtType::ExprStmt(expr),
-                    })
-                } else {
-                    let loc = expr.loc;
-                    match expr.val.clone() {
-                        ExprType::Identifier(ident) => {
-                            self.advance(); // consume the equals
-                            let val = self.parse_expression()?;
-                            check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                            Ok(Stmt {
-                                loc: Location {
-                                    start: loc.start,
-                                    end: val.loc.end,
-                                },
-                                val: StmtType::AssignStmt(Token { val: TokenType::Identifier(ident), loc: expr.loc }, val),
-                            })
-                        }
-                        ExprType::Index(ls, idx) => {
-                            self.advance();
-                            let val = self.parse_expression()?;
-                            check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                            Ok(Stmt {
-                                loc: Location {
-                                    start: loc.start,
-                                    end: val.loc.end,
-                                },
-                                val: StmtType::AssignIndexStmt(*ls, *idx, val),
-                            })
-                        }
-                        _ => { unreachable!() },
-                    }
-                }
+                self.parse_assignment()
             }
         }
     }
@@ -400,6 +364,53 @@ impl Parser {
             loc: Location { start: kw.loc.start, end: block.loc.end },
             val: StmtType::OperatorDeclStmt(sym, (param1, param2), block2, Precedence { prec: prec2 as usize, assoc }),
         })
+    }
+
+    fn parse_assignment(&mut self) -> Result<Stmt, Error> {
+        let expr = self.parse_expression()?;
+        if !is_typ!(self, Equals) {
+            check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+            return Ok(Stmt {
+                loc: expr.loc,
+                val: StmtType::ExprStmt(expr),
+            });
+        }
+        let loc = expr.loc;
+        match expr.val {
+            ExprType::Identifier(ident) => {
+                self.advance(); // consume the equals
+                let val = self.parse_expression()?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+                Ok(Stmt {
+                    loc: Location {
+                        start: loc.start,
+                        end: val.loc.end,
+                    },
+                    val: StmtType::AssignStmt(
+                        Token { val: TokenType::Identifier(ident), loc: expr.loc },
+                        val
+                    ),
+                })
+            }
+            ExprType::Index(ls, idx) => {
+                self.advance();
+                let val = self.parse_expression()?;
+                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+                Ok(Stmt {
+                    loc: Location {
+                        start: loc.start,
+                        end: val.loc.end,
+                    },
+                    val: StmtType::AssignIndexStmt(*ls, *idx, val),
+                })
+            }
+            _ => {
+                Err(Error {
+                    msg: "The left side of assignment must be either a variable or an index".to_string(),
+                    lines: vec![expr.loc],
+                })
+            },
+        }
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {
