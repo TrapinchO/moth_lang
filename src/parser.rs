@@ -368,6 +368,7 @@ impl Parser {
 
     fn parse_assignment(&mut self) -> Result<Stmt, Error> {
         let expr = self.parse_expression()?;
+        // just an expression
         if !is_typ!(self, Equals) {
             check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
             return Ok(Stmt {
@@ -375,35 +376,30 @@ impl Parser {
                 val: StmtType::ExprStmt(expr),
             });
         }
-        let loc = expr.loc;
+        // parse the rest
+        self.advance();
+        let val = self.parse_expression()?;
+        check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+        // return to the left side (aka check it)
+        // TODO: this will stop being a problem after the parse is able to report multiple errors
         match expr.val {
-            ExprType::Identifier(ident) => {
-                self.advance(); // consume the equals
-                let val = self.parse_expression()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                Ok(Stmt {
-                    loc: Location {
-                        start: loc.start,
-                        end: val.loc.end,
-                    },
-                    val: StmtType::AssignStmt(
-                        Token { val: TokenType::Identifier(ident), loc: expr.loc },
-                        val
-                    ),
-                })
-            }
-            ExprType::Index(ls, idx) => {
-                self.advance();
-                let val = self.parse_expression()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                Ok(Stmt {
-                    loc: Location {
-                        start: loc.start,
-                        end: val.loc.end,
-                    },
-                    val: StmtType::AssignIndexStmt(*ls, *idx, val),
-                })
-            }
+            ExprType::Identifier(ident) => Ok(Stmt {
+                loc: Location {
+                    start: expr.loc.start,
+                    end: val.loc.end,
+                },
+                val: StmtType::AssignStmt(
+                    Token { val: TokenType::Identifier(ident), loc: expr.loc },
+                    val
+                ),
+            }),
+            ExprType::Index(ls, idx) => Ok(Stmt {
+                loc: Location {
+                    start: expr.loc.start,
+                    end: val.loc.end,
+                },
+                val: StmtType::AssignIndexStmt(*ls, *idx, val),
+            }),
             _ => {
                 Err(Error {
                     msg: "The left side of assignment must be either a variable or an index".to_string(),

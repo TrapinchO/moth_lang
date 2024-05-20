@@ -578,3 +578,59 @@ fn test_paren_unary() {
         }]),
     )
 }
+
+#[test]
+fn test_assingment() {
+    let src = parse(lex("x = 1;").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::AssignStmt(
+                Token {
+                    val: TokenType::Identifier("x".to_string()),
+                    loc: Location { start: 0, end: 0 },
+                },
+                Expr {
+                    val: ExprType::Int(1),
+                    loc: Location { start: 4, end: 4 },
+                }),
+            loc: Location { start: 0, end: 4 },
+        }])
+    )
+}
+
+#[test]
+fn test_assingment_index() {
+    let src = parse(lex("x[0] = 1;").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::AssignIndexStmt(
+                Expr {
+                    val: ExprType::Identifier("x".to_string()),
+                    loc: Location { start: 0, end: 0 },
+                },
+                Expr {
+                    val: ExprType::Int(0),
+                    loc: Location { start: 2, end: 2 },
+                },
+                Expr {
+                    val: ExprType::Int(1),
+                    loc: Location { start: 7, end: 7 },
+                }),
+            loc: Location { start: 0, end: 7 },
+        }])
+    )
+}
+
+#[test]
+fn test_assingment_error() {
+    let src = parse(lex("1 = 1;").unwrap());
+    assert_eq!(
+        src,
+        Err(Error {
+            msg: "The left side of assignment must be either a variable or an index".to_string(),
+            lines: vec![Location { start: 0, end: 0 }],
+        })
+    )
+}
