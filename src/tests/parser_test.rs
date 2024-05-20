@@ -1,4 +1,4 @@
-use crate::exprstmt::{Expr, ExprType, Stmt, StmtType};
+use crate::{associativity::Precedence, exprstmt::{Expr, ExprType, Stmt, StmtType}};
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -393,7 +393,7 @@ fn test_reassoc() {
             ),
         ),
     ];
-    let symbols: std::collections::HashMap<String, reassoc::Precedence> = NATIVE_OPERATORS
+    let symbols: std::collections::HashMap<String, Precedence> = NATIVE_OPERATORS
         .map(|(name, assoc, _)| (name.to_string(), assoc))
         .into();
     for (s, op) in ops {

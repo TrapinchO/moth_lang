@@ -66,7 +66,7 @@ impl Error {
             .max()
             .unwrap_or_else(|| panic!("Expected error position(s);\nMessage: {}", self.msg));
         // otherwise it would consider the 10th line as 9th, thus one less character for padding
-        // see commit
+        // see commit d86b034 
         let width = (last_line+1).to_string().len();
 
         assert!(
