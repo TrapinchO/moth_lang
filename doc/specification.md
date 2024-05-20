@@ -61,6 +61,17 @@ The current operators are `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `>=`, `<`, `
 
 `+` operator also supports string concatenation.
 
+Custom operators are declared just like regular functions. Similarly to Haskell a custom precedence and associativity. Higher precedence means it will be evaluated sooner. For reference, addition (`+`) has associativity `5` and multiplication (`*`) `^`. Its values can range between 0 and 10 inclusive. Associativity is marked by the `infixl` and `infixr` keywords respectively. Most operators (like aforementioned addition) are left-associative.
+```rs
+infixl 0
+fun <<(f, g) {
+    fun _(x) {
+        f(g(x));
+    }
+    return _;
+}
+```
+
 NOTE: integers and floats cannot be mixed and they return their respective type, i.e. `1 + 1.0` throws an error and `1 / 4` returns `0` (just like Rust).
 
 

@@ -1,4 +1,21 @@
-1 = 10
+infixl 0
+fun <<(f, g) {
+    fun _(x) {
+        f(g(x));
+    }
+    return _;
+}
+fun f(x) { return x + 1; }
+(print << f)(1);
+// TODO: looks like errors or warnings on line 10 have incorrect underline
+// like because it suddenly has two numbers instead of one
+// also warnings for unused parameters dont seem to be emitted
+infixl 1
+fun --(a, b) {}
+
+/*
+1 -- 2;
+// custom precedence
 infixl 1
 fun <<(a, b) {
     return a - b;
@@ -10,17 +27,10 @@ fun --(a, b) {
 }
 print( 1 << 1 -- 2);
 print( 1 << (1 -- 2));
-
-/*
-// TODO: weird positions on error
-fun ---(a, b) {
-    return a - 2*b;
-}
-print(a --- b);
 */
 
-
 /*
+// operators
 let z = 1 + 2 * 3 / 6 - 1 - -1 + 2 + 100 * 3 +5;
 let y = true && false || false || true && false;
 //print("abcde"[2]);

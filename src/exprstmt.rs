@@ -56,6 +56,8 @@ pub enum StmtType {
     ExprStmt(Expr),
     // identifier, expression
     VarDeclStmt(Token, Expr),
+    // TODO: June suggested to merge assignments into assigning to a reference
+    // look at it again eventually
     AssignStmt(Token, Expr),
     AssignIndexStmt(Expr, Expr, Expr), // expr[expr] = expr
     BlockStmt(Vec<Stmt>),
