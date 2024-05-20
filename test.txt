@@ -12,9 +12,13 @@ fun f(x) { return x + 1; }
 // also warnings for unused parameters dont seem to be emitted
 infixl 1
 fun --(a, b) {}
+//1 -- 2;
+
+
+
+
 
 /*
-1 -- 2;
 // custom precedence
 infixl 1
 fun <<(a, b) {
@@ -25,8 +29,8 @@ print(5 << 1 << 2 + 3);
 fun --(a, b) {
     return a - b - b;
 }
-print( 1 << 1 -- 2);
-print( 1 << (1 -- 2));
+print(1 << 1 -- 2);
+print(1 << (1 -- 2));
 */
 
 /*

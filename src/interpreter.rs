@@ -2,7 +2,7 @@ use core::panic;
 use std::collections::HashMap;
 
 use crate::{
-    environment::Environment, error::{Error, ErrorType}, exprstmt::{Expr, ExprType, Stmt, StmtType}, located::Location, mref::MList, reassoc::Precedence, token::*, value::*
+    environment::Environment, error::{Error, ErrorType}, exprstmt::{Expr, ExprType, Stmt, StmtType}, located::Location, mref::MList, associativity::Precedence, token::*, value::*
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {

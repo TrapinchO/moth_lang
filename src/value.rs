@@ -5,7 +5,7 @@ use std::time::SystemTime;
 use crate::exprstmt::Stmt;
 use crate::located::Located;
 use crate::mref::{MList, MRef};
-use crate::reassoc::{Associativity, Precedence};
+use crate::associativity::{Associativity, Precedence};
 
 pub type NativeFunction = fn(Vec<ValueType>) -> Result<ValueType, String>;
 pub type Closure = Vec<MRef<HashMap<String, ValueType>>>;

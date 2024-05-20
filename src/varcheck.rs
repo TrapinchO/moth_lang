@@ -1,5 +1,5 @@
 #![allow(clippy::ptr_arg)]
-use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, reassoc::Precedence, token::*};
+use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, associativity::Precedence, token::*};
 
 use std::collections::HashMap;
 

@@ -1,6 +1,6 @@
 use std::{mem, vec};
 
-use crate::{error::Error, exprstmt::*, located::Location, reassoc::{Associativity, Precedence}, token::*};
+use crate::{error::Error, exprstmt::*, located::Location, associativity::{Associativity, Precedence}, token::*};
 
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {

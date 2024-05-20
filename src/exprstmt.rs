@@ -1,4 +1,4 @@
-use crate::{located::Located, reassoc::Precedence, token::Token};
+use crate::{located::Located, associativity::Precedence, token::Token};
 
 use std::fmt::Display;
 

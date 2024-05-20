@@ -1,4 +1,4 @@
-use crate::{error::Error, exprstmt::*, located::Location, reassoc::Precedence, token::Token};
+use crate::{error::Error, exprstmt::*, located::Location, associativity::Precedence, token::Token};
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {

@@ -5,6 +5,7 @@ use interpreter::Interpreter;
 use located::Location;
 use value::{get_builtins, NATIVE_OPERATORS};
 
+pub mod associativity;
 pub mod environment;
 pub mod error;
 pub mod exprstmt;

@@ -1,18 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{error::Error, exprstmt::*, located::Location, token::*, visitor::ExprVisitor, visitor::StmtVisitor};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Associativity {
-    Left,
-    Right,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Precedence {
-    pub prec: usize,
-    pub assoc: Associativity,
-}
+use crate::{associativity::{Associativity, Precedence}, error::Error, exprstmt::*, located::Location, token::*, visitor::ExprVisitor, visitor::StmtVisitor};
 
 pub fn reassociate(ops: HashMap<String, Precedence>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
