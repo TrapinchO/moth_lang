@@ -65,7 +65,9 @@ impl Error {
             .map(|x| x.0.line)
             .max()
             .unwrap_or_else(|| panic!("Expected error position(s);\nMessage: {}", self.msg));
-        let width = last_line.to_string().len();
+        // otherwise it would consider the 10th line as 9th, thus one less character for padding
+        // see commit
+        let width = (last_line+1).to_string().len();
 
         assert!(
             last_line < code_lines.len(),
@@ -78,12 +80,11 @@ impl Error {
             .map(|(start, end)| {
                 if start.line == end.line {
                     format!(
-                        "{:width$} | {}\n   {}{}",
+                        "{:width$} | {}\n   {padding}{underline}",
                         start.line + 1,
                         code_lines[start.line],        // line of the code; doesnt work with tabs
-                        " ".repeat(width + start.col), // align it properly
-                        "^".repeat(end.col - start.col + 1),
-                        width = width
+                        padding = " ".repeat(width + start.col), // align it properly
+                        underline = "^".repeat(end.col - start.col + 1),
                     )
                 } else {
                     let mut s: Vec<String> = vec![];
@@ -103,7 +104,6 @@ impl Error {
                             i + 1,
                             " ".repeat(width),
                             "^".repeat(line.len()),
-                            width = width
                         ));
                     }
                     let line = code_lines[end.line];
@@ -112,7 +112,6 @@ impl Error {
                         end.line + 1,
                         " ".repeat(width),
                         "^".repeat(end.col + 1),
-                        width = width
                     ));
                     s.join("\n")
                 }

@@ -1,12 +1,8 @@
-infixl 0
-fun <<(f, g) {
-    fun _(x) {
-        f(g(x));
-    }
-    return _;
-}
-fun f(x) { return x + 1; }
-(print << f)(1);
+fun b() {}
+
+
+
+
 // TODO: looks like errors or warnings on line 10 have incorrect underline
 // like because it suddenly has two numbers instead of one
 // also warnings for unused parameters dont seem to be emitted
@@ -101,7 +97,7 @@ fun a(x) {
 print $ a <$> [1, 2, 3];
 */
 
-
+aaaa = 1;
 
 
 
