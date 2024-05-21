@@ -1,5 +1,5 @@
 #![allow(clippy::ptr_arg)]
-use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, associativity::Precedence};
+use crate::{associativity::Precedence, environment::Environment, error::Error, exprstmt::*, located::Location};
 
 use std::collections::HashMap;
 
@@ -173,7 +173,14 @@ impl VarCheck {
         self.check_block(block);
         self.env.remove_scope();
     }
-    fn operator(&mut self, location: Location, name: &Symbol, params: &(Identifier, Identifier), block: &Vec<Stmt>, _: &Precedence) {
+    fn operator(
+        &mut self,
+        location: Location,
+        name: &Symbol,
+        params: &(Identifier, Identifier),
+        block: &Vec<Stmt>,
+        _: &Precedence,
+    ) {
         self.fun(location, name, &vec![params.0.clone(), params.1.clone()], block)
     }
     fn retur(&mut self, _: Location, expr: &Expr) {

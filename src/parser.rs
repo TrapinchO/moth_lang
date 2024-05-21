@@ -1,6 +1,12 @@
 use std::{mem, vec};
 
-use crate::{error::Error, exprstmt::*, located::Location, associativity::{Associativity, Precedence}, token::*};
+use crate::{
+    associativity::{Associativity, Precedence},
+    error::Error,
+    exprstmt::*,
+    located::Location,
+    token::*,
+};
 
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
@@ -152,9 +158,7 @@ impl Parser {
                 })
             }
             TokenType::LBrace => self.parse_block(),
-            _ => {
-                self.parse_assignment()
-            }
+            _ => self.parse_assignment(),
         }
     }
 
@@ -267,15 +271,17 @@ impl Parser {
         let tok = self.get_current().clone();
         // TODO: possibly use matches! macro
         let (op, name) = match tok.val {
-            TokenType::Identifier(name) => { (false, name) },
-                TokenType::Symbol(name) => { (true, name) },
-            _ => return Err(Error {
-                msg: "Expected an identifier or a valid symbol.".to_string(),
-                lines: vec![tok.loc],
-            }),
+            TokenType::Identifier(name) => (false, name),
+            TokenType::Symbol(name) => (true, name),
+            _ => {
+                return Err(Error {
+                    msg: "Expected an identifier or a valid symbol.".to_string(),
+                    lines: vec![tok.loc],
+                })
+            }
         };
         self.advance();
-        
+
         //let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
 
         check_variant!(self, LParen, "Expected an opening parenthesis")?;
@@ -322,7 +328,7 @@ impl Parser {
                             return Err(Error {
                                 msg: "Operators must have exactly two arguments".to_string(),
                                 lines: vec![tok.loc],
-                            })
+                            });
                         };
                         StmtType::OperatorDeclStmt(
                             Symbol { val: name.to_string(), loc: tok.loc }, (param1.clone(), param2.clone()), bl, Precedence { prec: 0, assoc: Associativity::Left })
@@ -346,7 +352,7 @@ impl Parser {
         let assoc = match kw.val {
             TokenType::Infixr => Associativity::Right,
             TokenType::Infixl => Associativity::Left,
-            _ => unreachable!()
+            _ => unreachable!(),
         };
         self.advance();
         // TODO: better matching for errors
@@ -425,12 +431,10 @@ impl Parser {
                 },
                 val: StmtType::AssignIndexStmt(*ls, *idx, val),
             }),
-            _ => {
-                Err(Error {
-                    msg: "The left side of assignment must be either a variable or an index".to_string(),
-                    lines: vec![expr.loc],
-                })
-            },
+            _ => Err(Error {
+                msg: "The left side of assignment must be either a variable or an index".to_string(),
+                lines: vec![expr.loc],
+            }),
         }
     }
 
@@ -450,10 +454,7 @@ impl Parser {
                     start: left.loc.start,
                     end: right.loc.end,
                 },
-                val: ExprType::BinaryOperation(
-                    left.into(),
-                    Symbol { val: sym_name, loc },
-                    right.into()),
+                val: ExprType::BinaryOperation(left.into(), Symbol { val: sym_name, loc }, right.into()),
             })
         } else {
             Ok(left)
@@ -490,29 +491,30 @@ impl Parser {
         loop {
             match self.get_current().val {
                 TokenType::LParen => {
-            self.advance();  // move past the paren
-            let start = expr.loc.start;
-            let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
-            let end = check_variant!(self, RParen, "")?.loc.end;
-            expr = Expr {
-                loc: Location { start, end },
-                val: ExprType::Call(expr.into(), args),
-            };
-                },
+                    self.advance(); // move past the paren
+                    let start = expr.loc.start;
+                    let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
+                    let end = check_variant!(self, RParen, "")?.loc.end;
+                    expr = Expr {
+                        loc: Location { start, end },
+                        val: ExprType::Call(expr.into(), args),
+                    };
+                }
                 TokenType::LBracket => {
-
-            self.advance();  // move past the bracket
-            let start = expr.loc.start;
-            let idx = self.parse_expression()?;
-            let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
-            expr = Expr {
-                loc: Location { start, end },
-                val: ExprType::Index(expr.into(), idx.into()),
-            };
-                },
-                _ => { break; }
+                    self.advance(); // move past the bracket
+                    let start = expr.loc.start;
+                    let idx = self.parse_expression()?;
+                    let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
+                    expr = Expr {
+                        loc: Location { start, end },
+                        val: ExprType::Index(expr.into(), idx.into()),
+                    };
+                }
+                _ => {
+                    break;
+                }
             }
-        };
+        }
         Ok(expr)
     }
 

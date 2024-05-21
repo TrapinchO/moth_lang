@@ -9,4 +9,3 @@ pub struct Precedence {
     pub prec: usize,
     pub assoc: Associativity,
 }
-

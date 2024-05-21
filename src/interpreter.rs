@@ -1,7 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    environment::Environment, error::{Error, ErrorType}, exprstmt::*, located::Location, mref::MList, associativity::Precedence, value::*
+    associativity::Precedence,
+    environment::Environment,
+    error::{Error, ErrorType},
+    exprstmt::*,
+    located::Location,
+    mref::MList,
+    value::*,
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -175,7 +181,13 @@ impl Interpreter {
         let _ = self.visit_expr(expr)?;
         Ok(())
     }
-    fn fun(&mut self, _: Location, name: Identifier, params: Vec<Identifier>, block: Vec<Stmt>) -> Result<(), ErrorType> {
+    fn fun(
+        &mut self,
+        _: Location,
+        name: Identifier,
+        params: Vec<Identifier>,
+        block: Vec<Stmt>,
+    ) -> Result<(), ErrorType> {
         let name2 = name.val;
         /*
         let TokenType::Identifier(name2) = &name.val else {
@@ -198,7 +210,14 @@ impl Interpreter {
         // TODO: nothing here yet
         Ok(())
     }
-    fn operator(&mut self, _: Location, name: Symbol, params: (Identifier, Identifier), block: Vec<Stmt>, _: Precedence) -> Result<(), ErrorType> {
+    fn operator(
+        &mut self,
+        _: Location,
+        name: Symbol,
+        params: (Identifier, Identifier),
+        block: Vec<Stmt>,
+        _: Precedence,
+    ) -> Result<(), ErrorType> {
         let name2 = name.val;
         let mut params2 = vec![];
         for p in [params.0, params.1] {
@@ -361,20 +380,18 @@ impl Interpreter {
                     lines: vec![loc],
                 })?;
                 Ok(ls.read(|l| l[n2].clone()).val)
-            },
+            }
             ValueType::String(s) => {
                 let n2 = MList::check_index(n, s.len()).ok_or_else(|| Error {
                     msg: format!("Index out of range: {}", n),
                     lines: vec![loc],
                 })?;
                 Ok(ValueType::String(s.chars().nth(n2).unwrap().to_string()))
-            },
-            _ => {
-                Err(Error {
-                    msg: format!("Expected a list or string, got {}", val.val),
-                    lines: vec![val.loc],
-                })
             }
+            _ => Err(Error {
+                msg: format!("Expected a list or string, got {}", val.val),
+                lines: vec![val.loc],
+            }),
         }
     }
 
@@ -432,7 +449,12 @@ impl Interpreter {
         Ok(val)
     }
 
-    fn call_fn_native(&mut self, func: NativeFunction, args: Vec<ValueType>, loc: Location) -> Result<ValueType, Error> {
+    fn call_fn_native(
+        &mut self,
+        func: NativeFunction,
+        args: Vec<ValueType>,
+        loc: Location,
+    ) -> Result<ValueType, Error> {
         func(args).map_err(|msg| Error { msg, lines: vec![loc] })
     }
 }

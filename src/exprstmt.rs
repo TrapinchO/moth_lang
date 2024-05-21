@@ -1,4 +1,4 @@
-use crate::{located::Located, associativity::Precedence};
+use crate::{associativity::Precedence, located::Located};
 
 use std::fmt::Display;
 
@@ -52,8 +52,8 @@ impl Display for ExprType {
 pub type Expr = Located<ExprType>;
 // these were made as a simplification of Token to remove some pointless destructuring
 // they were always followed by "else unreachable" anyways
-pub type Symbol = Located<String>;  // marks operators
-pub type Identifier = Located<String>;  // marks identifiers (names)
+pub type Symbol = Located<String>; // marks operators
+pub type Identifier = Located<String>; // marks identifiers (names)
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
@@ -115,7 +115,8 @@ impl StmtType {
             ),
             Self::OperatorDeclStmt(ident, params, block, _) => format!(
                 "fun {ident}({}, {}){block}",
-                params.0, params.1,
+                params.0,
+                params.1,
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::ReturnStmt(expr) => format!("return {expr};"),

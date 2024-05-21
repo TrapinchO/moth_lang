@@ -2,10 +2,10 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::time::SystemTime;
 
+use crate::associativity::{Associativity, Precedence};
 use crate::exprstmt::Stmt;
 use crate::located::Located;
 use crate::mref::{MList, MRef};
-use crate::associativity::{Associativity, Precedence};
 
 pub type NativeFunction = fn(Vec<ValueType>) -> Result<ValueType, String>;
 pub type Closure = Vec<MRef<HashMap<String, ValueType>>>;

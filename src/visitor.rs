@@ -1,4 +1,4 @@
-use crate::{error::Error, exprstmt::*, located::Location, associativity::Precedence};
+use crate::{associativity::Precedence, error::Error, exprstmt::*, located::Location};
 
 pub trait StmtVisitor<T> {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<T, Error> {
@@ -27,7 +27,14 @@ pub trait StmtVisitor<T> {
     fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<T, Error>;
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<T, Error>;
     fn fun(&mut self, loc: Location, name: Identifier, params: Vec<Identifier>, block: Vec<Stmt>) -> Result<T, Error>;
-    fn operator(&mut self, loc: Location, name: Symbol, params: (Identifier, Identifier), block: Vec<Stmt>, prec: Precedence) -> Result<T, Error>;
+    fn operator(
+        &mut self,
+        loc: Location,
+        name: Symbol,
+        params: (Identifier, Identifier),
+        block: Vec<Stmt>,
+        prec: Precedence,
+    ) -> Result<T, Error>;
     fn cont(&mut self, loc: Location) -> Result<T, Error>;
     fn brek(&mut self, loc: Location) -> Result<T, Error>;
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;

@@ -158,7 +158,13 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn fun(&mut self, loc: Location, name: Identifier, params: Vec<Identifier>, block: Vec<Stmt>) -> Result<Stmt, Error> {
+    fn fun(
+        &mut self,
+        loc: Location,
+        name: Identifier,
+        params: Vec<Identifier>,
+        block: Vec<Stmt>,
+    ) -> Result<Stmt, Error> {
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -168,7 +174,14 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn operator(&mut self, loc: Location, name: Symbol, params: (Identifier, Identifier), block: Vec<Stmt>, prec: Precedence) -> Result<Stmt, Error> {
+    fn operator(
+        &mut self,
+        loc: Location,
+        name: Symbol,
+        params: (Identifier, Identifier),
+        block: Vec<Stmt>,
+        prec: Precedence,
+    ) -> Result<Stmt, Error> {
         let s = name.val.clone();
         self.ops.insert(s, prec);
         let mut block2: Block = vec![];
