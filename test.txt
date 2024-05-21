@@ -1,4 +1,8 @@
-// /*
+fun --() {}
+1 -- 2;
+
+
+/*
 // custom precedence
 infixl 1
 fun <<(a, b) {
@@ -11,9 +15,9 @@ fun --(a, b) {
 }
 print(1 << 1 -- 2);
 print(1 << (1 -- 2));
-// */
+*/
 
-// /*
+/*
 // operators
 let z = 1 + 2 * 3 / 6 - 1 - -1 + 2 + 100 * 3 +5;
 let y = true && false || false || true && false;
@@ -21,10 +25,7 @@ print(z, y);
 //print("abcde"[2]);
 print((&&)(true, false));
 print((+)(1, 2));
-// */
-
-
-
+*/
 
 
 
