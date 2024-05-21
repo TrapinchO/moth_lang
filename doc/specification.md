@@ -61,7 +61,7 @@ The current operators are `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `>`, `>=`, `<`, `
 
 `+` operator also supports string concatenation.
 
-Custom operators are declared just like regular functions. Similarly to Haskell a custom precedence and associativity. Higher precedence means it will be evaluated sooner. For reference, addition (`+`) has associativity `5` and multiplication (`*`) `^`. Its values can range between 0 and 10 inclusive. Associativity is marked by the `infixl` and `infixr` keywords respectively. Most operators (like aforementioned addition) are left-associative.
+Custom operators are declared just like regular functions. Similarly to Haskell a custom precedence and associativity. Higher precedence means it will be evaluated sooner. For reference, addition (`+`) has associativity `5` and multiplication (`*`) `6`. Its values can range between 0 and 10 inclusive. Associativity is marked by the `infixl` and `infixr` keywords respectively. Most operators (like aforementioned addition) are left-associative.
 ```rs
 infixl 0
 fun <<(f, g) {

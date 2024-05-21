@@ -1,5 +1,5 @@
 #![allow(clippy::ptr_arg)]
-use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, associativity::Precedence, token::*};
+use crate::{environment::Environment, error::Error, exprstmt::*, located::Location, associativity::Precedence};
 
 use std::collections::HashMap;
 
@@ -47,40 +47,24 @@ impl VarCheck {
         for s in block {
             match &s.val {
                 StmtType::VarDeclStmt(t, expr) => {
-                    // TODO: I hate this, but destructuring in the match is horrible
-                    let Token { val: TokenType::Identifier(name), .. } = t else {
-                        unreachable!();
-                    };
                     self.visit_expr(expr);
 
-                    self.declare_item(name, t.loc);
+                    self.declare_item(&t.val, t.loc);
                 }
                 StmtType::FunDeclStmt(t, _, _) => {
-                    let Token { val: TokenType::Identifier(name), .. } = t else {
-                        unreachable!();
-                    };
-
-                    self.declare_item(name, t.loc);
+                    self.declare_item(&t.val, t.loc);
 
                     self.visit_stmt(s);
                 }
                 StmtType::OperatorDeclStmt(t, _, _, _) => {
-                    let Token { val: TokenType::Symbol(name), .. } = t else {
-                        unreachable!();
-                    };
-
-                    self.declare_item(name, t.loc);
+                    self.declare_item(&t.val, t.loc);
 
                     self.visit_stmt(s);
                 }
 
                 StmtType::AssignStmt(t, expr) => {
-                    let Token { val: TokenType::Identifier(name), .. } = t else {
-                        unreachable!();
-                    };
-
                     self.visit_expr(expr);
-                    if !self.env.contains(name) {
+                    if !self.env.contains(&t.val) {
                         self.errs.push(Error {
                             msg: "Undeclared variable".to_string(),
                             lines: vec![s.loc],
@@ -145,10 +129,10 @@ impl VarCheck {
     fn expr(&mut self, _: Location, expr: &Expr) {
         self.visit_expr(expr);
     }
-    fn var_decl(&mut self, _: Location, _: &Token, expr: &Expr) {
+    fn var_decl(&mut self, _: Location, _: &Identifier, expr: &Expr) {
         self.visit_expr(expr);
     }
-    fn assignment(&mut self, _: Location, _: &Token, expr: &Expr) {
+    fn assignment(&mut self, _: Location, _: &Identifier, expr: &Expr) {
         self.visit_expr(expr);
     }
     fn assignindex(&mut self, _: Location, ls: &Expr, idx: &Expr, val: &Expr) {
@@ -169,13 +153,11 @@ impl VarCheck {
         self.visit_expr(cond);
         self.check_block(block);
     }
-    fn fun(&mut self, _: Location, _: &Token, params: &Vec<Token>, block: &Vec<Stmt>) {
+    fn fun(&mut self, _: Location, _: &Identifier, params: &Vec<Identifier>, block: &Vec<Stmt>) {
         let mut params2: HashMap<String, (Location, bool)> = HashMap::new();
         for p in params.iter() {
-            let TokenType::Identifier(name) = &p.val else {
-                unreachable!()
-            };
-            match params2.get(name) {
+            let name = p.val.clone();
+            match params2.get(&name) {
                 Some(original) => {
                     self.errs.push(Error {
                         msg: format!("Duplicate parameter: \"{p}\""),
@@ -191,7 +173,7 @@ impl VarCheck {
         self.check_block(block);
         self.env.remove_scope();
     }
-    fn operator(&mut self, location: Location, name: &Token, params: &(Token, Token), block: &Vec<Stmt>, _: &Precedence) {
+    fn operator(&mut self, location: Location, name: &Symbol, params: &(Identifier, Identifier), block: &Vec<Stmt>, _: &Precedence) {
         self.fun(location, name, &vec![params.0.clone(), params.1.clone()], block)
     }
     fn retur(&mut self, _: Location, expr: &Expr) {
@@ -246,12 +228,12 @@ impl VarCheck {
             self.visit_expr(arg);
         }
     }
-    fn unary(&mut self, _: Location, _: &Token, expr: &Expr) {
+    fn unary(&mut self, _: Location, _: &Symbol, expr: &Expr) {
         self.visit_expr(expr);
     }
-    fn binary(&mut self, loc: Location, left: &Expr, op: &Token, right: &Expr) {
+    fn binary(&mut self, loc: Location, left: &Expr, op: &Symbol, right: &Expr) {
         self.visit_expr(left);
-        let TokenType::Symbol(s) = &op.val else { unreachable!() };
+        let s = &op.val;
         match self.env.get(s) {
             Some(var) => {
                 self.env.update(s, (var.0, true)).unwrap();

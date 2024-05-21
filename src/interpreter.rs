@@ -1,8 +1,7 @@
-use core::panic;
 use std::collections::HashMap;
 
 use crate::{
-    environment::Environment, error::{Error, ErrorType}, exprstmt::{Expr, ExprType, Stmt, StmtType}, located::Location, mref::MList, associativity::Precedence, token::*, value::*
+    environment::Environment, error::{Error, ErrorType}, exprstmt::*, located::Location, mref::MList, associativity::Precedence, value::*
 };
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
@@ -91,24 +90,20 @@ impl Interpreter {
             StmtType::ContinueStmt => self.cont(loc),
         }
     }
-    fn var_decl(&mut self, _: Location, ident: Token, expr: Expr) -> Result<(), ErrorType> {
-        let TokenType::Identifier(name) = &ident.val else {
-            unreachable!()
-        };
+    fn var_decl(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), ErrorType> {
+        let name = ident.val;
         let val = self.visit_expr(expr)?;
-        self.environment.insert(name, val.val).ok_or(Error {
+        self.environment.insert(&name, val.val).ok_or(Error {
             msg: format!("Name \"{name}\" already exists"),
             lines: vec![ident.loc],
         })?;
         Ok(())
     }
 
-    fn assignment(&mut self, _: Location, ident: Token, expr: Expr) -> Result<(), ErrorType> {
-        let TokenType::Identifier(name) = &ident.val else {
-            unreachable!()
-        };
+    fn assignment(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), ErrorType> {
+        let name = ident.val;
         let val = self.visit_expr(expr)?;
-        self.environment.update(name, val.val).ok_or_else(|| Error {
+        self.environment.update(&name, val.val).ok_or_else(|| Error {
             msg: format!("Name not found: \"{name}\""),
             lines: vec![ident.loc],
         })?;
@@ -180,11 +175,8 @@ impl Interpreter {
         let _ = self.visit_expr(expr)?;
         Ok(())
     }
-    fn fun(&mut self, _: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<(), ErrorType> {
-        let name2 = match &name.val {
-            TokenType::Identifier(n) | TokenType::Symbol(n) => n,
-            _ => unreachable!(),
-        };
+    fn fun(&mut self, _: Location, name: Identifier, params: Vec<Identifier>, block: Vec<Stmt>) -> Result<(), ErrorType> {
+        let name2 = name.val;
         /*
         let TokenType::Identifier(name2) = &name.val else {
             unreachable!()
@@ -192,14 +184,11 @@ impl Interpreter {
         */
         let mut params2 = vec![];
         for p in params {
-            let TokenType::Identifier(n) = &p.val else {
-                unreachable!()
-            };
-            params2.push(n.clone());
+            params2.push(p.val);
         }
         self.environment
             .insert(
-                name2,
+                &name2,
                 ValueType::Function(params2, block, self.environment.scopes.clone()),
             )
             .ok_or(Error {
@@ -209,20 +198,15 @@ impl Interpreter {
         // TODO: nothing here yet
         Ok(())
     }
-    fn operator(&mut self, _: Location, name: Token, params: (Token, Token), block: Vec<Stmt>, _: Precedence) -> Result<(), ErrorType> {
-        let TokenType::Symbol(name2) = &name.val else {
-            unreachable!()
-        };
+    fn operator(&mut self, _: Location, name: Symbol, params: (Identifier, Identifier), block: Vec<Stmt>, _: Precedence) -> Result<(), ErrorType> {
+        let name2 = name.val;
         let mut params2 = vec![];
-        for p in vec![params.0, params.1] {
-            let TokenType::Identifier(n) = &p.val else {
-                unreachable!()
-            };
-            params2.push(n.clone());
+        for p in [params.0, params.1] {
+            params2.push(p.val);
         }
         self.environment
             .insert(
-                name2,
+                &name2,
                 ValueType::Function(params2, block, self.environment.scopes.clone()),
             )
             .ok_or(Error {
@@ -304,11 +288,9 @@ impl Interpreter {
             }),
         }
     }
-    fn unary(&mut self, op: Token, expr: Expr) -> Result<ValueType, Error> {
+    fn unary(&mut self, op: Symbol, expr: Expr) -> Result<ValueType, Error> {
         let val = self.visit_expr(expr)?;
-        let TokenType::Symbol(op_name) = &op.val else {
-            panic!("Expected a symbol, found {}", op.val);
-        };
+        let op_name = op.val;
         let new_val = match op_name.as_str() {
             "-" => match val.val {
                 ValueType::Int(n) => ValueType::Int(-n),
@@ -336,13 +318,11 @@ impl Interpreter {
 
         Ok(new_val)
     }
-    fn binary(&mut self, left: Expr, op: Token, right: Expr, loc: Location) -> Result<ValueType, Error> {
+    fn binary(&mut self, left: Expr, op: Symbol, right: Expr, loc: Location) -> Result<ValueType, Error> {
         let right_loc = right.loc;
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
-        let TokenType::Symbol(op_name) = &op.val else {
-            unreachable!("Expected a symbol, found {}", op.val)
-        };
+        let op_name = &op.val;
         let val = self.environment.get(op_name).ok_or(Error {
             msg: format!("Name not found: \"{op_name}\""),
             lines: vec![op.loc],

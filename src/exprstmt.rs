@@ -1,4 +1,4 @@
-use crate::{located::Located, associativity::Precedence, token::Token};
+use crate::{located::Located, associativity::Precedence};
 
 use std::fmt::Display;
 
@@ -12,8 +12,8 @@ pub enum ExprType {
     Identifier(String),
     Parens(Box<Expr>),
     Call(Box<Expr>, Vec<Expr>), // calle(arg1, arg2, arg3)
-    UnaryOperation(Token, Box<Expr>),
-    BinaryOperation(Box<Expr>, Token, Box<Expr>),
+    UnaryOperation(Symbol, Box<Expr>),
+    BinaryOperation(Box<Expr>, Symbol, Box<Expr>),
     List(Vec<Expr>),
     Index(Box<Expr>, Box<Expr>), // expr[idx]
 }
@@ -50,22 +50,26 @@ impl Display for ExprType {
 }
 
 pub type Expr = Located<ExprType>;
+// these were made as a simplification of Token to remove some pointless destructuring
+// they were always followed by "else unreachable" anyways
+pub type Symbol = Located<String>;  // marks operators
+pub type Identifier = Located<String>;  // marks identifiers (names)
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
     ExprStmt(Expr),
     // identifier, expression
-    VarDeclStmt(Token, Expr),
+    VarDeclStmt(Identifier, Expr),
     // TODO: June suggested to merge assignments into assigning to a reference
     // look at it again eventually
-    AssignStmt(Token, Expr),
+    AssignStmt(Identifier, Expr),
     AssignIndexStmt(Expr, Expr, Expr), // expr[expr] = expr
     BlockStmt(Vec<Stmt>),
     IfStmt(Vec<(Expr, Vec<Stmt>)>),
     WhileStmt(Expr, Vec<Stmt>),
     // name, parameters, body
-    FunDeclStmt(Token, Vec<Token>, Vec<Stmt>),
-    OperatorDeclStmt(Token, (Token, Token), Vec<Stmt>, Precedence),
+    FunDeclStmt(Identifier, Vec<Identifier>, Vec<Stmt>),
+    OperatorDeclStmt(Symbol, (Identifier, Identifier), Vec<Stmt>, Precedence),
     ReturnStmt(Expr),
     BreakStmt,
     ContinueStmt,
@@ -110,8 +114,8 @@ impl StmtType {
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::OperatorDeclStmt(ident, params, block, _) => format!(
-                "fun {ident}({params}){block}",
-                params = format!("{}, {}", params.0, params.1),
+                "fun {ident}({}, {}){block}",
+                params.0, params.1,
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::ReturnStmt(expr) => format!("return {expr};"),

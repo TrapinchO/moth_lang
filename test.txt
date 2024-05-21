@@ -1,20 +1,4 @@
-fun b() {}
-
-
-
-
-// TODO: looks like errors or warnings on line 10 have incorrect underline
-// like because it suddenly has two numbers instead of one
-// also warnings for unused parameters dont seem to be emitted
-infixl 1
-fun --(a, b) {}
-//1 -- 2;
-
-
-
-
-
-/*
+// /*
 // custom precedence
 infixl 1
 fun <<(a, b) {
@@ -27,16 +11,23 @@ fun --(a, b) {
 }
 print(1 << 1 -- 2);
 print(1 << (1 -- 2));
-*/
+// */
 
-/*
+// /*
 // operators
 let z = 1 + 2 * 3 / 6 - 1 - -1 + 2 + 100 * 3 +5;
 let y = true && false || false || true && false;
+print(z, y);
 //print("abcde"[2]);
 print((&&)(true, false));
 print((+)(1, 2));
-*/
+// */
+
+
+
+
+
+
 
 /*
 // CLOSURES
@@ -97,7 +88,7 @@ fun a(x) {
 print $ a <$> [1, 2, 3];
 */
 
-aaaa = 1;
+//aaaa = 1;
 
 
 

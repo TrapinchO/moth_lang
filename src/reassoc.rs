@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{associativity::{Associativity, Precedence}, error::Error, exprstmt::*, located::Location, token::*, visitor::ExprVisitor, visitor::StmtVisitor};
+use crate::{associativity::*, error::Error, exprstmt::*, located::Location, visitor::*};
 
 pub fn reassociate(ops: HashMap<String, Precedence>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
@@ -23,7 +23,7 @@ impl Reassociate {
     // binary operator reassociation
     // https://stackoverflow.com/a/67992584
     // TODO: play with references and stuff once I dare again
-    fn reassoc(&mut self, left: Expr, op1: Token, right: Expr) -> Result<Expr, Error> {
+    fn reassoc(&mut self, left: Expr, op1: Symbol, right: Expr) -> Result<Expr, Error> {
         let left = self.visit_expr(left)?;
         let right = self.visit_expr(right)?;
         // not a binary operation, no need to reassociate it
@@ -37,17 +37,13 @@ impl Reassociate {
             });
         };
 
-        let TokenType::Symbol(op1_sym) = &op1.val else {
-            unreachable!()
-        };
+        let op1_sym = &op1.val;
         let prec1 = self.ops.get(op1_sym).ok_or(Error {
             msg: format!("Operator not found: {}", op1_sym),
             lines: vec![op1.loc],
         })?;
 
-        let TokenType::Symbol(op2_sym) = &op2.val else {
-            unreachable!()
-        };
+        let op2_sym = &op2.val;
         let prec2 = self.ops.get(op2_sym).ok_or(Error {
             msg: format!("Operator not found: {}", op2_sym),
             lines: vec![op2.loc],
@@ -104,13 +100,13 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn var_decl(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+    fn var_decl(&mut self, loc: Location, ident: Identifier, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
             loc,
         })
     }
-    fn assignment(&mut self, loc: Location, ident: Token, expr: Expr) -> Result<Stmt, Error> {
+    fn assignment(&mut self, loc: Location, ident: Identifier, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
             loc,
@@ -162,7 +158,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn fun(&mut self, loc: Location, name: Token, params: Vec<Token>, block: Vec<Stmt>) -> Result<Stmt, Error> {
+    fn fun(&mut self, loc: Location, name: Identifier, params: Vec<Identifier>, block: Vec<Stmt>) -> Result<Stmt, Error> {
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -172,11 +168,9 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn operator(&mut self, loc: Location, name: Token, params: (Token, Token), block: Vec<Stmt>, prec: Precedence) -> Result<Stmt, Error> {
-        let TokenType::Symbol(s) = &name.val else {
-            unreachable!()
-        };
-        self.ops.insert(s.clone(), prec);
+    fn operator(&mut self, loc: Location, name: Symbol, params: (Identifier, Identifier), block: Vec<Stmt>, prec: Precedence) -> Result<Stmt, Error> {
+        let s = name.val.clone();
+        self.ops.insert(s, prec);
         let mut block2: Block = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?)
@@ -259,13 +253,13 @@ impl ExprVisitor<Expr> for Reassociate {
             loc,
         })
     }
-    fn unary(&mut self, loc: Location, op: Token, expr: Expr) -> Result<Expr, Error> {
+    fn unary(&mut self, loc: Location, op: Symbol, expr: Expr) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::UnaryOperation(op, self.visit_expr(expr)?.into()),
             loc,
         })
     }
-    fn binary(&mut self, _: Location, left: Expr, op: Token, right: Expr) -> Result<Expr, Error> {
+    fn binary(&mut self, _: Location, left: Expr, op: Symbol, right: Expr) -> Result<Expr, Error> {
         self.reassoc(left, op, right)
     }
     fn list(&mut self, loc: Location, ls: Vec<Expr>) -> Result<Expr, Error> {

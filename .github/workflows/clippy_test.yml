@@ -39,7 +39,7 @@ jobs:
       - name: Run cargo clippy
         uses: actions-rs/cargo@v1
         with:
-          command: clippy
+          command: clippy -- -Aclippy::all -Aclippy::pedantic -Aclippy::nursery -Aclippy::cargo
 
   test:
     name: Test Suite

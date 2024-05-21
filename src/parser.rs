@@ -183,6 +183,9 @@ impl Parser {
 
     fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
         let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
+        let TokenType::Identifier(name) = ident.val else {
+            unreachable!()
+        };
         check_variant!(self, Equals, "Expected an equals symbol")?;
         let expr = self.parse_expression()?;
         Ok(Stmt {
@@ -190,7 +193,9 @@ impl Parser {
                 start: ident.loc.start,
                 end: expr.loc.end,
             },
-            val: StmtType::VarDeclStmt(ident, expr),
+            val: StmtType::VarDeclStmt(
+                Identifier { val: name, loc: ident.loc },
+                expr),
         })
     }
 
@@ -261,9 +266,9 @@ impl Parser {
         self.advance();
         let tok = self.get_current().clone();
         // TODO: possibly use matches! macro
-        let (op, ident) = match tok.val {
-            TokenType::Identifier(_) => { (false, tok) },
-                TokenType::Symbol(_) => { (true, tok) },
+        let (op, name) = match tok.val {
+            TokenType::Identifier(name) => { (false, name) },
+                TokenType::Symbol(name) => { (true, name) },
             _ => return Err(Error {
                 msg: "Expected an identifier or a valid symbol.".to_string(),
                 lines: vec![tok.loc],
@@ -276,6 +281,7 @@ impl Parser {
         check_variant!(self, LParen, "Expected an opening parenthesis")?;
 
         // TODO: monstrosity, but checks out
+        // TODO: operators with zero params might slip through
         if is_typ!(self, RParen) {
             self.advance();
             let block = self.parse_block()?;
@@ -284,13 +290,19 @@ impl Parser {
                 unreachable!();
             };
             return Ok(Stmt {
-                val: StmtType::FunDeclStmt(ident, vec![], bl),
+                val: StmtType::FunDeclStmt(
+                    Identifier { val: name.to_string(), loc: tok.loc },
+                    vec![], bl)
+,
                 loc: Location { start, end: block.loc.end },
             })
         }
         let mut params = vec![];
         while !self.is_at_end() {
-            params.push(check_variant!(self, Identifier(_), "Expected a parameter name")?);
+            let param = check_variant!(self, Identifier(_), "Expected a parameter name")?;
+            let TokenType::Identifier(param_name) = param.val else { unreachable!() };
+            let param = Identifier { val: param_name, loc: param.loc };
+            params.push(param);
             // TODO: turn the condition around
             if is_typ!(self, RParen) {
                 self.advance();
@@ -302,15 +314,18 @@ impl Parser {
                 };
                 return Ok(Stmt {
                     val: if !op {
-                        StmtType::FunDeclStmt(ident, params, bl)
+                        StmtType::FunDeclStmt(
+                            Identifier { val: name.to_string(), loc: tok.loc },
+                            params, bl)
                     } else {
                         let [param1, param2] = &*params else {
                             return Err(Error {
                                 msg: "Operators must have exactly two arguments".to_string(),
-                                lines: vec![ident.loc],
+                                lines: vec![tok.loc],
                             })
                         };
-                        StmtType::OperatorDeclStmt(ident, (param1.clone(), param2.clone()), bl, Precedence { prec: 0, assoc: Associativity::Left })
+                        StmtType::OperatorDeclStmt(
+                            Symbol { val: name.to_string(), loc: tok.loc }, (param1.clone(), param2.clone()), bl, Precedence { prec: 0, assoc: Associativity::Left })
                     },
                     loc: Location {
                         start,
@@ -350,10 +365,15 @@ impl Parser {
         self.advance();
         check_variant!(self, Fun, "Expected a function declaration")?;
         let sym = check_variant!(self, Symbol(_), "Expected an operator symbol")?;
+        let Token { val: TokenType::Symbol(name), loc: sym_loc } = sym else { unreachable!() };
         check_variant!(self, LParen, "Expected an opening parenthesis")?;
         let param1 = check_variant!(self, Identifier(_), "Expected a parameter")?;
+        let TokenType::Identifier(param1_name) = param1.val else { unreachable!() };
+        let param1 = Identifier { val: param1_name, loc: param1.loc };
         check_variant!(self, Comma, "Expected a comma after a parameter")?;
         let param2 = check_variant!(self, Identifier(_), "Expected a parameter")?;
+        let TokenType::Identifier(param2_name) = param2.val else { unreachable!() };
+        let param2 = Identifier { val: param2_name, loc: param2.loc };
         check_variant!(self, RParen, "Expected a closing parenthesis")?;
         let block = self.parse_block()?;
         let StmtType::BlockStmt(block2) = block.val else {
@@ -362,7 +382,12 @@ impl Parser {
 
         Ok(Stmt {
             loc: Location { start: kw.loc.start, end: block.loc.end },
-            val: StmtType::OperatorDeclStmt(sym, (param1, param2), block2, Precedence { prec: prec2 as usize, assoc }),
+            val: StmtType::OperatorDeclStmt(
+                Symbol { val: name.to_string(), loc: sym_loc },
+                (param1, param2),
+                block2,
+                Precedence { prec: prec2 as usize, assoc }
+            ),
         })
     }
 
@@ -389,7 +414,7 @@ impl Parser {
                     end: val.loc.end,
                 },
                 val: StmtType::AssignStmt(
-                    Token { val: TokenType::Identifier(ident), loc: expr.loc },
+                    Identifier { val: ident, loc: expr.loc },
                     val
                 ),
             }),
@@ -416,11 +441,7 @@ impl Parser {
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_unary()?;
         // if it is a symbol, look for nested binary operator
-        if let tok @ Token {
-            val: TokenType::Symbol(_),
-            ..
-        } = self.get_current().clone()
-        {
+        if let Token { val: TokenType::Symbol(sym_name), loc } = self.get_current().clone() {
             self.advance();
 
             let right = self.parse_binary()?;
@@ -429,7 +450,10 @@ impl Parser {
                     start: left.loc.start,
                     end: right.loc.end,
                 },
-                val: ExprType::BinaryOperation(left.into(), tok, right.into()),
+                val: ExprType::BinaryOperation(
+                    left.into(),
+                    Symbol { val: sym_name, loc },
+                    right.into()),
             })
         } else {
             Ok(left)
@@ -437,26 +461,25 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
-        let tok @ Token { val: TokenType::Symbol(_), .. } = self.get_current().clone() else {
+        let Token { val: TokenType::Symbol(sym), loc } = self.get_current().clone() else {
             return self.parse_suffix()
-        };
-        let TokenType::Symbol(sym) = &tok.val else {
-            unreachable!()
         };
         if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
                 msg: format!("Unknown operator: \"{sym}\""),
-                lines: vec![tok.loc],
+                lines: vec![loc],
             });
         }
         self.advance();
         let expr = self.parse_unary()?;
         Ok(Expr {
             loc: Location {
-                start: tok.loc.start,
+                start: loc.start,
                 end: expr.loc.end,
             },
-            val: ExprType::UnaryOperation(tok, expr.into()),
+            val: ExprType::UnaryOperation(
+                Symbol { val: sym.to_string(), loc },
+                expr.into()),
         })
     }
 
@@ -544,7 +567,9 @@ impl Parser {
                         ExprType::Parens(
                             Expr {
                                 loc: Location { start: sym.loc.start, end: expr.loc.end },
-                                val: ExprType::UnaryOperation(sym, expr.into()),
+                                val: ExprType::UnaryOperation(
+                                    Symbol { val: sym_name, loc: sym.loc },
+                                    expr.into()),
                             }.into()
                         )
                     }

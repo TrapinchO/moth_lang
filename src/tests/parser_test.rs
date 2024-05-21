@@ -1,4 +1,4 @@
-use crate::{associativity::Precedence, exprstmt::{Expr, ExprType, Stmt, StmtType}};
+use crate::{associativity::Precedence, exprstmt::{Expr, ExprType, Identifier, Stmt, StmtType, Symbol}};
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -8,8 +8,8 @@ macro_rules! binop {
                 loc: Location { start: 0, end: 0 },
             }
             .into(),
-            Token {
-                val: TokenType::Symbol($op.to_string()),
+            Symbol {
+                val: $op.to_string(),
                 loc: Location { start: 0, end: 0 },
             },
             Expr {
@@ -24,8 +24,8 @@ macro_rules! binop {
 macro_rules! unop {
     ($op:tt, $expr:expr) => {
         ExprType::UnaryOperation(
-            Token {
-                val: TokenType::Symbol($op.to_string()),
+            Symbol {
+                val: $op.to_string(),
                 loc: Location { start: 0, end: 0 },
             },
             Expr {
@@ -249,8 +249,8 @@ fn parse_unary() {
         vec![Stmt {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::UnaryOperation(
-                    Token {
-                        val: TokenType::Symbol("-".to_string()),
+                    Symbol {
+                        val: "-".to_string(),
                         loc: Location { start: 0, end: 0 },
                     },
                     Expr {
@@ -273,14 +273,14 @@ fn parse_unary_nested() {
         vec![Stmt {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::UnaryOperation(
-                    Token {
-                        val: TokenType::Symbol("-".to_string()),
+                    Symbol {
+                        val: "-".to_string(),
                         loc: Location { start: 0, end: 0 },
                     },
                     Expr {
                         val: ExprType::UnaryOperation(
-                            Token {
-                                val: TokenType::Symbol("-".to_string()),
+                            Symbol {
+                                val: "-".to_string(),
                                 loc: Location { start: 2, end: 2 },
                             },
                             Expr {
@@ -312,8 +312,8 @@ fn parse_binary() {
                         loc: Location { start: 0, end: 0 },
                     }
                     .into(),
-                    Token {
-                        val: TokenType::Symbol("+".to_string()),
+                    Symbol {
+                        val: "+".to_string(),
                         loc: Location { start: 2, end: 2 },
                     },
                     Expr {
@@ -463,8 +463,8 @@ fn test_no_params() {
         Ok(vec![
            Stmt {
                val: StmtType::FunDeclStmt(
-                    Token {
-                        val: TokenType::Identifier("f".to_string()),
+                    Identifier {
+                        val: "f".to_string(),
                         loc: Location { start: 4, end: 4 },
                     },
                     vec![],  // NO PARAMS
@@ -561,8 +561,8 @@ fn test_paren_unary() {
             val: StmtType::ExprStmt(Expr {
                 val: ExprType::Parens(Expr {
                     val: ExprType::UnaryOperation(
-                        Token {
-                            val: TokenType::Symbol("-".to_string()),
+                        Symbol {
+                            val: "-".to_string(),
                             loc: Location { start: 1, end: 1 }
                         },
                         Expr {
@@ -586,8 +586,8 @@ fn test_assingment() {
         src,
         Ok(vec![Stmt {
             val: StmtType::AssignStmt(
-                Token {
-                    val: TokenType::Identifier("x".to_string()),
+                Identifier {
+                    val: "x".to_string(),
                     loc: Location { start: 0, end: 0 },
                 },
                 Expr {
