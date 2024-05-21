@@ -477,6 +477,52 @@ fn test_no_params() {
 }
 
 #[test]
+fn test_one_param() {
+    let src = parse(lex("fun f(x) {}").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![
+           Stmt {
+               val: StmtType::FunDeclStmt(
+                    Identifier {
+                        val: "f".to_string(),
+                        loc: Location { start: 4, end: 4 },
+                    },
+                    vec![Identifier { val: "x".to_string(), loc: Location { start: 6, end: 6 } }],
+                    vec![],
+               ),
+               loc: Location { start: 0, end: 10 },
+           }
+        ])
+    );
+}
+
+#[test]
+fn test_more_params() {
+    let src = parse(lex("fun f(x, y, z) {}").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![
+           Stmt {
+               val: StmtType::FunDeclStmt(
+                    Identifier {
+                        val: "f".to_string(),
+                        loc: Location { start: 4, end: 4 },
+                    },
+                    vec![
+                        Identifier { val: "x".to_string(), loc: Location { start: 6, end: 6 } },
+                        Identifier { val: "y".to_string(), loc: Location { start: 9, end: 9 } },
+                        Identifier { val: "z".to_string(), loc: Location { start: 12, end: 12 } },
+                    ],
+                    vec![],
+               ),
+               loc: Location { start: 0, end: 16 },
+           }
+        ])
+    );
+}
+
+#[test]
 fn test_index_call() {
     let src = parse(lex("[print][0]();").unwrap());
     assert_eq!(

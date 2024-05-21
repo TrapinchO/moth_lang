@@ -1,5 +1,10 @@
-fun --() {}
-1 -- 2;
+fun a() {}
+fun b(a) {}
+fun c(a, b) {}
+fun d(a, ) {}
+//fun e(a a) {}
+//fun f(,) {}
+print(a, b, c, d,);
 
 
 /*

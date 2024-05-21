@@ -78,10 +78,12 @@ impl Parser {
         fn cmp(this: &TokenType, other: &TokenType) -> bool {
             mem::discriminant(this) == mem::discriminant(other)
         }
-        let mut items = vec![];
+
         if cmp(&self.get_current().val, &end_tok) {
-            return Ok(items);
+            return Ok(vec![]);
         }
+
+        let mut items = vec![];
         while !self.is_at_end() {
             items.push(f(self)?);
             if cmp(&self.get_current().val, &end_tok) {
@@ -100,7 +102,6 @@ impl Parser {
         let mut ls = vec![];
         while !self.is_at_end()
             && !is_typ!(self, Eof)  // apparently needed
-            && !is_typ!(self, RBrace)
         {
             ls.push(self.parse_statement()?);
         }
@@ -265,11 +266,44 @@ impl Parser {
         })
     }
 
-    fn parse_fun(&mut self) -> Result<Stmt, Error> {
+    /// used to get parameters for function and operator declarations
+    /// consumes opening and closing parens
+    /// supports trailing comma
+    fn parse_params(&mut self) -> Result<Vec<Identifier>, Error> {
+        check_variant!(self, LParen, "Expected an opening parenthesis")?;
+        if is_typ!(self, RParen) {
+            self.advance();
+            return Ok(vec![])
+        }
+        let mut params = vec![];
+        loop {
+            let tok = self.get_current().clone();
+            let Token { val: TokenType::Identifier(name), loc } = tok else {
+                return Err(Error {
+                    msg: "Expected a parameter name".to_string(),
+                    lines: vec![tok.loc],
+                });
+            };
+            params.push(Identifier { val: name, loc });
+            self.advance();
+            
+            if !is_typ!(self, Comma) {
+                break;
+            }
+            self.advance(); // move past the comma
+            if is_typ!(self, RParen) {
+                break;
+            }
+        }
+        check_variant!(self, RParen, "Expected a closing parenthesis")?;
+        Ok(params)
+    }
+
+    fn parse_fun(&mut self,) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
-        self.advance();
+        self.advance(); // move past keyword
+
         let tok = self.get_current().clone();
-        // TODO: possibly use matches! macro
         let (op, name) = match tok.val {
             TokenType::Identifier(name) => (false, name),
             TokenType::Symbol(name) => (true, name),
@@ -282,69 +316,37 @@ impl Parser {
         };
         self.advance();
 
-        //let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
-
-        check_variant!(self, LParen, "Expected an opening parenthesis")?;
-
-        // TODO: monstrosity, but checks out
-        // TODO: operators with zero params might slip through
-        if is_typ!(self, RParen) {
-            self.advance();
-            let block = self.parse_block()?;
-            // TODO: horrible cheating, but eh
-            let StmtType::BlockStmt(bl) = block.val else {
-                unreachable!();
-            };
-            return Ok(Stmt {
+        let params = self.parse_params()?;
+        let block = self.parse_block()?;
+        // TODO: horrible cheating, but eh
+        let StmtType::BlockStmt(bl) = block.val else {
+            unreachable!();
+        };
+        if !op {
+            Ok(Stmt {
                 val: StmtType::FunDeclStmt(
                     Identifier { val: name.to_string(), loc: tok.loc },
-                    vec![], bl)
-,
-                loc: Location { start, end: block.loc.end },
+                    params, bl
+                ),
+                loc: Location { start, end: block.loc.end }
             })
-        }
-        let mut params = vec![];
-        while !self.is_at_end() {
-            let param = check_variant!(self, Identifier(_), "Expected a parameter name")?;
-            let TokenType::Identifier(param_name) = param.val else { unreachable!() };
-            let param = Identifier { val: param_name, loc: param.loc };
-            params.push(param);
-            // TODO: turn the condition around
-            if is_typ!(self, RParen) {
-                self.advance();
-                //check_variant!(self, RParen, "");
-                let block = self.parse_block()?;
-                // TODO: horrible cheating, but eh
-                let StmtType::BlockStmt(bl) = block.val else {
-                    unreachable!();
-                };
-                return Ok(Stmt {
-                    val: if !op {
-                        StmtType::FunDeclStmt(
-                            Identifier { val: name.to_string(), loc: tok.loc },
-                            params, bl)
-                    } else {
-                        let [param1, param2] = &*params else {
-                            return Err(Error {
-                                msg: "Operators must have exactly two arguments".to_string(),
-                                lines: vec![tok.loc],
-                            });
-                        };
-                        StmtType::OperatorDeclStmt(
-                            Symbol { val: name.to_string(), loc: tok.loc }, (param1.clone(), param2.clone()), bl, Precedence { prec: 0, assoc: Associativity::Left })
-                    },
-                    loc: Location {
-                        start,
-                        end: block.loc.end,
-                    },
+        } else {
+            let [param1, param2] = &*params else {
+                return Err(Error {
+                    msg: "Operators must have exactly two arguments".to_string(),
+                    lines: vec![tok.loc],
                 });
-            }
-            check_variant!(self, Comma, "Expected a comma \",\" after an argument")?;
+            };
+            Ok(Stmt {
+                val: StmtType::OperatorDeclStmt(
+                    Symbol { val: name.to_string(), loc: tok.loc },
+                    (param1.clone(), param2.clone()), bl,
+                    Precedence { prec: 0, assoc: Associativity::Left }
+                ),
+                loc: Location { start, end: block.loc.end }
+            })
+            
         }
-        Err(Error {
-            msg: "Reached EOF".to_string(), // TODO: idk yet how
-            lines: vec![self.get_current().loc],
-        })
     }
 
     fn parse_operator(&mut self) -> Result<Stmt, Error> {
@@ -370,17 +372,23 @@ impl Parser {
         };
         self.advance();
         check_variant!(self, Fun, "Expected a function declaration")?;
-        let sym = check_variant!(self, Symbol(_), "Expected an operator symbol")?;
-        let Token { val: TokenType::Symbol(name), loc: sym_loc } = sym else { unreachable!() };
-        check_variant!(self, LParen, "Expected an opening parenthesis")?;
-        let param1 = check_variant!(self, Identifier(_), "Expected a parameter")?;
-        let TokenType::Identifier(param1_name) = param1.val else { unreachable!() };
-        let param1 = Identifier { val: param1_name, loc: param1.loc };
-        check_variant!(self, Comma, "Expected a comma after a parameter")?;
-        let param2 = check_variant!(self, Identifier(_), "Expected a parameter")?;
-        let TokenType::Identifier(param2_name) = param2.val else { unreachable!() };
-        let param2 = Identifier { val: param2_name, loc: param2.loc };
-        check_variant!(self, RParen, "Expected a closing parenthesis")?;
+        let tok = self.get_current().clone();
+        let TokenType::Symbol(sym_name) = tok.val else {
+            return Err(Error {
+                msg: "Expected an operator symbol".to_string(),
+                lines: vec![tok.loc],
+            });
+        };
+        let sym = Symbol { val: sym_name, loc: tok.loc };
+
+        let params = self.parse_params()?;
+        let [param1, param2] = &*params else {
+            return Err(Error {
+                msg: "Operators must have exactly two parameters".to_string(),
+                lines: vec![sym.loc],
+            });
+        };
+
         let block = self.parse_block()?;
         let StmtType::BlockStmt(block2) = block.val else {
             unreachable!()
@@ -389,8 +397,8 @@ impl Parser {
         Ok(Stmt {
             loc: Location { start: kw.loc.start, end: block.loc.end },
             val: StmtType::OperatorDeclStmt(
-                Symbol { val: name.to_string(), loc: sym_loc },
-                (param1, param2),
+                sym,
+                (param1.clone(), param2.clone()),
                 block2,
                 Precedence { prec: prec2 as usize, assoc }
             ),
@@ -411,25 +419,23 @@ impl Parser {
         self.advance();
         let val = self.parse_expression()?;
         check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
+        let loc = Location {
+            start: expr.loc.start,
+            end: val.loc.end,
+        };
         // return to the left side (aka check it)
         // TODO: this will stop being a problem after the parse is able to report multiple errors
         match expr.val {
             ExprType::Identifier(ident) => Ok(Stmt {
-                loc: Location {
-                    start: expr.loc.start,
-                    end: val.loc.end,
-                },
                 val: StmtType::AssignStmt(
                     Identifier { val: ident, loc: expr.loc },
                     val
                 ),
+                loc,
             }),
             ExprType::Index(ls, idx) => Ok(Stmt {
-                loc: Location {
-                    start: expr.loc.start,
-                    end: val.loc.end,
-                },
                 val: StmtType::AssignIndexStmt(*ls, *idx, val),
+                loc,
             }),
             _ => Err(Error {
                 msg: "The left side of assignment must be either a variable or an index".to_string(),
@@ -454,7 +460,11 @@ impl Parser {
                     start: left.loc.start,
                     end: right.loc.end,
                 },
-                val: ExprType::BinaryOperation(left.into(), Symbol { val: sym_name, loc }, right.into()),
+                val: ExprType::BinaryOperation(
+                    left.into(),
+                    Symbol { val: sym_name, loc },
+                    right.into()
+                ),
             })
         } else {
             Ok(left)
@@ -479,20 +489,20 @@ impl Parser {
                 end: expr.loc.end,
             },
             val: ExprType::UnaryOperation(
-                Symbol { val: sym.to_string(), loc },
+                Symbol { val: sym, loc },
                 expr.into()),
         })
     }
 
     fn parse_suffix(&mut self) -> Result<Expr, Error> {
         let mut expr = self.parse_primary()?;
+        let start = expr.loc.start;
         // a condition is not actually needed
         // the parser should figure out by itself
         loop {
             match self.get_current().val {
                 TokenType::LParen => {
                     self.advance(); // move past the paren
-                    let start = expr.loc.start;
                     let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
                     let end = check_variant!(self, RParen, "")?.loc.end;
                     expr = Expr {
@@ -502,7 +512,6 @@ impl Parser {
                 }
                 TokenType::LBracket => {
                     self.advance(); // move past the bracket
-                    let start = expr.loc.start;
                     let idx = self.parse_expression()?;
                     let end = check_variant!(self, RBracket, "Expected closing bracket.")?.loc.end;
                     expr = Expr {
@@ -522,61 +531,56 @@ impl Parser {
         let tok = self.get_current().clone();
         let expr = match &tok.val {
             TokenType::String(s) => {
-                let expr = ExprType::String(s.to_string());
                 self.advance();
-                expr
+                ExprType::String(s.to_string())
             }
             TokenType::Int(n) => {
-                let expr = ExprType::Int(*n);
                 self.advance();
-                expr
+                ExprType::Int(*n)
             }
             TokenType::Float(n) => {
-                let expr = ExprType::Float(*n);
                 self.advance();
-                expr
+                ExprType::Float(*n)
             }
             TokenType::Identifier(ident) => {
-                let expr = ExprType::Identifier(ident.to_string());
                 self.advance();
-                expr
+                ExprType::Identifier(ident.to_string())
             }
             TokenType::True => {
-                let expr = ExprType::Bool(true);
                 self.advance();
-                expr
+                ExprType::Bool(true)
             }
             TokenType::False => {
-                let expr = ExprType::Bool(false);
                 self.advance();
-                expr
+                ExprType::Bool(false)
             }
             TokenType::LParen => {
                 self.advance();
-                let val = if is_typ!(self, RParen) {
-                    ExprType::Unit
-                } else if is_typ!(self, Symbol(_)) {
-                    let sym = self.get_current().clone();
-                    let TokenType::Symbol(sym_name) = sym.val.clone() else {
-                        unreachable!()
-                    };
-                    self.advance();
-                    // either a symbol reference or unary operation
-                    if is_typ!(self, RParen) {
-                        ExprType::Identifier(sym_name)
-                    } else {
-                        let expr = self.parse_unary()?;
-                        ExprType::Parens(
-                            Expr {
-                                loc: Location { start: sym.loc.start, end: expr.loc.end },
-                                val: ExprType::UnaryOperation(
-                                    Symbol { val: sym_name, loc: sym.loc },
-                                    expr.into()),
-                            }.into()
-                        )
-                    }
-                } else {
-                    ExprType::Parens(self.parse_expression()?.into())
+                let next = self.get_current().clone();
+                let val = match next.val {
+                    TokenType::RParen => {
+                        ExprType::Unit
+                    },
+                    TokenType::Symbol(sym_name) => {
+                        self.advance();
+                        // either a symbol reference or unary operation
+                        if is_typ!(self, RParen) {
+                            ExprType::Identifier(sym_name)
+                        } else {
+                            let expr = self.parse_unary()?;
+                            ExprType::Parens(
+                                Expr {
+                                    loc: Location { start: next.loc.start, end: expr.loc.end },
+                                    val: ExprType::UnaryOperation(
+                                        Symbol { val: sym_name, loc: next.loc },
+                                        expr.into()),
+                                }.into()
+                            )
+                        }
+                    },
+                    _ => {
+                        ExprType::Parens(self.parse_expression()?.into())
+                    },
                 };
                 let end = check_variant!(self, RParen, "Expected closing parenthesis")?.loc.end;
                 return Ok(Expr {
@@ -588,8 +592,8 @@ impl Parser {
                 });
             }
             TokenType::LBracket => {
-                let start = tok.loc.start;
                 self.advance();
+                let start = tok.loc.start;
                 let items = self.sep(Parser::parse_expression, TokenType::RBracket)?;
                 let end = check_variant!(self, RBracket, "")?.loc.end;
                 return Ok(Expr {
