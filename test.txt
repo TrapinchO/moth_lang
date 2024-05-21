@@ -4,7 +4,8 @@ fun c(a, b) {}
 fun d(a, ) {}
 //fun e(a a) {}
 //fun f(,) {}
-print(a, b, c, d,);
+print(a, b, c, d);
+print([], [1 + 1], [1,], [1, 2]);
 
 
 /*

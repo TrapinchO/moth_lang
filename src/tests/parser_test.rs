@@ -680,3 +680,79 @@ fn test_assingment_error() {
         })
     )
 }
+
+
+#[test]
+fn list_empty() {
+    let src = parse(lex("[];").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::List(vec![]),
+                loc: Location { start: 0, end: 1 },
+            }),
+            loc: Location { start: 0, end: 1 },
+        }])
+    )
+}
+
+#[test]
+fn list_one() {
+    let src = parse(lex("[1];").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::List(vec![
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 1, end: 1 },
+                    }
+                ]),
+                loc: Location { start: 0, end: 2 },
+            }),
+            loc: Location { start: 0, end: 2 },
+        }])
+    );
+    let src = parse(lex("[1, ];").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::List(vec![
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 1, end: 1 },
+                    }
+                ]),
+                loc: Location { start: 0, end: 4 },
+            }),
+            loc: Location { start: 0, end: 4 },
+        }])
+    )
+}
+
+#[test]
+fn list_more() {
+    let src = parse(lex("[1, 2];").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::List(vec![
+                    Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 1, end: 1 },
+                    },
+                    Expr {
+                        val: ExprType::Int(2),
+                        loc: Location { start: 4, end: 4 },
+                    },
+                ]),
+                loc: Location { start: 0, end: 5 },
+            }),
+            loc: Location { start: 0, end: 5 },
+        }])
+    )
+}

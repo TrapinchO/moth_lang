@@ -70,32 +70,65 @@ impl Parser {
         self.idx += 1;
     }
 
-    // TODO: accept beginning and separator
-    // TODO: allow trailing separator
-    fn sep<R>(&mut self, f: fn(&mut Self) -> Result<R, Error>, end_tok: TokenType) -> Result<Vec<R>, Error> {
+    /// parses an array of items surrounded by opening and closing tokens and delimited by a comma
+    /// supports trailing comma
+    /// 
+    /// "()" // ok
+    /// "(a)" // ok
+    /// "(a, b)" // ok
+    /// "(a, )" // ok
+    /// "(a a)" // error
+    /// "(,)" // error
+    ///
+    /// "[]" // ok
+    /// "[1+1]" // ok
+    fn sep<R>(&mut self, start_tok: TokenType, end_tok: TokenType, f: fn(&mut Self) -> Result<R, Error>) -> Result<(Vec<R>, Location), Error> {
         // TODO: fix hack
         // funnily enough, my new system with macros broke this one
         fn cmp(this: &TokenType, other: &TokenType) -> bool {
             mem::discriminant(this) == mem::discriminant(other)
         }
 
+        // move past starting token
+        if !cmp(&self.get_current().val, &start_tok) {
+            return Err(Error {
+                msg: format!("Expected opening token: {}", start_tok),
+                lines: vec![self.get_current().loc],
+            });
+        }
+        let start = self.get_current().loc.start;
+        self.advance();
+
+        // no items inbetween
         if cmp(&self.get_current().val, &end_tok) {
-            return Ok(vec![]);
+            let end = self.get_current().loc.end;
+            self.advance();
+            return Ok((vec![], Location { start, end }));
         }
 
         let mut items = vec![];
-        while !self.is_at_end() {
+        loop {
             items.push(f(self)?);
-            if cmp(&self.get_current().val, &end_tok) {
-                return Ok(items);
+            //self.advance();
+            if !is_typ!(self, Comma) {
+                break;
             }
-            check_variant!(self, Comma, "Expected a comma \",\" after an item")?;
+            self.advance();
+            if cmp(&self.get_current().val, &end_tok) {
+                break;
+            }
         }
-        let eof = self.get_current();
-        Err(Error {
-            msg: "Unexpected EOF while parsing function call".to_string(),
-            lines: vec![eof.loc],
-        })
+
+        let cur = self.get_current();
+        if !cmp(&cur.val, &end_tok) {
+            return Err(Error {
+                msg: format!("Expected closing token: {}", end_tok),
+                lines: vec![self.get_current().loc],
+            });
+        }
+        let end = cur.loc.end;
+        self.advance(); // move past ending token
+        Ok((items, Location { start, end }))
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
@@ -266,39 +299,18 @@ impl Parser {
         })
     }
 
-    /// used to get parameters for function and operator declarations
-    /// consumes opening and closing parens
-    /// supports trailing comma
-    fn parse_params(&mut self) -> Result<Vec<Identifier>, Error> {
-        check_variant!(self, LParen, "Expected an opening parenthesis")?;
-        if is_typ!(self, RParen) {
-            self.advance();
-            return Ok(vec![])
-        }
-        let mut params = vec![];
-        loop {
-            let tok = self.get_current().clone();
-            let Token { val: TokenType::Identifier(name), loc } = tok else {
-                return Err(Error {
-                    msg: "Expected a parameter name".to_string(),
-                    lines: vec![tok.loc],
-                });
-            };
-            params.push(Identifier { val: name, loc });
-            self.advance();
-            
-            if !is_typ!(self, Comma) {
-                break;
-            }
-            self.advance(); // move past the comma
-            if is_typ!(self, RParen) {
-                break;
-            }
-        }
-        check_variant!(self, RParen, "Expected a closing parenthesis")?;
-        Ok(params)
+    /// used to avoid a lambda in function and operator declarations
+    fn parse_param(&mut self) -> Result<Identifier, Error> {
+        let cur = self.get_current().clone();
+        let Token { val: TokenType::Identifier(name), loc } = cur else {
+            return Err(Error {
+                msg: "Expected a parameter".to_string(),
+                lines: vec![cur.loc],
+            });
+        };
+        self.advance();
+        Ok(Identifier { val: name, loc })
     }
-
     fn parse_fun(&mut self,) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
         self.advance(); // move past keyword
@@ -316,7 +328,11 @@ impl Parser {
         };
         self.advance();
 
-        let params = self.parse_params()?;
+        //let params = self.parse_params()?;
+        let (params, _) = self.sep(
+            TokenType::LParen, TokenType::RParen,
+            Parser::parse_param,
+        )?;
         let block = self.parse_block()?;
         // TODO: horrible cheating, but eh
         let StmtType::BlockStmt(bl) = block.val else {
@@ -381,7 +397,10 @@ impl Parser {
         };
         let sym = Symbol { val: sym_name, loc: tok.loc };
 
-        let params = self.parse_params()?;
+        let (params, _) = self.sep(
+            TokenType::LParen, TokenType::RParen,
+            Parser::parse_param,
+        )?;
         let [param1, param2] = &*params else {
             return Err(Error {
                 msg: "Operators must have exactly two parameters".to_string(),
@@ -502,11 +521,12 @@ impl Parser {
         loop {
             match self.get_current().val {
                 TokenType::LParen => {
-                    self.advance(); // move past the paren
-                    let args = self.sep(Parser::parse_expression, TokenType::RParen)?;
-                    let end = check_variant!(self, RParen, "")?.loc.end;
+                    let (args, loc) = self.sep(
+                        TokenType::LParen, TokenType::RParen,
+                        Parser::parse_expression
+                    )?;
                     expr = Expr {
-                        loc: Location { start, end },
+                        loc: Location { start, end: loc.end },
                         val: ExprType::Call(expr.into(), args),
                     };
                 }
@@ -592,12 +612,12 @@ impl Parser {
                 });
             }
             TokenType::LBracket => {
-                self.advance();
-                let start = tok.loc.start;
-                let items = self.sep(Parser::parse_expression, TokenType::RBracket)?;
-                let end = check_variant!(self, RBracket, "")?.loc.end;
+                let (items, loc) = self.sep(
+                    TokenType::LBracket, TokenType::RBracket,
+                    Parser::parse_expression
+                )?;
                 return Ok(Expr {
-                    loc: Location { start, end },
+                    loc,
                     val: ExprType::List(items),
                 });
             }
