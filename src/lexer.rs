@@ -175,7 +175,7 @@ impl Lexer {
             // check if the number is a float
             else if self.is_char('.') {
                 // if it is just a decimal point (and not a symbol)
-                if self.idx < self.code.len() - 1 && self.code[self.idx + 1].is_ascii_digit() {
+                if self.idx < self.code.len() - 1 && !SYMBOLS.contains(self.code[self.idx + 1]) {
                     if is_float {
                         self.advance(); // for prettier error message
                         return Err(self.error("Found two floating point number delimiters".to_string()));

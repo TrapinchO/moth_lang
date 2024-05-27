@@ -428,3 +428,13 @@ fn comment_operator_invalid() {
     )
 }
 
+#[test]
+fn float_point_letter() {
+    assert_eq!(
+        lex("1.a1"),
+        Err(Error {
+            msg: "Invalid digit: \"a\"".to_string(),
+            lines: vec![Location { start: 0, end: 2 }],
+        })
+    )
+}
