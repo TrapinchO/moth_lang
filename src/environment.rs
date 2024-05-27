@@ -16,13 +16,13 @@ impl<T: Clone> Environment<T> {
         }
     }
 
-    pub fn insert(&mut self, name: &String, val: T) -> Option<()> {
+    pub fn insert(&mut self, name: &String, val: T) -> bool {
         let last_scope = self.scopes.last_mut().unwrap();
         if last_scope.read(|s| s.contains_key(name)) {
-            return None;
+            return false;
         }
         last_scope.insert(name.clone(), val);
-        Some(())
+        true
     }
 
     pub fn get(&self, ident: &String) -> Option<T> {
@@ -34,14 +34,14 @@ impl<T: Clone> Environment<T> {
         None
     }
 
-    pub fn update(&mut self, name: &String, val: T) -> Option<()> {
+    pub fn update(&mut self, name: &String, val: T) -> bool {
         for scope in self.scopes.iter_mut().rev() {
             if scope.read(|s| s.contains_key(name)) {
                 scope.insert(name.clone(), val);
-                return Some(());
+                return true;
             }
         }
-        None
+        false
     }
 
     pub fn contains(&self, name: &String) -> bool {

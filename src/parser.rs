@@ -304,7 +304,7 @@ impl Parser {
         let cur = self.get_current().clone();
         let Token { val: TokenType::Identifier(name), loc } = cur else {
             return Err(Error {
-                msg: "Expected a parameter".to_string(),
+                msg: "Expected a parameter name".to_string(),
                 lines: vec![cur.loc],
             });
         };

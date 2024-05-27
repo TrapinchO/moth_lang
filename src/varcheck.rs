@@ -38,7 +38,7 @@ impl VarCheck {
                 // we dont care about the error, we know it
                 // give dummy values
                 // it is always going to succeed (as I already check for the existence)
-                self.env.insert(name, (loc, false)).unwrap();
+                self.env.insert(name, (loc, false));
             }
         };
     }
@@ -154,6 +154,7 @@ impl VarCheck {
         self.check_block(block);
     }
     fn fun(&mut self, _: Location, _: &Identifier, params: &Vec<Identifier>, block: &Vec<Stmt>) {
+        // /*
         let mut params2: HashMap<String, (Location, bool)> = HashMap::new();
         for p in params.iter() {
             let name = p.val.clone();
@@ -165,12 +166,21 @@ impl VarCheck {
                     });
                 }
                 None => {
-                    params2.insert(name.clone(), (p.loc, false));
+                    params2.insert(name, (p.loc, false));
                 }
             }
         }
+        // */
         self.env.add_scope_vars(params2);
         self.check_block(block);
+        for (name, used) in self.env.scopes.last().unwrap().iter() {
+            if !used.1 {
+                self.warns.push(Error {
+                    msg: format!("Variable \"{name}\" not used."),
+                    lines: vec![used.0],
+                })
+            }
+        }
         self.env.remove_scope();
     }
     fn operator(
@@ -216,7 +226,7 @@ impl VarCheck {
     fn identifier(&mut self, loc: Location, ident: &String) {
         match self.env.get(ident) {
             Some(var) => {
-                self.env.update(ident, (var.0, true)).unwrap();
+                self.env.update(ident, (var.0, true));
             }
             None => {
                 self.errs.push(Error {
@@ -243,7 +253,7 @@ impl VarCheck {
         let s = &op.val;
         match self.env.get(s) {
             Some(var) => {
-                self.env.update(s, (var.0, true)).unwrap();
+                self.env.update(s, (var.0, true));
             }
             None => self.errs.push(Error {
                 msg: "Undeclared variable".to_string(),

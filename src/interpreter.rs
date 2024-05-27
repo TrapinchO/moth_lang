@@ -99,20 +99,24 @@ impl Interpreter {
     fn var_decl(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), ErrorType> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
-        self.environment.insert(&name, val.val).ok_or(Error {
-            msg: format!("Name \"{name}\" already exists"),
-            lines: vec![ident.loc],
-        })?;
+        if !self.environment.insert(&name, val.val) {
+            return Err(Error {
+                msg: format!("Name \"{name}\" already exists"),
+                lines: vec![ident.loc],
+            }.into());
+        }
         Ok(())
     }
 
     fn assignment(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), ErrorType> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
-        self.environment.update(&name, val.val).ok_or_else(|| Error {
-            msg: format!("Name not found: \"{name}\""),
-            lines: vec![ident.loc],
-        })?;
+        if !self.environment.update(&name, val.val) {
+            return Err(Error {
+                msg: format!("Name not found: \"{name}\""),
+                lines: vec![ident.loc],
+            }.into());
+        }
         Ok(())
     }
 
@@ -188,52 +192,30 @@ impl Interpreter {
         params: Vec<Identifier>,
         block: Vec<Stmt>,
     ) -> Result<(), ErrorType> {
-        let name2 = name.val;
-        /*
-        let TokenType::Identifier(name2) = &name.val else {
-            unreachable!()
-        };
-        */
         let mut params2 = vec![];
         for p in params {
             params2.push(p.val);
         }
-        self.environment
-            .insert(
-                &name2,
-                ValueType::Function(params2, block, self.environment.scopes.clone()),
-            )
-            .ok_or(Error {
-                msg: format!("Name \"{name2}\" already exists"),
+        if !self.environment.insert(
+            &name.val,
+            ValueType::Function(params2, block, self.environment.scopes.clone()),
+            ) {
+             return Err(Error {
+                msg: format!("Name \"{}\" already exists", name.val),
                 lines: vec![name.loc],
-            })?;
-        // TODO: nothing here yet
+             }.into());
+         }
         Ok(())
     }
     fn operator(
         &mut self,
-        _: Location,
+        loc: Location,
         name: Symbol,
         params: (Identifier, Identifier),
         block: Vec<Stmt>,
         _: Precedence,
     ) -> Result<(), ErrorType> {
-        let name2 = name.val;
-        let mut params2 = vec![];
-        for p in [params.0, params.1] {
-            params2.push(p.val);
-        }
-        self.environment
-            .insert(
-                &name2,
-                ValueType::Function(params2, block, self.environment.scopes.clone()),
-            )
-            .ok_or(Error {
-                msg: format!("Name \"{name2}\" already exists"),
-                lines: vec![name.loc],
-            })?;
-        // TODO: nothing here yet
-        Ok(())
+        self.fun(loc, name, vec![params.0, params.1], block)
     }
     fn brek(&mut self, _: Location) -> Result<(), ErrorType> {
         Err(ErrorType::Break)
