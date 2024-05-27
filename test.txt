@@ -7,7 +7,6 @@ fun d(a, ) {}
 print(a, b, c, d);
 print([], [1 + 1], [1,], [1, 2]);
 
-
 /*
 // custom precedence
 infixl 1
@@ -21,7 +20,7 @@ fun --(a, b) {
 }
 print(1 << 1 -- 2);
 print(1 << (1 -- 2));
-*/
+****/
 
 /*
 // operators

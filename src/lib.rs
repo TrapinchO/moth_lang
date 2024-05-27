@@ -69,22 +69,21 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
             for w in warns {
                 println!("{}", w.format_message(&input));
             }
-            let has_errors = !errs.is_empty();
-            if has_errors {
+            if !errs.is_empty() {
                 return Err(errs);
             }
         }
     }
 
     let compile_end = compile_start.elapsed();
-    let eval_time = Instant::now();
+    let eval_start = Instant::now();
     //println!("===== evaluating =====");
     interp.interpret(resassoc).map_err(|e| vec![e])?;
     //interp.interpret(&resassoc)?;
 
     if time {
         println!("Compiled in: {:?}", compile_end);
-        println!("Evaluated in: {:?}", eval_time.elapsed());
+        println!("Evaluated in: {:?}", eval_start.elapsed());
     }
     Ok(())
 }

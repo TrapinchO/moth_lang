@@ -400,3 +400,31 @@ fn lex_example() {
         assert_eq!(tok, lexed, "\n{:?}", ex);
     }
 }
+
+#[test]
+fn comment_operator() {
+    assert_eq!(
+        lex("/* fun -*/() {} */").unwrap(),
+        vec![Token { val: TokenType::Eof, loc: Location { start: 18, end: 18 } }],
+    )
+}
+
+#[test]
+fn comment_stars() {
+    assert_eq!(
+        lex("/*** fun -*/() {} ***/").unwrap(),
+        vec![Token { val: TokenType::Eof, loc: Location { start: 22, end: 22 } }],
+    )
+}
+
+#[test]
+fn comment_operator_invalid() {
+    assert_eq!(
+        lex("fun */() {}"),
+        Err(Error {
+            msg: "Block comment ending cannot be an operator".to_string(),
+            lines: vec![Location { start: 4, end: 6 }], // TODO: incorrect end location
+        })
+    )
+}
+

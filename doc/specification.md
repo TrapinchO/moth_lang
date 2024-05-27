@@ -74,6 +74,7 @@ fun <<(f, g) {
 
 NOTE: integers and floats cannot be mixed and they return their respective type, i.e. `1 + 1.0` throws an error and `1 / 4` returns `0` (just like Rust).
 
+NOTE: an operator composed of only leading stars and an ending slash (e.g. `*/` or `****/`) is not a valid operator to prevent confusion
 
 # Variables
 Variables are declared using `let` keyword. A variable cannot be overshadowed, i.e. a variable of the same cannot be declared in the current scope.
@@ -106,6 +107,7 @@ let x = 10;  // error - already declared variable
 Line comments are made with double forward slash `//`. Multiline comments are made by surrounding the comment by `/*` and `*/`.
 <br>NOTE: line comment must not be immediately followed by a symbol, as that counts as an operator
 <br>NOTE: like line comments, multiline comment beginning must contain only the leading slash and stars
+<br>NOTE: the ending can contain any number of leading starts and must be terminated but a slash
 <br>NOTE: as of now, the comments cannot be nested
 ```rs
 1+1;  // this comment is ignored
@@ -118,7 +120,7 @@ above in the code despite it not doing absolutely anything
 expect taking space and making the compiler and clippy angry at me.
 */
 /* this is ok */
-/** this is also ok, only stars */
+/** this is also ok, only stars ****/
 /*= not ok, an operator */
 /* also not ok */*
 ```

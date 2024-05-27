@@ -71,7 +71,7 @@ impl Error {
 
         assert!(
             last_line < code_lines.len(),
-            "Error's line ({last_line}) is greater than that of the code ({})",
+            "Error's line ({last_line}) is greater or equal than that of the code ({})",
             code_lines.len()
         );
 

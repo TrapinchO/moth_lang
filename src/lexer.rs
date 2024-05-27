@@ -120,6 +120,12 @@ impl Lexer {
                         "=" => TokenType::Equals,
                         "?" => TokenType::QuestionMark,
                         "." => TokenType::Dot,
+                        // TODO: error underlines the following symbol as well
+                        _ if sym.ends_with("*/")
+                            && sym[..sym.len()-2].chars().all(|s| s == '*') => {
+                                println!("{}", sym[..sym.len()-1].to_string());
+                            return Err(self.error("Block comment ending cannot be an operator".to_string()));
+                        }
                         // it is a comment if it stars with /* and has only stars afterwards
                         _ if sym.starts_with("/*") && sym[2..].chars().all(|s| s == '*') => {
                             self.lex_block_comment()?;
@@ -188,7 +194,7 @@ impl Lexer {
             // TODO: overflows behaving funny
             TokenType::Float(
                 num.parse::<f32>()
-                    .map_err(|_| self.error("Integer overflow".to_string()))?,
+                    .map_err(|_| self.error("Float overflow".to_string()))?,
             )
         } else {
             TokenType::Int(
@@ -254,23 +260,31 @@ impl Lexer {
 
     // TODO: stuff like "==*/" at the end
     fn lex_block_comment(&mut self) -> Result<(), Error> {
+        let mut state = 0;
         while !self.is_at_end() {
             // could be the end of the comment
-            // fun fact: clippy hates this, but it is more readable imo
-            if self.is_char('*') {
-                // at the end of the file
-                if (self.idx == self.code.len() - 2 && self.code[self.idx + 1] == '/')
-                    // otherwise must check whether it is not an operator instead (e.g. */*)
-                    || (self.idx < self.code.len() - 2
-                    && self.code[self.idx + 1] == '/'
-                    && !SYMBOLS.contains(self.code[self.idx + 2]))
-                {
-                    self.advance();
-                    self.advance();
-                    return Ok(());
-                }
+            if self.is_char('*') && state <= 1 {
+                state = 1;
+            } else if state == 1 && self.is_char('/') {
+                state = 2;
+            } else if state == 2 && !SYMBOLS.contains(self.get_current()) {
+                //end of the comment
+                self.advance();
+                return Ok(());
+            } else if state > 0 {
+                // not the end of the comment actually
+                state = 0;
+            } else if SYMBOLS.contains(self.get_current()) {
+                // if state is 0 (didnt find a star) and the char is a Symbol
+                // set the state so that the following (potential) star is ignored
+                // to prevent false positives like -*/
+                state = 5;
             }
             self.advance();
+        }
+        // the comment end might be the last thing in the file
+        if state == 2 {
+            return Ok(());
         }
         Err(self.error("EOF while lexing block comment".to_string()))
     }
