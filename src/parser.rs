@@ -153,7 +153,7 @@ impl Parser {
             }
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
-            TokenType::Fun => self.parse_fun(),
+            TokenType::Fun => self.parse_fun(false),
             TokenType::Infixl | TokenType::Infixr => self.parse_operator(),
             TokenType::Continue => {
                 self.advance();
@@ -311,13 +311,21 @@ impl Parser {
         self.advance();
         Ok(Identifier { val: name, loc })
     }
-    fn parse_fun(&mut self,) -> Result<Stmt, Error> {
+    fn parse_fun(&mut self, force_operator: bool) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
         self.advance(); // move past keyword
 
         let tok = self.get_current().clone();
         let (op, name) = match tok.val {
-            TokenType::Identifier(name) => (false, name),
+            TokenType::Identifier(name) => {
+                if force_operator {
+                    return Err(Error {
+                        msg: "Expected a valid symbol".to_string(),
+                        lines: vec![tok.loc]
+                    })
+                }
+                (false, name)
+            },
             TokenType::Symbol(name) => (true, name),
             _ => {
                 return Err(Error {
@@ -328,7 +336,6 @@ impl Parser {
         };
         self.advance();
 
-        //let params = self.parse_params()?;
         let (params, _) = self.sep(
             TokenType::LParen, TokenType::RParen,
             Parser::parse_param,
@@ -349,7 +356,7 @@ impl Parser {
         } else {
             let [param1, param2] = &*params else {
                 return Err(Error {
-                    msg: "Operators must have exactly two arguments".to_string(),
+                    msg: format!("Operators must have exactly two arguments, got {}", params.len()),
                     lines: vec![tok.loc],
                 });
             };
@@ -387,40 +394,14 @@ impl Parser {
             })
         };
         self.advance();
-        check_variant!(self, Fun, "Expected a function declaration")?;
-        let tok = self.get_current().clone();
-        let TokenType::Symbol(sym_name) = tok.val else {
-            return Err(Error {
-                msg: "Expected an operator symbol".to_string(),
-                lines: vec![tok.loc],
-            });
-        };
-        let sym = Symbol { val: sym_name, loc: tok.loc };
-
-        let (params, _) = self.sep(
-            TokenType::LParen, TokenType::RParen,
-            Parser::parse_param,
-        )?;
-        let [param1, param2] = &*params else {
-            return Err(Error {
-                msg: "Operators must have exactly two parameters".to_string(),
-                lines: vec![sym.loc],
-            });
-        };
-
-        let block = self.parse_block()?;
-        let StmtType::BlockStmt(block2) = block.val else {
-            unreachable!()
-        };
-
+        // because we set the flag we know it WILL be an operator
+        // basically all we need to do is replace the associativity and starting location
+        let Stmt { val: StmtType::OperatorDeclStmt(name, params, block, _), loc } = self.parse_fun(true)? else { unreachable!() };
         Ok(Stmt {
-            loc: Location { start: kw.loc.start, end: block.loc.end },
             val: StmtType::OperatorDeclStmt(
-                sym,
-                (param1.clone(), param2.clone()),
-                block2,
-                Precedence { prec: prec2 as usize, assoc }
-            ),
+                    name, params, block,
+                    Precedence { prec: prec2 as usize, assoc }),
+            loc: Location { start: kw.loc.start, end: loc.end }
         })
     }
 
