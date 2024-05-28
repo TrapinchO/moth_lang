@@ -180,7 +180,17 @@ impl Interpreter {
     }
 
     fn whiles(&mut self, _: Location, cond: Expr, block: Vec<Stmt>) -> Result<(), InterpError> {
-        while let ValueType::Bool(true) = self.visit_expr(cond.clone())?.val {
+        loop {
+            let val = self.visit_expr(cond.clone())?;
+            let ValueType::Bool(b) = val.val else {
+                return Err(Error {
+                    msg: ErrorType::ExpectedBool,
+                    lines: vec![val.loc]
+                }.into())
+            };
+            if !b {
+                break;
+            }
             match self.interpret_block(block.clone()) {
                 Ok(_) => {}
                 Err(err) => match err {
