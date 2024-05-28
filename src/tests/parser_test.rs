@@ -1,4 +1,4 @@
-use crate::{associativity::Precedence, exprstmt::{Expr, ExprType, Identifier, Stmt, StmtType, Symbol}};
+use crate::{associativity::Precedence, error::ErrorType, exprstmt::{Expr, ExprType, Identifier, Stmt, StmtType, Symbol}};
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -109,7 +109,7 @@ use crate::{
 #[test]
 fn test_varcheck() -> Result<(), Error> {
     let input = "let x = 10; x = 1;".to_string();
-    let tokens = lex(&input)?;
+    let tokens = lex(&input).unwrap();
     let ast = parse(tokens)?;
     let builtins = get_builtins()
         .keys()
@@ -120,7 +120,7 @@ fn test_varcheck() -> Result<(), Error> {
         checked,
         Err((
             vec![Error {
-                msg: "Variable \"x\" not used.".to_string(),
+                msg: ErrorType::ItemNotUsed("x".to_string()),
                 lines: vec![Location { start: 4, end: 4 }]
             }],
             vec![]
@@ -236,7 +236,7 @@ fn parse_parens_unclosed() {
     assert_eq!(
         parse(lex("(1").unwrap()),
         Err(Error {
-            msg: "Expected closing parenthesis".to_string(),
+            msg: ErrorType::ExpectedToken("Expected a closing parenthesis".to_string()),
             lines: vec![Location { start: 2, end: 2 }]
         })
     );
@@ -332,7 +332,7 @@ fn parse_binary() {
 #[test]
 fn expr_error() {
     let err = Error {
-        msg: "Expected an element but reached EOF".to_string(),
+        msg: ErrorType::UnexpectedEof,
         lines: vec![Location { start: 2, end: 2 }],
     };
     let op = parse(lex("1+").unwrap()).unwrap_err();
@@ -675,7 +675,7 @@ fn test_assingment_error() {
     assert_eq!(
         src,
         Err(Error {
-            msg: "The left side of assignment must be either a variable or an index".to_string(),
+            msg: ErrorType::InvalidAssignmentTarget,
             lines: vec![Location { start: 0, end: 0 }],
         })
     )

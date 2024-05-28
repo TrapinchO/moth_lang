@@ -14,6 +14,21 @@ pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Resu
     Interpreter::new(builtins).interpret(stmts)
 }
 
+#[derive(Debug)]
+enum InterpError {
+    Error(Error),
+    Return(Value),
+    Continue,
+    Break,
+}
+
+// a miracle
+impl From<Error> for InterpError {
+    fn from(value: Error) -> Self {
+        InterpError::Error(value)
+    }
+}
+
 pub struct Interpreter {
     environment: Environment<ValueType>,
 }
@@ -33,12 +48,11 @@ impl Interpreter {
                 Ok(..) => {}
                 Err(err) => {
                     let msg = match err {
-                        ErrorType::Error(error) => return Err(error),
-                        ErrorType::Return(_) => "Cannot use return outside of a function",
-                        ErrorType::Break => "Cannot use break outside of a loop",
-                        ErrorType::Continue => "Cannot use continue outside of a loop",
-                    }
-                    .to_string();
+                        InterpError::Error(error) => return Err(error),
+                        InterpError::Return(_) => ErrorType::ReturnOutsideFunction,
+                        InterpError::Break => ErrorType::BreakOutsideLoop,
+                        InterpError::Continue => ErrorType::ContinueOutsideLoop,
+                    };
                     return Err(Error {
                         msg,
                         lines: vec![s.loc], // TODO: add locations
@@ -62,7 +76,7 @@ impl Interpreter {
         self.environment.remove_scope();
     }
 
-    fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), ErrorType> {
+    fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), InterpError> {
         self.add_scope();
         for s in block {
             match self.visit_stmt(s) {
@@ -79,7 +93,7 @@ impl Interpreter {
 }
 
 impl Interpreter {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), ErrorType> {
+    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), InterpError> {
         let loc = stmt.loc;
         match stmt.val {
             StmtType::ExprStmt(expr) => self.expr(loc, expr),
@@ -96,62 +110,62 @@ impl Interpreter {
             StmtType::ContinueStmt => self.cont(loc),
         }
     }
-    fn var_decl(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), ErrorType> {
+    fn var_decl(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), InterpError> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
         if !self.environment.insert(&name, val.val) {
             return Err(Error {
-                msg: format!("Name \"{name}\" already exists"),
+                msg: ErrorType::AlreadyDeclaredItem,
                 lines: vec![ident.loc],
             }.into());
         }
         Ok(())
     }
 
-    fn assignment(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), ErrorType> {
+    fn assignment(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), InterpError> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
         if !self.environment.update(&name, val.val) {
             return Err(Error {
-                msg: format!("Name not found: \"{name}\""),
+                msg: ErrorType::UndeclaredItem,
                 lines: vec![ident.loc],
             }.into());
         }
         Ok(())
     }
 
-    fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), ErrorType> {
+    fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), InterpError> {
         let ValueType::List(mut ls2) = self.visit_expr(ls.clone())?.val else {
             return Err(Error {
-                msg: "Expected a list index".to_string(),
+                msg: ErrorType::ExpectedListIndex,
                 lines: vec![ls.loc],
             }
             .into());
         };
         let ValueType::Int(n) = self.visit_expr(idx.clone())?.val else {
             return Err(Error {
-                msg: "Expected an index".to_string(),
+                msg: ErrorType::ExpectedIndex,
                 lines: vec![idx.loc],
             }.into())
         };
-        let n2 = MList::check_index(n, ls2.read(|l| l.len())).ok_or_else(|| Error {
-            msg: format!("Index out of range: {}", n),
+        let n2 = MList::check_index(n, ls2.len()).ok_or_else(|| Error {
+            msg: ErrorType::IndexOutOfRange(n, ls2.len()),
             lines: vec![idx.loc],
         })?;
         ls2.modify(n2, self.visit_expr(val)?);
         Ok(())
     }
 
-    fn block(&mut self, _: Location, block: Vec<Stmt>) -> Result<(), ErrorType> {
+    fn block(&mut self, _: Location, block: Vec<Stmt>) -> Result<(), InterpError> {
         self.interpret_block(block)?;
         Ok(())
     }
 
-    fn if_else(&mut self, _: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<(), ErrorType> {
+    fn if_else(&mut self, _: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<(), InterpError> {
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
                 return Err(Error {
-                    msg: format!("Expected bool, got {}", cond.val),
+                    msg: ErrorType::ExpectedBool,
                     lines: vec![cond.loc],
                 }.into());
             };
@@ -165,22 +179,22 @@ impl Interpreter {
         Ok(())
     }
 
-    fn whiles(&mut self, _: Location, cond: Expr, block: Vec<Stmt>) -> Result<(), ErrorType> {
+    fn whiles(&mut self, _: Location, cond: Expr, block: Vec<Stmt>) -> Result<(), InterpError> {
         while let ValueType::Bool(true) = self.visit_expr(cond.clone())?.val {
             match self.interpret_block(block.clone()) {
                 Ok(_) => {}
                 Err(err) => match err {
-                    ErrorType::Error(_) => return Err(err),
-                    ErrorType::Return(_) => return Err(err),
-                    ErrorType::Continue => continue,
-                    ErrorType::Break => break,
+                    InterpError::Error(_) => return Err(err),
+                    InterpError::Return(_) => return Err(err),
+                    InterpError::Continue => continue,
+                    InterpError::Break => break,
                 },
             }
         }
         Ok(())
     }
 
-    fn expr(&mut self, _: Location, expr: Expr) -> Result<(), ErrorType> {
+    fn expr(&mut self, _: Location, expr: Expr) -> Result<(), InterpError> {
         // TODO: later check if it is not unit!
         let _ = self.visit_expr(expr)?;
         Ok(())
@@ -191,7 +205,7 @@ impl Interpreter {
         name: Identifier,
         params: Vec<Identifier>,
         block: Vec<Stmt>,
-    ) -> Result<(), ErrorType> {
+    ) -> Result<(), InterpError> {
         let mut params2 = vec![];
         for p in params {
             params2.push(p.val);
@@ -201,7 +215,7 @@ impl Interpreter {
             ValueType::Function(params2, block, self.environment.scopes.clone()),
             ) {
              return Err(Error {
-                msg: format!("Name \"{}\" already exists", name.val),
+                msg: ErrorType::AlreadyDeclaredItem,
                 lines: vec![name.loc],
              }.into());
          }
@@ -214,18 +228,18 @@ impl Interpreter {
         params: (Identifier, Identifier),
         block: Vec<Stmt>,
         _: Precedence,
-    ) -> Result<(), ErrorType> {
+    ) -> Result<(), InterpError> {
         self.fun(loc, name, vec![params.0, params.1], block)
     }
-    fn brek(&mut self, _: Location) -> Result<(), ErrorType> {
-        Err(ErrorType::Break)
+    fn brek(&mut self, _: Location) -> Result<(), InterpError> {
+        Err(InterpError::Break)
     }
-    fn cont(&mut self, _: Location) -> Result<(), ErrorType> {
-        Err(ErrorType::Continue)
+    fn cont(&mut self, _: Location) -> Result<(), InterpError> {
+        Err(InterpError::Continue)
     }
-    fn retur(&mut self, _: Location, expr: Expr) -> Result<(), ErrorType> {
+    fn retur(&mut self, _: Location, expr: Expr) -> Result<(), InterpError> {
         let val = self.visit_expr(expr)?;
-        Err(ErrorType::Return(val))
+        Err(InterpError::Return(val))
     }
 }
 
@@ -259,7 +273,7 @@ impl Interpreter {
     }
     fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
         self.environment.get(&ident).ok_or_else(|| Error {
-            msg: format!("Name not found: \"{ident}\""),
+            msg: ErrorType::UndeclaredItem,
             lines: vec![loc],
         })
     }
@@ -284,7 +298,7 @@ impl Interpreter {
             ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
             ValueType::Function(params, body, closure) => self.call_fn(params, body, closure, args2, loc),
             _ => Err(Error {
-                msg: format!("\"{}\" is not calleable", callee.val),
+                msg: ErrorType::ItemNotCalleable,
                 lines: vec![callee.loc],
             }),
         }
@@ -298,7 +312,7 @@ impl Interpreter {
                 ValueType::Float(n) => ValueType::Float(-n),
                 _ => {
                     return Err(Error {
-                        msg: format!("Expected a number, got: {}", val.val),
+                        msg: ErrorType::ExpectedUnaryNumber,
                         lines: vec![val.loc],
                     })
                 }
@@ -307,7 +321,7 @@ impl Interpreter {
                 ValueType::Bool(b) => ValueType::Bool(!b),
                 _ => {
                     return Err(Error {
-                        msg: format!("Expected a bool, got: {}", val.val),
+                        msg: ErrorType::ExpectedUnaryBool,
                         lines: vec![val.loc],
                     })
                 }
@@ -325,7 +339,7 @@ impl Interpreter {
         let right2 = self.visit_expr(right)?;
         let op_name = &op.val;
         let val = self.environment.get(op_name).ok_or(Error {
-            msg: format!("Name not found: \"{op_name}\""),
+            msg: ErrorType::UndeclaredItem,
             lines: vec![op.loc],
         })?;
         match val {
@@ -334,7 +348,7 @@ impl Interpreter {
                 self.call_fn(params, body, closure, vec![left2.val, right2.val], loc)
             }
             _ => Err(Error {
-                msg: format!("Symbol \"{op_name}\" is not a native function"),
+                msg: ErrorType::ItemNotCalleable,
                 lines: vec![op.loc],
             }),
         }
@@ -351,27 +365,27 @@ impl Interpreter {
         let idx2 = self.visit_expr(idx)?;
         let ValueType::Int(n) = idx2.val else {
             return Err(Error {
-                msg: format!("Expected an integer, got: {}", idx2.val),
+                msg: ErrorType::ExpectedIndex,
                 lines: vec![idx2.loc],
             });
         };
         match val.val {
             ValueType::List(ls) => {
-                let n2 = MList::check_index(n, ls.read(|l| l.len())).ok_or_else(|| Error {
-                    msg: format!("Index out of range: {}", n),
+                let n2 = MList::check_index(n, ls.len()).ok_or_else(|| Error {
+                    msg: ErrorType::IndexOutOfRange(n, ls.len()),
                     lines: vec![loc],
                 })?;
                 Ok(ls.read(|l| l[n2].clone()).val)
             }
             ValueType::String(s) => {
                 let n2 = MList::check_index(n, s.len()).ok_or_else(|| Error {
-                    msg: format!("Index out of range: {}", n),
+                    msg: ErrorType::IndexOutOfRange(n, s.len()),
                     lines: vec![loc],
                 })?;
                 Ok(ValueType::String(s.chars().nth(n2).unwrap().to_string()))
             }
             _ => Err(Error {
-                msg: format!("Expected a list or string, got {}", val.val),
+                msg: ErrorType::ItemNotIndexable,
                 lines: vec![val.loc],
             }),
         }
@@ -387,11 +401,7 @@ impl Interpreter {
     ) -> Result<ValueType, Error> {
         if args.len() != params.len() {
             return Err(Error {
-                msg: format!(
-                    "the number of arguments ({}) must match the number of parameters ({})",
-                    args.len(),
-                    params.len()
-                ),
+                msg: ErrorType::IncorrectParameterCount(args.len(), params.len()),
                 lines: vec![loc],
             });
         }
@@ -410,17 +420,17 @@ impl Interpreter {
             Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
             Err(err) => match err {
                 // TODO: ERRORRRRRR
-                ErrorType::Error(err) => return Err(err),
-                ErrorType::Return(val) => val.val,
-                ErrorType::Break => {
+                InterpError::Error(err) => return Err(err),
+                InterpError::Return(val) => val.val,
+                InterpError::Break => {
                     return Err(Error {
-                        msg: "Cannot use break outside of loop".to_string(),
+                        msg: ErrorType::BreakOutsideLoop,
                         lines: vec![loc], // TODO: add locations
                     });
                 }
-                ErrorType::Continue => {
+                InterpError::Continue => {
                     return Err(Error {
-                        msg: "Cannot use continue outside of loop".to_string(),
+                        msg: ErrorType::ContinueOutsideLoop,
                         lines: vec![loc], // TODO: add locations
                     });
                 }
@@ -437,6 +447,6 @@ impl Interpreter {
         args: Vec<ValueType>,
         loc: Location,
     ) -> Result<ValueType, Error> {
-        func(args).map_err(|msg| Error { msg, lines: vec![loc] })
+        func(args).map_err(|msg| Error { msg: ErrorType::NativeFunctionError(msg), lines: vec![loc] })
     }
 }

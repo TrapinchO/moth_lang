@@ -44,13 +44,12 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     }
     */
 
-    let resassoc = reassoc::reassociate(
+    let ast2 = reassoc::reassociate(
         NATIVE_OPERATORS
             .map(|(name, assoc, _)| (name.to_string(), assoc))
             .into(),
         ast,
-    )
-    .map_err(|e| vec![e])?;
+    ).map_err(|e| vec![e])?;
     /*
     println!("===== reassociating =====");
     for s in &resassoc {
@@ -63,7 +62,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
         .keys()
         .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
         .collect::<HashMap<_, _>>();
-    match varcheck::varcheck(builtins, &resassoc) {
+    match varcheck::varcheck(builtins, &ast2) {
         Ok(()) => {}
         Err((warns, errs)) => {
             for w in warns {
@@ -78,7 +77,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     let compile_end = compile_start.elapsed();
     let eval_start = Instant::now();
     //println!("===== evaluating =====");
-    interp.interpret(resassoc).map_err(|e| vec![e])?;
+    interp.interpret(ast2).map_err(|e| vec![e])?;
     //interp.interpret(&resassoc)?;
 
     if time {

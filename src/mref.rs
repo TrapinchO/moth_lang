@@ -100,12 +100,17 @@ impl MList {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.read(|l| l.len())
+    }
+
     pub fn iter(&self) -> impl Iterator<Item = Value> {
         MListIter::new(self.clone())
     }
 
     // checks whether it is in the possible range (even if negative)
     // and returns it as a positive index
+    // NOTE: for future me, this is also used for indexing strings
     pub fn check_index(idx: i32, length: usize) -> Option<usize> {
         if length as i32 <= idx || idx < -(length as i32) {
             return None;

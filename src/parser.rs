@@ -2,7 +2,7 @@ use std::{mem, vec};
 
 use crate::{
     associativity::{Associativity, Precedence},
-    error::Error,
+    error::{Error, ErrorType},
     exprstmt::*,
     located::Location,
     token::*,
@@ -16,7 +16,7 @@ macro_rules! check_variant {
                 TokenType::$variant $( ( $($pattern),+ ) )? => { let tok = tok.clone(); $self.advance(); Ok(tok) },
                 _ => Err(Error {
                     //msg: concat!("Expected ", stringify!($variant)).to_string(),
-                    msg: $msg.to_string(),
+                    msg: ErrorType::ExpectedToken($msg.to_string()),
                     lines: vec![tok.loc],
                 })
             }
@@ -92,7 +92,7 @@ impl Parser {
         // move past starting token
         if !cmp(&self.get_current().val, &start_tok) {
             return Err(Error {
-                msg: format!("Expected opening token: {}", start_tok),
+                msg: ErrorType::ExpectedOpeningToken(start_tok),
                 lines: vec![self.get_current().loc],
             });
         }
@@ -122,7 +122,7 @@ impl Parser {
         let cur = self.get_current();
         if !cmp(&cur.val, &end_tok) {
             return Err(Error {
-                msg: format!("Expected closing token: {}", end_tok),
+                msg: ErrorType::ExpectedClosingToken(end_tok),
                 lines: vec![self.get_current().loc],
             });
         }
@@ -304,7 +304,7 @@ impl Parser {
         let cur = self.get_current().clone();
         let Token { val: TokenType::Identifier(name), loc } = cur else {
             return Err(Error {
-                msg: "Expected a parameter name".to_string(),
+                msg: ErrorType::ExpectedParameterName,
                 lines: vec![cur.loc],
             });
         };
@@ -320,7 +320,7 @@ impl Parser {
             TokenType::Identifier(name) => {
                 if force_operator {
                     return Err(Error {
-                        msg: "Expected a valid symbol".to_string(),
+                        msg: ErrorType::InvalidOperatorname,
                         lines: vec![tok.loc]
                     })
                 }
@@ -329,7 +329,7 @@ impl Parser {
             TokenType::Symbol(name) => (true, name),
             _ => {
                 return Err(Error {
-                    msg: "Expected an identifier or a valid symbol.".to_string(),
+                    msg: ErrorType::InvalidFunctionName,
                     lines: vec![tok.loc],
                 })
             }
@@ -356,7 +356,7 @@ impl Parser {
         } else {
             let [param1, param2] = &*params else {
                 return Err(Error {
-                    msg: format!("Operators must have exactly two arguments, got {}", params.len()),
+                    msg: ErrorType::IncorrectOperatorParameterCount(params.len()),
                     lines: vec![tok.loc],
                 });
             };
@@ -385,11 +385,11 @@ impl Parser {
         let prec2 = match prec.val {
             TokenType::Int(n @ 0..=10) => { n },
             TokenType::Int(n) => return Err(Error {
-                msg: format!("Expected an integer between 0 and 10, found: {}", n),
+                msg: ErrorType::PrecedenceOutOfRange(n),
                 lines: vec![prec.loc],
             }),
             _ => return Err(Error {
-                msg: "Expected an integer".to_string(),
+                msg: ErrorType::InvalidPrecedence,
                 lines: vec![prec.loc],
             })
         };
@@ -438,7 +438,7 @@ impl Parser {
                 loc,
             }),
             _ => Err(Error {
-                msg: "The left side of assignment must be either a variable or an index".to_string(),
+                msg: ErrorType::InvalidAssignmentTarget,
                 lines: vec![expr.loc],
             }),
         }
@@ -477,7 +477,7 @@ impl Parser {
         };
         if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
-                msg: format!("Unknown operator: \"{sym}\""),
+                msg: ErrorType::UnknownUnaryOperator(sym),
                 lines: vec![loc],
             });
         }
@@ -583,7 +583,7 @@ impl Parser {
                         ExprType::Parens(self.parse_expression()?.into())
                     },
                 };
-                let end = check_variant!(self, RParen, "Expected closing parenthesis")?.loc.end;
+                let end = check_variant!(self, RParen, "Expected a closing parenthesis")?.loc.end;
                 return Ok(Expr {
                     val,
                     loc: Location {
@@ -604,13 +604,13 @@ impl Parser {
             }
             TokenType::Eof => {
                 return Err(Error {
-                    msg: "Expected an element but reached EOF".to_string(),
+                    msg: ErrorType::UnexpectedEof,
                     lines: vec![tok.loc],
                 })
             }
             _ => {
                 return Err(Error {
-                    msg: format!("Unknown element: {}", tok.val),
+                    msg: ErrorType::UnknownElement(tok.val),
                     lines: vec![tok.loc],
                 })
             }

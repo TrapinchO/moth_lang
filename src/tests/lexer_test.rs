@@ -1,4 +1,4 @@
-use crate::{error::*, lexer::lex, located::Location, token::*};
+use crate::{error::{Error, ErrorType}, lexer::lex, located::Location, token::*};
 
 #[test]
 fn lex_empty() {
@@ -33,7 +33,7 @@ fn lex_float_error() {
     assert_eq!(
         lex("1.1.1"),
         Err(Error {
-            msg: "Found two floating point number delimiters".to_string(),
+            msg: ErrorType::TwoDecimalPoints,
             lines: vec![Location { start: 0, end: 4 }]
         })
     );
@@ -44,7 +44,7 @@ fn lex_number_err() {
     let nums = [(
         "1a",
         Error {
-            msg: "Invalid digit: \"a\"".to_string(),
+            msg: ErrorType::InvalidDigit('a'),
             lines: vec![Location { start: 0, end: 1 }],
         },
     )];
@@ -106,14 +106,14 @@ fn lex_string_err() {
         (
             "\"",
             Error {
-                msg: "EOF while parsing string".to_string(),
+                msg: ErrorType::StringEoF,
                 lines: vec![Location { start: 0, end: 1 }],
             },
         ),
         (
             "\"test\n\"",
             Error {
-                msg: "EOL while parsing string".to_string(),
+                msg: ErrorType::StringEol,
                 lines: vec![Location { start: 0, end: 5 }],
             },
         ),
@@ -422,7 +422,7 @@ fn comment_operator_invalid() {
     assert_eq!(
         lex("fun */() {}"),
         Err(Error {
-            msg: "Block comment ending cannot be an operator".to_string(),
+            msg: ErrorType::CommentSymbol,
             lines: vec![Location { start: 4, end: 6 }], // TODO: incorrect end location
         })
     )
@@ -433,7 +433,7 @@ fn float_point_letter() {
     assert_eq!(
         lex("1.a1"),
         Err(Error {
-            msg: "Invalid digit: \"a\"".to_string(),
+            msg: ErrorType::InvalidDigit('a'),
             lines: vec![Location { start: 0, end: 2 }],
         })
     )

@@ -1,6 +1,6 @@
-//use crate::{token::{TokenType}, reassoc::Precedence};
-
-use crate::{located::Location, value::Value};
+use crate::associativity::Precedence;
+use crate::located::Location;
+use crate::token::TokenType;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Pos {
@@ -8,48 +8,119 @@ struct Pos {
     col: usize,
 }
 
-/*
 #[derive(Debug, PartialEq)]
-enum ErrorType {
+pub enum ErrorType {
     // lexer
-    UnknownCharacter,
+    UnknownCharacter(char),
     StringEol,
     StringEoF,
     TwoDecimalPoints,
     InvalidDigit(char),
     IntegerOverflow,
     CommentEof,
+    CommentSymbol,
     // parser
     ExpectedSemicolon,
-    ExpectedLBrace,
-    ExpectedRBrace,
-    ExpectedToken(TokenType),
+    ExpectedToken(String),
+    UnknownElement(TokenType),
+    UnknownUnaryOperator(String),
+    InvalidAssignmentTarget,
+    InvalidPrecedence,
+    PrecedenceOutOfRange(i32),
+    IncorrectOperatorParameterCount(usize),
+    InvalidFunctionName,
+    InvalidOperatorname,
+    ExpectedOpeningToken(TokenType),
+    ExpectedClosingToken(TokenType),
+    ExpectedParameterName,
+    UnexpectedEof,
     // reassoc
-    NotASymbol,
-    IncompatiblePrecedence(Precedence, Precedence),
+    OperatorNotFound(String),
+    IncompatiblePrecedence(String, Precedence, String, Precedence),
     // varcheck
-    UndeclaredVariable(String),
+    AlreadyDeclaredItem,
+    UndeclaredItem,
+    DuplicateParameter(String),
+    // varcheck warns
+    ItemNotUsed(String),
+    // interpreter
+    ExpectedListIndex,
+    ExpectedIndex,
+    IndexOutOfRange(i32, usize), // tried, max
+    ExpectedBool,
+    ItemNotCalleable,
+    ExpectedUnaryNumber,
+    ExpectedUnaryBool,
+    ItemNotIndexable,
+    IncorrectParameterCount(usize, usize),
+    ReturnOutsideFunction,
+    BreakOutsideLoop,
+    ContinueOutsideLoop,
+    NativeFunctionError(String),
+    // other
+    OtherError(String),
 }
-*/
 
-#[derive(Debug)]
-pub enum ErrorType {
-    Error(Error),
-    Return(Value),
-    Continue,
-    Break,
-}
-// a miracle
-impl From<Error> for ErrorType {
-    fn from(value: Error) -> Self {
-        ErrorType::Error(value)
+impl ErrorType {
+    pub fn msg(&self) -> String {
+        match self {
+            // lexer
+            Self::UnknownCharacter(c) => format!("Unknown character: \"{c}\""),
+            Self::StringEol => "EOL while parsing string".to_string(),
+            Self::StringEoF => "EOF while parsing string".to_string(),
+            Self::TwoDecimalPoints => "Found two decimal delimiters".to_string(),
+            Self::InvalidDigit(c) => format!("Invalid digit: \"{c}\""),
+            Self::IntegerOverflow => "Integer overflow".to_string(),
+            Self::CommentEof => "EOF while parsing block comment".to_string(),
+            Self::CommentSymbol => "Block comment ending cannot be an operator".to_string(),
+            // parser
+            Self::ExpectedSemicolon => "Expected a semicolon".to_string(),
+            Self::ExpectedToken(msg) => msg.clone(),
+            Self::UnknownElement(tok) => format!("Unknown element: {tok}"),
+            Self::UnknownUnaryOperator(s) => format!("Unknown unary operator: {s}"),
+            Self::InvalidAssignmentTarget => "The left side of an assignment must be either a variable or an index".to_string(),
+            Self::InvalidPrecedence => "Precendence value must be an integer".to_string(),
+            Self::PrecedenceOutOfRange(n) => format!("Precedence value must be between 0 and 10, got: {n}"),
+            Self::IncorrectOperatorParameterCount(n) => format!("Operator declaration must have exactly two parameters, got {n}"),
+            Self::InvalidFunctionName => "Function name must be either an identifier or a valid symbol".to_string(),
+            Self::InvalidOperatorname => "Operator name must be a valid symbol".to_string(),
+            Self::ExpectedOpeningToken(tok) => format!("Expected opening token {tok}"),
+            Self::ExpectedClosingToken(tok) => format!("Expected closing token {tok}"),
+            Self::UnexpectedEof => "Expected an element but reached EOF".to_string(),
+            Self::ExpectedParameterName => "Expected a parameter name".to_string(),
+            // reassoc
+            Self::OperatorNotFound(s) => format!("Operator not found: {s}"),
+            Self::IncompatiblePrecedence(op1, prec1, op2, prec2) => format!("Incompatible operator precedence: \"{op1}\" ({prec1:?}) and \"{op2}\" ({prec2:?}) - both have precedence {}", prec1.prec),
+            // varcheck
+            Self::AlreadyDeclaredItem => "Item already declared".to_string(),
+            Self::UndeclaredItem => "Item not declared".to_string(),
+            Self::DuplicateParameter(s) => format!("Duplicate parameter: {s}"),
+            // varcheck warns
+            Self::ItemNotUsed(s) => format!("Item {s} not used"),
+            // interpreter
+            Self::ExpectedListIndex => "Expected a list index expression".to_string(),
+            Self::ExpectedIndex => "Expected an integer index".to_string(),
+            Self::IndexOutOfRange(n, len) => format!("Index out of range: {n} (length {len})"),
+            Self::ExpectedBool => "Expected bool in a condition".to_string(),
+            Self::ItemNotCalleable => "Item is not calleable".to_string(),
+            Self::ExpectedUnaryNumber => "Expected a number to negate".to_string(),
+            Self::ExpectedUnaryBool => "Expected a bool to negate".to_string(),
+            Self::ItemNotIndexable => "Item is not indexable".to_string(),
+            Self::IncorrectParameterCount(n, max) => format!("The number of arguments ({n}) must match the number of parameters ({max})"),
+            Self::ReturnOutsideFunction => "Cannot use return outside of a function".to_string(),
+            Self::BreakOutsideLoop => "Cannot use break outside of a loop".to_string(),
+            Self::ContinueOutsideLoop => "Cannot use continue outside of a loop".to_string(),
+            Self::NativeFunctionError(msg) => msg.clone(),
+            // other
+            Self::OtherError(msg) => msg.clone(),
+        }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq)]
 pub struct Error {
-    pub msg: String,
-    pub lines: Vec<Location>, // start, end INDEXES
+    pub msg: ErrorType,
+    pub lines: Vec<Location>,
 }
 
 impl Error {
@@ -64,7 +135,7 @@ impl Error {
             .iter()
             .map(|x| x.0.line)
             .max()
-            .unwrap_or_else(|| panic!("Expected error position(s);\nMessage: {}", self.msg));
+            .unwrap_or_else(|| panic!("Expected error position(s);\nMessage: {}", self.msg.msg()));
         // otherwise it would consider the 10th line as 9th, thus one less character for padding
         // see commit d86b034
         let width = (last_line + 1).to_string().len();
@@ -118,7 +189,7 @@ impl Error {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        format!("Error: {}\n{}", self.msg, lines)
+        format!("Error: {}\n{}", self.msg.msg(), lines)
     }
 }
 
