@@ -1,9 +1,13 @@
 let i = 0;
+let total = 0;
+let prod = 1;
 while i < 10 {
-    print(i);
+    //print(i);
     i = i + 1;
 }
-
+if true {
+    break;
+}
 
 /*
 fun a() {}

@@ -5,7 +5,7 @@ use crate::{
     environment::Environment,
     error::{Error, ErrorType},
     exprstmt::*,
-    located::Location,
+    located::{Located, Location},
     mref::MList,
     value::*,
 };
@@ -15,17 +15,22 @@ pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Resu
 }
 
 #[derive(Debug)]
-enum InterpError {
+enum InterpErrorType {
     Error(Error),
     Return(Value),
     Continue,
     Break,
 }
 
+type InterpError = Located<InterpErrorType>;
+
 // a miracle
 impl From<Error> for InterpError {
     fn from(value: Error) -> Self {
-        InterpError::Error(value)
+        InterpError {
+            loc: *value.lines.first().unwrap(),
+            val: InterpErrorType::Error(value),
+        }
     }
 }
 
@@ -47,15 +52,15 @@ impl Interpreter {
             match self.visit_stmt(s.clone()) {
                 Ok(..) => {}
                 Err(err) => {
-                    let msg = match err {
-                        InterpError::Error(error) => return Err(error),
-                        InterpError::Return(_) => ErrorType::ReturnOutsideFunction,
-                        InterpError::Break => ErrorType::BreakOutsideLoop,
-                        InterpError::Continue => ErrorType::ContinueOutsideLoop,
+                    let msg = match err.val {
+                        InterpErrorType::Error(error) => return Err(error),
+                        InterpErrorType::Return(_) => ErrorType::ReturnOutsideFunction,
+                        InterpErrorType::Break => ErrorType::BreakOutsideLoop,
+                        InterpErrorType::Continue => ErrorType::ContinueOutsideLoop,
                     };
                     return Err(Error {
                         msg,
-                        lines: vec![s.loc], // TODO: add locations
+                        lines: vec![err.loc],
                     });
                 }
             };
@@ -114,10 +119,7 @@ impl Interpreter {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
         if !self.environment.insert(&name, val.val) {
-            return Err(Error {
-                msg: ErrorType::AlreadyDeclaredItem,
-                lines: vec![ident.loc],
-            }.into());
+            unreachable!("Item \"{}\" already declared\nLocation: {:?}", name, ident.loc);
         }
         Ok(())
     }
@@ -181,11 +183,11 @@ impl Interpreter {
 
     fn whiles(&mut self, _: Location, cond: Expr, block: Vec<Stmt>) -> Result<(), InterpError> {
         loop {
-            let val = self.visit_expr(cond.clone())?;
-            let ValueType::Bool(b) = val.val else {
+            let cond = self.visit_expr(cond.clone())?;
+            let ValueType::Bool(b) = cond.val else {
                 return Err(Error {
                     msg: ErrorType::ExpectedBool,
-                    lines: vec![val.loc]
+                    lines: vec![cond.loc]
                 }.into())
             };
             if !b {
@@ -193,11 +195,11 @@ impl Interpreter {
             }
             match self.interpret_block(block.clone()) {
                 Ok(_) => {}
-                Err(err) => match err {
-                    InterpError::Error(_) => return Err(err),
-                    InterpError::Return(_) => return Err(err),
-                    InterpError::Continue => continue,
-                    InterpError::Break => break,
+                Err(err) => match err.val {
+                    InterpErrorType::Error(_) => return Err(err),
+                    InterpErrorType::Return(_) => return Err(err),
+                    InterpErrorType::Continue => continue,
+                    InterpErrorType::Break => break,
                 },
             }
         }
@@ -241,15 +243,24 @@ impl Interpreter {
     ) -> Result<(), InterpError> {
         self.fun(loc, name, vec![params.0, params.1], block)
     }
-    fn brek(&mut self, _: Location) -> Result<(), InterpError> {
-        Err(InterpError::Break)
+    fn brek(&mut self, loc: Location) -> Result<(), InterpError> {
+        Err(InterpError {
+            val: InterpErrorType::Break,
+            loc,
+        })
     }
-    fn cont(&mut self, _: Location) -> Result<(), InterpError> {
-        Err(InterpError::Continue)
+    fn cont(&mut self, loc: Location) -> Result<(), InterpError> {
+        Err(InterpError {
+            val: InterpErrorType::Continue,
+            loc,
+        })
     }
-    fn retur(&mut self, _: Location, expr: Expr) -> Result<(), InterpError> {
+    fn retur(&mut self, loc: Location, expr: Expr) -> Result<(), InterpError> {
         let val = self.visit_expr(expr)?;
-        Err(InterpError::Return(val))
+        Err(InterpError {
+            val: InterpErrorType::Return(val),
+            loc,
+        })
     }
 }
 
@@ -428,20 +439,20 @@ impl Interpreter {
 
         let val = match self.interpret_block(body) {
             Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
-            Err(err) => match err {
+            Err(err) => match err.val {
                 // TODO: ERRORRRRRR
-                InterpError::Error(err) => return Err(err),
-                InterpError::Return(val) => val.val,
-                InterpError::Break => {
+                InterpErrorType::Error(err) => return Err(err),
+                InterpErrorType::Return(val) => val.val,
+                InterpErrorType::Break => {
                     return Err(Error {
                         msg: ErrorType::BreakOutsideLoop,
-                        lines: vec![loc], // TODO: add locations
+                        lines: vec![err.loc], // TODO: add locations
                     });
                 }
-                InterpError::Continue => {
+                InterpErrorType::Continue => {
                     return Err(Error {
                         msg: ErrorType::ContinueOutsideLoop,
-                        lines: vec![loc], // TODO: add locations
+                        lines: vec![err.loc], // TODO: add locations
                     });
                 }
             },
