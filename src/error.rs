@@ -15,7 +15,8 @@ pub enum ErrorType {
     // lexer
     UnknownCharacter(char),
     StringEol,
-    StringEoF,
+    StringEof,
+    InvalidEscapeChar(String), // string because of handling escaping special characters
     TwoDecimalPoints,
     InvalidDigit(char),
     IntegerOverflow,
@@ -69,7 +70,8 @@ impl ErrorType {
             // lexer
             Self::UnknownCharacter(c) => format!("Unknown character: \"{c}\""),
             Self::StringEol => "EOL while parsing string".to_string(),
-            Self::StringEoF => "EOF while parsing string".to_string(),
+            Self::StringEof => "EOF while parsing string".to_string(),
+            Self::InvalidEscapeChar(c) => format!("Invalid escape character: \"\\{c}\""),
             Self::TwoDecimalPoints => "Found two decimal delimiters".to_string(),
             Self::InvalidDigit(c) => format!("Invalid digit: \"{c}\""),
             Self::IntegerOverflow => "Integer overflow".to_string(),

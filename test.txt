@@ -1,9 +1,9 @@
-let a = 10;
-fun f(x, b) { let a = 11; a+b+x; }
-print(a, f(1, 2));
 
 
 
+
+
+// "aa\", \\, \naaaa";
 
 /*
 fun a() {}

@@ -106,7 +106,7 @@ fn lex_string_err() {
         (
             "\"",
             Error {
-                msg: ErrorType::StringEoF,
+                msg: ErrorType::StringEof,
                 lines: vec![Location { start: 0, end: 1 }],
             },
         ),

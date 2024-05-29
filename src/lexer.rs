@@ -238,18 +238,41 @@ impl Lexer {
         // move behind the opening quote
         self.advance();
         while !self.is_at_end() {
-            if self.is_char('\"') {
-                // move behind the closing quote
-                self.advance();
-                return Ok(s);
+            match self.get_current() {
+                '\"' => {
+                    // move behind the closing quote
+                    self.advance();
+                    return Ok(s);
+                },
+                '\n' => {
+                    return Err(self.error(ErrorType::StringEol));
+                },
+                '\\' => {
+                    self.advance();
+                    if self.is_at_end() {
+                        return Err(self.error(ErrorType::StringEof))
+                    }
+                    let escaped = match self.get_current() {
+                        'n' => '\n',
+                        't' => '\t',
+                        '\"' => '\"',
+                        '\'' => '\'',
+                        '\\' => '\\',
+                        c => {
+                            // makes sure newlines etc. do not behave funny
+                            let c = c.escape_debug().to_string();
+                            return Err(self.error(ErrorType::InvalidEscapeChar(c)));
+                        }
+                    };
+                    s.push(escaped)
+                }
+                c => {
+                    s.push(c)
+                }
             }
-            if self.is_char('\n') {
-                return Err(self.error(ErrorType::StringEol));
-            }
-            s.push(self.get_current());
             self.advance();
         }
-        Err(self.error(ErrorType::StringEoF))
+        Err(self.error(ErrorType::StringEof))
     }
 
     fn lex_line_comment(&mut self) {

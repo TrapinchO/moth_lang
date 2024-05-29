@@ -307,7 +307,6 @@ impl Interpreter {
 
         let callee = self.visit_expr(callee)?;
         match callee.val {
-            // TODO: the ok and ? can be removed
             ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
             ValueType::Function(params, body, closure) => self.call_fn(params, body, closure, args2, loc),
             _ => Err(Error {
@@ -430,19 +429,18 @@ impl Interpreter {
         let val = match self.interpret_block(body) {
             Ok(..) => ValueType::Unit, // hope this doesnt bite me later...
             Err(err) => match err.val {
-                // TODO: ERRORRRRRR
                 InterpErrorType::Error(err) => return Err(err),
                 InterpErrorType::Return(val) => val.val,
                 InterpErrorType::Break => {
                     return Err(Error {
                         msg: ErrorType::BreakOutsideLoop,
-                        lines: vec![err.loc], // TODO: add locations
+                        lines: vec![err.loc],
                     });
                 }
                 InterpErrorType::Continue => {
                     return Err(Error {
                         msg: ErrorType::ContinueOutsideLoop,
-                        lines: vec![err.loc], // TODO: add locations
+                        lines: vec![err.loc],
                     });
                 }
             },
