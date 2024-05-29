@@ -128,10 +128,7 @@ impl Interpreter {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
         if !self.environment.update(&name, val.val) {
-            return Err(Error {
-                msg: ErrorType::UndeclaredItem,
-                lines: vec![ident.loc],
-            }.into());
+            unreachable!("Item \"{}\" not declared\nLocation: {:?}", name, ident.loc);
         }
         Ok(())
     }
@@ -226,10 +223,7 @@ impl Interpreter {
             &name.val,
             ValueType::Function(params2, block, self.environment.scopes.clone()),
             ) {
-             return Err(Error {
-                msg: ErrorType::AlreadyDeclaredItem,
-                lines: vec![name.loc],
-             }.into());
+            unreachable!("Item \"{}\" already declared\nLocation: {:?}", name.val, name.loc);
          }
         Ok(())
     }
@@ -293,10 +287,8 @@ impl Interpreter {
         Ok(ValueType::Float(n))
     }
     fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
-        self.environment.get(&ident).ok_or_else(|| Error {
-            msg: ErrorType::UndeclaredItem,
-            lines: vec![loc],
-        })
+        self.environment.get(&ident)
+            .ok_or_else(|| unreachable!("Item \"{}\" already declared\nLocation: {:?}", ident, loc))
     }
     fn string(&mut self, s: String) -> Result<ValueType, Error> {
         Ok(ValueType::String(s))
@@ -348,7 +340,7 @@ impl Interpreter {
                 }
             },
             sym => {
-                unreachable!("unknown binary operator interpreted: {sym}");
+                unreachable!("unknown unary operator interpreted: {sym}");
             }
         };
 
@@ -359,10 +351,8 @@ impl Interpreter {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let op_name = &op.val;
-        let val = self.environment.get(op_name).ok_or(Error {
-            msg: ErrorType::UndeclaredItem,
-            lines: vec![op.loc],
-        })?;
+        let val = self.environment.get(op_name)
+            .unwrap_or_else(|| unreachable!("Item \"{}\" already declared\nLocation: {:?}", op_name, op.loc));
         match val {
             ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2.val, right2.val], right_loc),
             ValueType::Function(params, body, closure) => {
