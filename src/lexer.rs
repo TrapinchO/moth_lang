@@ -258,7 +258,6 @@ impl Lexer {
         }
     }
 
-    // TODO: stuff like "==*/" at the end
     fn lex_block_comment(&mut self) -> Result<(), Error> {
         let mut state = 0;
         while !self.is_at_end() {

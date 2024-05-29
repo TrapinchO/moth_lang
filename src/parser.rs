@@ -400,7 +400,7 @@ impl Parser {
         Ok(Stmt {
             val: StmtType::OperatorDeclStmt(
                     name, params, block,
-                    Precedence { prec: prec2 as usize, assoc }),
+                    Precedence { prec: prec2 as u8, assoc }),
             loc: Location { start: kw.loc.start, end: loc.end }
         })
     }
@@ -566,6 +566,7 @@ impl Parser {
                         self.advance();
                         // either a symbol reference or unary operation
                         if is_typ!(self, RParen) {
+                            // TODO: location includes the parenthesis too, not sure if I like it
                             ExprType::Identifier(sym_name)
                         } else {
                             let expr = self.parse_unary()?;

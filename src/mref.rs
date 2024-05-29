@@ -42,6 +42,7 @@ impl<T: Debug> Debug for MRef<T> {
     }
 }
 
+
 pub type MMap<T> = MRef<HashMap<String, T>>;
 impl<T: Clone> MMap<T> {
     pub fn insert(&mut self, key: String, val: T) {
@@ -61,7 +62,7 @@ impl<T: Clone> MMap<T> {
         MMapIter::new(self.clone())
     }
 }
-// /*
+
 struct MMapIter<T> {
     idx: usize,
     len: usize,
@@ -90,7 +91,8 @@ impl<T: Clone> Iterator for MMapIter<T> {
         Some((key, item.clone()))
     }
 }
-// */
+
+
 pub type MList = MRef<Vec<Value>>;
 impl MList {
     pub fn modify(&mut self, idx: usize, val: Value) {

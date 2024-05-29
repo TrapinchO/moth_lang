@@ -98,7 +98,7 @@ impl ErrorType {
             Self::UndeclaredItem => "Item not declared".to_string(),
             Self::DuplicateParameter(s) => format!("Duplicate parameter: {s}"),
             // varcheck warns
-            Self::ItemNotUsed(s) => format!("Item {s} not used"),
+            Self::ItemNotUsed(s) => format!("Item \"{s}\" not used"),
             // interpreter
             Self::ExpectedListIndex => "Expected a list index expression".to_string(),
             Self::ExpectedIndex => "Expected an integer index".to_string(),

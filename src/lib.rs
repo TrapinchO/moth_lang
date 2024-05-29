@@ -35,7 +35,6 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     }
     */
 
-    // TODO: unknown operator is not reported unless reassociated in binary operation
     let ast = parser::parse(tokens).map_err(|e| vec![e])?;
     /*
     println!("===== parsing =====");
@@ -57,7 +56,6 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     }
     */
 
-    // TODO: change back to reference, less cloning
     let builtins = get_builtins()
         .keys()
         .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
@@ -65,7 +63,8 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     match varcheck::varcheck(builtins, &ast2) {
         Ok(()) => {}
         Err((warns, errs)) => {
-            for w in warns {
+            // apparently they are in the reverse order...
+            for w in warns.iter().rev() {
                 println!("{}\n", w.format_message(&input));
             }
             if !errs.is_empty() {

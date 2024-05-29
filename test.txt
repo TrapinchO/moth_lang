@@ -1,13 +1,12 @@
-let i = 0;
-let total = 0;
-let prod = 1;
-while i < 10 {
-    //print(i);
-    i = i + 1;
-}
+let a = 10;
 if true {
-    break;
+    let a = 11;
+    print(a);
 }
+
+
+
+
 
 /*
 fun a() {}

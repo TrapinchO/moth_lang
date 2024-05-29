@@ -35,9 +35,6 @@ impl VarCheck {
                 });
             }
             None => {
-                // we dont care about the error, we know it
-                // give dummy values
-                // it is always going to succeed (as I already check for the existence)
                 self.env.insert(name, (loc, false));
             }
         };
