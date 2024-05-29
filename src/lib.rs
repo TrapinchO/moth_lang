@@ -66,7 +66,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
         Ok(()) => {}
         Err((warns, errs)) => {
             for w in warns {
-                println!("{}", w.format_message(&input));
+                println!("{}\n", w.format_message(&input));
             }
             if !errs.is_empty() {
                 return Err(errs);

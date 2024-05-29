@@ -26,7 +26,7 @@ fn main() {
             Ok(_) => {}
             Err(errs) => {
                 for e in errs {
-                    println!("{}", e.format_message(&src));
+                    println!("{}\n", e.format_message(&src));
                 }
             }
         }

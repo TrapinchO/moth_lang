@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::associativity::Precedence;
 use crate::located::Location;
 use crate::token::TokenType;
@@ -115,6 +117,20 @@ impl ErrorType {
             Self::OtherError(msg) => msg.clone(),
         }
     }
+
+    pub fn is_warn(&self) -> bool {
+        match self {
+            Self::ItemNotUsed(_) => true,
+            _ => false,
+        }
+    }
+}
+
+impl Display for ErrorType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // f.alternate();
+        write!(f, "{}", self.msg())
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -189,7 +205,8 @@ impl Error {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        format!("Error: {}\n{}", self.msg.msg(), lines)
+        let warn = if self.msg.is_warn() { "Warning" } else { "Error" };
+        format!("{warn}: {}\n{lines}", self.msg)
     }
 }
 
