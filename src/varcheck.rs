@@ -23,11 +23,10 @@ struct VarCheck {
     warns: Vec<Error>,
 }
 
-// TODO: because env.contains looks through ALL of the scopes,
-// shadowing in a different scope is not possible
 impl VarCheck {
     fn declare_item(&mut self, name: &String, loc: Location) {
-        match self.env.get(name) {
+        // there should always be a scope
+        match self.env.scopes.last().unwrap().get(name) {
             Some(val) => {
                 self.errs.push(Error {
                     msg: ErrorType::AlreadyDeclaredItem,

@@ -1,9 +1,6 @@
 let a = 10;
-if true {
-    let a = 11;
-    print(a);
-}
-
+fun f(x, b) { let a = 11; a+b+x; }
+print(a, f(1, 2));
 
 
 
