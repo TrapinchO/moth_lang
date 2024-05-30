@@ -477,7 +477,7 @@ impl Parser {
         };
         if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
-                msg: ErrorType::UnknownUnaryOperator(sym),
+                msg: ErrorType::UnknownUnaryOperator,
                 lines: vec![loc],
             });
         }

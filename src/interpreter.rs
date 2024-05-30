@@ -346,14 +346,13 @@ impl Interpreter {
         Ok(new_val)
     }
     fn binary(&mut self, left: Expr, op: Symbol, right: Expr, loc: Location) -> Result<ValueType, Error> {
-        let right_loc = right.loc;
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
         let op_name = &op.val;
         let val = self.environment.get(op_name)
             .unwrap_or_else(|| unreachable!("Item \"{}\" already declared\nLocation: {:?}", op_name, op.loc));
         match val {
-            ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2.val, right2.val], right_loc),
+            ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2.val, right2.val], loc),
             ValueType::Function(params, body, closure) => {
                 self.call_fn(params, body, closure, vec![left2.val, right2.val], loc)
             }
@@ -364,6 +363,10 @@ impl Interpreter {
         }
     }
     fn list(&mut self, _: Location, ls: Vec<Expr>) -> Result<ValueType, Error> {
+        // a nicer version, but requires cloning...
+        //let ls2 = ls.iter()
+        //    .map(|e| self.visit_expr(e.clone()))
+        //    .collect::<Result<Vec<_>, _>>()?;
         let mut ls2 = vec![];
         for e in ls {
             ls2.push(self.visit_expr(e)?);
