@@ -1,5 +1,5 @@
 #![allow(clippy::ptr_arg)]
-use crate::{associativity::Precedence, environment::Environment, error::Error, exprstmt::*, located::Location};
+use crate::{associativity::Precedence, environment::Environment, error::{ErrorType, Error}, exprstmt::*, located::Location};
 
 use std::collections::HashMap;
 
@@ -23,21 +23,17 @@ struct VarCheck {
     warns: Vec<Error>,
 }
 
-// TODO: because env.contains looks through ALL of the scopes,
-// shadowing in a different scope is not possible
 impl VarCheck {
     fn declare_item(&mut self, name: &String, loc: Location) {
-        match self.env.get(name) {
+        // there should always be a scope
+        match self.env.scopes.last().unwrap().get(name) {
             Some(val) => {
                 self.errs.push(Error {
-                    msg: "Already declared variable".to_string(),
+                    msg: ErrorType::AlreadyDeclaredItem,
                     lines: vec![val.0, loc],
                 });
             }
             None => {
-                // we dont care about the error, we know it
-                // give dummy values
-                // it is always going to succeed (as I already check for the existence)
                 self.env.insert(name, (loc, false));
             }
         };
@@ -66,7 +62,7 @@ impl VarCheck {
                     self.visit_expr(expr);
                     if !self.env.contains(&t.val) {
                         self.errs.push(Error {
-                            msg: "Undeclared variable".to_string(),
+                            msg: ErrorType::UndeclaredItem,
                             lines: vec![s.loc],
                         });
                     }
@@ -99,7 +95,7 @@ impl VarCheck {
         for (name, used) in self.env.scopes.last().unwrap().iter() {
             if !used.1 {
                 self.warns.push(Error {
-                    msg: format!("Variable \"{name}\" not used."),
+                    msg: ErrorType::ItemNotUsed(name),
                     lines: vec![used.0],
                 })
             }
@@ -154,14 +150,13 @@ impl VarCheck {
         self.check_block(block);
     }
     fn fun(&mut self, _: Location, _: &Identifier, params: &Vec<Identifier>, block: &Vec<Stmt>) {
-        // /*
         let mut params2: HashMap<String, (Location, bool)> = HashMap::new();
         for p in params.iter() {
             let name = p.val.clone();
             match params2.get(&name) {
                 Some(original) => {
                     self.errs.push(Error {
-                        msg: format!("Duplicate parameter: \"{p}\""),
+                        msg: ErrorType::DuplicateParameter(name),
                         lines: vec![original.0, p.loc],
                     });
                 }
@@ -170,13 +165,12 @@ impl VarCheck {
                 }
             }
         }
-        // */
         self.env.add_scope_vars(params2);
         self.check_block(block);
         for (name, used) in self.env.scopes.last().unwrap().iter() {
             if !used.1 {
                 self.warns.push(Error {
-                    msg: format!("Variable \"{name}\" not used."),
+                    msg: ErrorType::ItemNotUsed(name),
                     lines: vec![used.0],
                 })
             }
@@ -230,7 +224,7 @@ impl VarCheck {
             }
             None => {
                 self.errs.push(Error {
-                    msg: "Undeclared variable".to_string(),
+                    msg: ErrorType::UndeclaredItem,
                     lines: vec![loc],
                 });
             }
@@ -256,7 +250,7 @@ impl VarCheck {
                 self.env.update(s, (var.0, true));
             }
             None => self.errs.push(Error {
-                msg: "Undeclared variable".to_string(),
+                msg: ErrorType::UndeclaredItem,
                 lines: vec![loc],
             }),
         }

@@ -19,14 +19,15 @@ fn main() {
             println!("File \"{}\" not found.", file_name);
             return;
         };
-        let src = src.trim_end().replace('\r', ""); // TODO: windows newlines have \r which messes up the lexer
+        // TODO: windows newlines have \r which messes up the lexer
+        let src = src.trim_end().replace('\r', "");
 
         let mut interp = Interpreter::new(get_builtins());
         match run(&mut interp, src.to_string(), true) {
             Ok(_) => {}
             Err(errs) => {
                 for e in errs {
-                    println!("{}", e.format_message(&src));
+                    println!("{}\n", e.format_message(&src));
                 }
             }
         }
