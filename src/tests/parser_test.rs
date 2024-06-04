@@ -756,3 +756,35 @@ fn list_more() {
         }])
     )
 }
+
+#[test]
+fn unary_parenthesis() {
+    let src = parse(lex("(-10 * 10);").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Parens(Expr {
+                    val: ExprType::BinaryOperation(
+                        Expr {
+                            val: ExprType::UnaryOperation(
+                                Symbol { val: "-".to_string(), loc: Location { start: 1, end: 1 } },
+                                Expr {
+                                    val: ExprType::Int(10),
+                                    loc: Location { start: 2, end: 3 }
+                            }.into()),
+                            loc: Location { start: 1, end: 3 },
+                        }.into(),
+                        Symbol { val: "*".to_string(), loc: Location { start: 5, end: 5 } },
+                        Expr {
+                            val: ExprType::Int(10),
+                            loc: Location { start: 7, end: 8 },
+                        }.into()),
+                    loc: Location { start: 1, end: 8 }
+                }.into()),
+                loc: Location { start: 0, end: 9 },
+            }),
+            loc: Location { start: 0, end: 9 },
+        }])
+    )
+}

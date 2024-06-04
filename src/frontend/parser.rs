@@ -614,15 +614,9 @@ impl Parser {
                             // TODO: location includes the parenthesis too, not sure if I like it
                             ExprType::Identifier(sym_name)
                         } else {
-                            let expr = self.parse_unary()?;
-                            ExprType::Parens(
-                                Expr {
-                                    loc: Location { start: next.loc.start, end: expr.loc.end },
-                                    val: ExprType::UnaryOperation(
-                                        Symbol { val: sym_name, loc: next.loc },
-                                        expr.into()),
-                                }.into()
-                            )
+                            // TODO: backtracks, try to remove it later
+                            self.idx -= 1;
+                            ExprType::Parens(self.parse_expression()?.into())
                         }
                     },
                     _ => {
