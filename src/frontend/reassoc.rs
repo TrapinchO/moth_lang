@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
-use crate::{associativity::*, error::Error, error::ErrorType, exprstmt::*, located::Location, visitor::*};
+use crate::{associativity::{Associativity, Precedence}, error::Error, error::ErrorType, exprstmt::*, located::Location, visitor::{ExprVisitor, StmtVisitor}};
 
 pub fn reassociate(ops: HashMap<String, Precedence>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
     let mut ls = vec![];
     for s in stmt {
-        ls.push(reassoc.reassociate(s)?)
+        ls.push(reassoc.reassociate(s)?);
     }
     Ok(ls)
 }
@@ -122,7 +122,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<Stmt, Error> {
         let mut block2: Vec<Stmt> = vec![];
         for s in block {
-            block2.push(self.visit_stmt(s)?)
+            block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
             val: StmtType::BlockStmt(block2),
@@ -134,9 +134,9 @@ impl StmtVisitor<Stmt> for Reassociate {
         for (cond, stmts) in blocks {
             let mut block: Block = vec![];
             for s in stmts {
-                block.push(self.visit_stmt(s)?)
+                block.push(self.visit_stmt(s)?);
             }
-            blocks_result.push((self.visit_expr(cond)?, block))
+            blocks_result.push((self.visit_expr(cond)?, block));
         }
 
         Ok(Stmt {
@@ -148,7 +148,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         let cond = self.visit_expr(cond)?;
         let mut block2: Block = vec![];
         for s in block {
-            block2.push(self.visit_stmt(s)?)
+            block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
             val: StmtType::WhileStmt(cond, block2),
@@ -164,7 +164,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     ) -> Result<Stmt, Error> {
         let mut block2: Block = vec![];
         for s in block {
-            block2.push(self.visit_stmt(s)?)
+            block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
             val: StmtType::FunDeclStmt(name, params, block2),
@@ -183,7 +183,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         self.ops.insert(s, prec);
         let mut block2: Block = vec![];
         for s in block {
-            block2.push(self.visit_stmt(s)?)
+            block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
             val: StmtType::OperatorDeclStmt(name, params, block2, prec),

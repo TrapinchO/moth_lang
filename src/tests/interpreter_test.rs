@@ -4,14 +4,14 @@ use crate::backend::value::{get_builtins, ValueType};
 
 fn run_code(code: &str, val: &str) -> Option<ValueType> {
     let mut interp = Interpreter::new(get_builtins());
-    run(&mut interp, code.to_string(), false).ok()?;
+    run(&mut interp, code, false).ok()?;
     interp.get_val(val.to_string())
 }
 
 #[test]
 fn blank() {
     let mut interp = Interpreter::new(get_builtins());
-    let res = run(&mut interp, "".to_string(), false);
+    let res = run(&mut interp, "", false);
     assert_eq!(res.is_ok(), true);
 }
 
@@ -41,7 +41,7 @@ fn list() {
 #[test]
 fn t() {
     let mut interp = Interpreter::new(get_builtins());
-    run(&mut interp, "let x = 2;".to_string(), false).unwrap();
+    run(&mut interp, "let x = 2;", false).unwrap();
     assert_eq!(ValueType::Int(2), interp.get_val("x".to_string()).unwrap());
 }
 

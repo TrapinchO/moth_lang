@@ -40,7 +40,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(defaults: HashMap<String, ValueType>) -> Self {
-        Interpreter {
+        Self {
             environment: Environment::new(defaults),
         }
     }
@@ -74,7 +74,7 @@ impl Interpreter {
     }
 
     fn add_scope(&mut self) {
-        self.environment.add_scope()
+        self.environment.add_scope();
     }
 
     fn remove_scope(&mut self) {
@@ -85,7 +85,7 @@ impl Interpreter {
         self.add_scope();
         for s in block {
             match self.visit_stmt(s) {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(err) => {
                     self.remove_scope();
                     return Err(err);
@@ -134,22 +134,24 @@ impl Interpreter {
     }
 
     fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), InterpError> {
-        let ValueType::List(mut ls2) = self.visit_expr(ls.clone())?.val else {
+        let ls_loc = ls.loc;
+        let ValueType::List(mut ls2) = self.visit_expr(ls)?.val else {
             return Err(Error {
                 msg: ErrorType::ExpectedListIndex,
-                lines: vec![ls.loc],
+                lines: vec![ls_loc],
             }
             .into());
         };
-        let ValueType::Int(n) = self.visit_expr(idx.clone())?.val else {
+        let idx_loc = idx.loc;
+        let ValueType::Int(n) = self.visit_expr(idx)?.val else {
             return Err(Error {
                 msg: ErrorType::ExpectedIndex,
-                lines: vec![idx.loc],
+                lines: vec![idx_loc],
             }.into())
         };
         let n2 = MList::check_index(n, ls2.len()).ok_or_else(|| Error {
             msg: ErrorType::IndexOutOfRange(n, ls2.len()),
-            lines: vec![idx.loc],
+            lines: vec![idx_loc],
         })?;
         ls2.modify(n2, self.visit_expr(val)?);
         Ok(())
@@ -191,7 +193,7 @@ impl Interpreter {
                 break;
             }
             match self.interpret_block(block.clone()) {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(err) => match err.val {
                     InterpErrorType::Error(_) => return Err(err),
                     InterpErrorType::Return(_) => return Err(err),
@@ -461,8 +463,10 @@ impl Interpreter {
         Ok(val)
     }
 
+    // btw the self is technically not needed
+    // leaving it here for style for now
     fn call_fn_native(
-        &mut self,
+        &self,
         func: NativeFunction,
         args: Vec<ValueType>,
         loc: Location,

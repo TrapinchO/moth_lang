@@ -37,7 +37,7 @@ impl ExprType {
             ),
             Self::List(ls) => format!(
                 "[{}]",
-                ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
+                ls.iter().map(|e| { format!("{e}") }).collect::<Vec<_>>().join(", ")
             ),
             Self::Index(expr, idx) => format!("{}[{}]", expr.val, idx.val),
             Self::Lambda(params, block) => format!(

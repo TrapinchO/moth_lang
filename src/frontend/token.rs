@@ -44,10 +44,10 @@ impl TokenType {
         match self {
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
-            Self::String(s) => format!("\"{}\"", s),
+            Self::String(s) => format!("\"{s}\""),
             Self::Symbol(s) => s.to_string(),
             Self::Identifier(i) => i.to_string(),
-            typ => format!("{:?}", typ),
+            typ => format!("{typ:?}"),
         }
     }
 }

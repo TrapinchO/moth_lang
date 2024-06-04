@@ -19,11 +19,11 @@ mod visitor;
 #[cfg(test)]
 mod tests;
 
-pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Vec<Error>> {
+pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<Error>> {
     let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
-    let tokens = frontend::lexer::lex(&input).map_err(|e| vec![e])?;
+    let tokens = frontend::lexer::lex(input).map_err(|e| vec![e])?;
     /*
     println!("===== lexing =====");
     for t in &tokens {
@@ -61,7 +61,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
         Err((warns, errs)) => {
             // apparently they are in the reverse order...
             for w in warns.iter().rev() {
-                println!("{}\n", w.format_message(&input));
+                println!("{}\n", w.format_message(input));
             }
             if !errs.is_empty() {
                 return Err(errs);
@@ -76,7 +76,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     //interp.interpret(&resassoc)?;
 
     if time {
-        println!("Compiled in: {:?}", compile_end);
+        println!("Compiled in: {compile_end:?}");
         println!("Evaluated in: {:?}", eval_start.elapsed());
     }
     Ok(())

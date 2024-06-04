@@ -2,7 +2,7 @@ use crate::{
     error::{Error, ErrorType},
     located::{Located, Location},
 };
-use super::token::*;
+use super::token::{Token, TokenType};
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
@@ -57,9 +57,8 @@ impl Lexer {
     }
 
     fn get_current(&self) -> char {
-        if self.is_at_end() {
-            panic!("Attempted to index character out of bounds: {}", self.idx);
-        }
+        assert!(!self.is_at_end(),
+                "Attempted to index character out of bounds: {}", self.idx);
         self.code[self.idx]
     }
 
@@ -161,7 +160,7 @@ impl Lexer {
     }
 
     fn lex_number(&mut self) -> Result<TokenType, Error> {
-        let mut num = String::from("");
+        let mut num = String::new();
         let mut is_float = false;
 
         while !self.is_at_end() {
@@ -204,7 +203,7 @@ impl Lexer {
     }
 
     fn lex_identifier(&mut self) -> String {
-        let mut s = String::from("");
+        let mut s = String::new();
 
         while !self.is_at_end() {
             let cur_char = self.get_current();
@@ -218,7 +217,7 @@ impl Lexer {
     }
 
     fn lex_symbol(&mut self) -> String {
-        let mut s = String::from("");
+        let mut s = String::new();
 
         while !self.is_at_end() {
             let cur_char = self.get_current();
@@ -232,7 +231,7 @@ impl Lexer {
     }
 
     fn lex_string(&mut self) -> Result<String, Error> {
-        let mut s = String::from("");
+        let mut s = String::new();
 
         // move behind the opening quote
         self.advance();
@@ -263,10 +262,10 @@ impl Lexer {
                             return Err(self.error(ErrorType::InvalidEscapeChar(c)));
                         }
                     };
-                    s.push(escaped)
+                    s.push(escaped);
                 }
                 c => {
-                    s.push(c)
+                    s.push(c);
                 }
             }
             self.advance();

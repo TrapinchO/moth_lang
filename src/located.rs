@@ -7,7 +7,7 @@ pub struct Location {
 }
 
 /// a struct to hold a value and its position within the source code
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Located<T> {
     pub val: T,
     pub loc: Location,

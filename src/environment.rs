@@ -8,8 +8,8 @@ pub struct Environment<T> {
 }
 
 impl<T: Clone> Environment<T> {
-    pub fn new(defaults: HashMap<String, T>) -> Environment<T> {
-        Environment {
+    pub fn new(defaults: HashMap<String, T>) -> Self {
+        Self {
             scopes: vec![defaults.into()],
         }
     }
@@ -43,7 +43,7 @@ impl<T: Clone> Environment<T> {
     }
 
     pub fn contains(&self, name: &String) -> bool {
-        for scope in self.scopes.iter() {
+        for scope in &self.scopes {
             if scope.read(|s| s.contains_key(name)) {
                 return true;
             }

@@ -6,7 +6,7 @@ use crate::{
     exprstmt::*,
     located::Location,
 };
-use super::token::*;
+use super::token::{Token, TokenType};
 
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
@@ -44,10 +44,9 @@ struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        if tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof {
-            panic!("Expected code to parse");
-        }
-        Parser { tokens, idx: 0 }
+        assert!(!(tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof),
+                "Expected code to parse");
+        Self { tokens, idx: 0 }
     }
 
     fn is_at_end(&self) -> bool {
@@ -56,13 +55,12 @@ impl Parser {
     }
 
     fn get_current(&self) -> &Token {
-        if self.is_at_end() {
-            panic!(
-                "Attempted to index token out ouf bounds: {} (length {})",
-                self.idx,
-                self.tokens.len()
-            );
-        }
+        assert!(
+            !self.is_at_end(),
+            "Attempted to index token out ouf bounds: {} (length {})",
+            self.idx,
+            self.tokens.len());
+
         &self.tokens[self.idx]
     }
 
@@ -186,14 +184,14 @@ impl Parser {
             }
             TokenType::Return => {
                 self.advance();
-                let val = if !is_typ!(self, Semicolon) {
-                    self.parse_expression()?
-                } else {
+                let val = if is_typ!(self, Semicolon) {
                     // phantom value, the location is for the return statement
                     Expr {
                         val: ExprType::Unit,
                         loc: tok.loc,
                     }
+                } else {
+                    self.parse_expression()?
                 };
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
@@ -338,7 +336,7 @@ impl Parser {
 
         let (params, _) = self.sep(
             TokenType::LParen, TokenType::RParen,
-            Parser::parse_param,
+            Self::parse_param,
         )?;
         let block = self.parse_block()?;
         // TODO: horrible cheating, but eh
@@ -348,7 +346,7 @@ impl Parser {
         if !op {
             Ok(Stmt {
                 val: StmtType::FunDeclStmt(
-                    Identifier { val: name.to_string(), loc: tok.loc },
+                    Identifier { val: name, loc: tok.loc },
                     params, bl
                 ),
                 loc: Location { start, end: block.loc.end }
@@ -362,7 +360,7 @@ impl Parser {
             };
             Ok(Stmt {
                 val: StmtType::OperatorDeclStmt(
-                    Symbol { val: name.to_string(), loc: tok.loc },
+                    Symbol { val: name, loc: tok.loc },
                     (param1.clone(), param2.clone()), bl,
                     Precedence { prec: 0, assoc: Associativity::Left }
                 ),
@@ -508,7 +506,7 @@ impl Parser {
                 TokenType::LParen => {
                     let (args, loc) = self.sep(
                         TokenType::LParen, TokenType::RParen,
-                        Parser::parse_expression
+                        Self::parse_expression
                     )?;
                     expr = Expr {
                         loc: Location { start, end: loc.end },
@@ -540,7 +538,7 @@ impl Parser {
             TokenType::Pipe => {
                 self.sep(
                     TokenType::Pipe, TokenType::Pipe,
-                    Parser::parse_param
+                    Self::parse_param
                 )?.0
             },
             TokenType::Symbol(s) => {
@@ -641,7 +639,7 @@ impl Parser {
             TokenType::LBracket => {
                 let (items, loc) = self.sep(
                     TokenType::LBracket, TokenType::RBracket,
-                    Parser::parse_expression
+                    Self::parse_expression
                 )?;
                 return Ok(Expr {
                     loc,

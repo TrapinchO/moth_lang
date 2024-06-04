@@ -23,6 +23,9 @@ struct VarCheck {
     warns: Vec<Error>,
 }
 
+// TODO: consider cutting down everything unused, e.g. brek and cont methods
+// as well as some unused parameters
+// these are leftovers of Visitor (which is no longer used), maybe they will come handy some time?
 impl VarCheck {
     fn declare_item(&mut self, name: &String, loc: Location) {
         // there should always be a scope
@@ -47,17 +50,11 @@ impl VarCheck {
 
                     self.declare_item(&t.val, t.loc);
                 }
-                StmtType::FunDeclStmt(t, _, _) => {
+                StmtType::FunDeclStmt(t, _, _) | StmtType::OperatorDeclStmt(t, _, _, _) => {
                     self.declare_item(&t.val, t.loc);
 
                     self.visit_stmt(s);
                 }
-                StmtType::OperatorDeclStmt(t, _, _, _) => {
-                    self.declare_item(&t.val, t.loc);
-
-                    self.visit_stmt(s);
-                }
-
                 StmtType::AssignStmt(t, expr) => {
                     self.visit_expr(expr);
                     if !self.env.contains(&t.val) {
@@ -84,8 +81,7 @@ impl VarCheck {
                 StmtType::ExprStmt(..) => {
                     self.visit_stmt(s);
                 }
-                StmtType::BreakStmt => {}
-                StmtType::ContinueStmt => {}
+                StmtType::BreakStmt | StmtType::ContinueStmt => {}
                 StmtType::ReturnStmt(..) => {
                     self.visit_stmt(s);
                 }
@@ -97,7 +93,7 @@ impl VarCheck {
                 self.warns.push(Error {
                     msg: ErrorType::ItemNotUsed(name),
                     lines: vec![used.0],
-                })
+                });
             }
         }
         self.env.remove_scope();
@@ -151,7 +147,7 @@ impl VarCheck {
     }
     fn fun(&mut self, _: Location, _: &Identifier, params: &Vec<Identifier>, block: &Vec<Stmt>) {
         let mut params2: HashMap<String, (Location, bool)> = HashMap::new();
-        for p in params.iter() {
+        for p in params {
             let name = p.val.clone();
             match params2.get(&name) {
                 Some(original) => {
@@ -172,7 +168,7 @@ impl VarCheck {
                 self.warns.push(Error {
                     msg: ErrorType::ItemNotUsed(name),
                     lines: vec![used.0],
-                })
+                });
             }
         }
         self.env.remove_scope();
@@ -185,7 +181,7 @@ impl VarCheck {
         block: &Vec<Stmt>,
         _: &Precedence,
     ) {
-        self.fun(location, name, &vec![params.0.clone(), params.1.clone()], block)
+        self.fun(location, name, &vec![params.0.clone(), params.1.clone()], block);
     }
     fn retur(&mut self, _: Location, expr: &Expr) {
         self.visit_expr(expr);

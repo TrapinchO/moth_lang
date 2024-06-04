@@ -10,7 +10,7 @@ use crate::backend::value::Value;
 pub struct MRef<T>(Rc<UnsafeCell<T>>);
 impl<T> MRef<T> {
     pub fn new(val: T) -> Self {
-        MRef(Rc::new(UnsafeCell::new(val)))
+        Self(Rc::new(UnsafeCell::new(val)))
     }
 
     pub fn read<V: 'static>(&self, f: impl FnOnce(&T) -> V) -> V {
@@ -26,7 +26,7 @@ impl<T> MRef<T> {
 
 impl<T> From<T> for MRef<T> {
     fn from(value: T) -> Self {
-        MRef::new(value)
+        Self::new(value)
     }
 }
 
@@ -71,7 +71,7 @@ struct MMapIter<T> {
 }
 impl<T> MMapIter<T> {
     fn new(map: MMap<T>) -> Self {
-        MMapIter {
+        Self {
             idx: 0,
             len: map.read(|m| m.len()),
             keys: map.read(|m| m.keys().cloned().collect::<Vec<_>>()),
@@ -116,7 +116,7 @@ impl MList {
     // and returns it as a positive index
     // NOTE: for future me, this is also used for indexing strings
     pub fn check_index(idx: i32, length: usize) -> Option<usize> {
-        if length as i32 <= idx || idx < -(length as i32) {
+        if length <= idx as usize || idx < -(length as i32) {
             return None;
         }
         Some(if idx < 0 { length as i32 + idx } else { idx } as usize)
@@ -130,7 +130,7 @@ struct MListIter {
 impl MListIter {
     fn new(ls: MList) -> Self {
         let len = ls.read(|l| l.len());
-        MListIter { ls, len, idx: 0 }
+        Self { ls, len, idx: 0 }
     }
 }
 impl Iterator for MListIter {

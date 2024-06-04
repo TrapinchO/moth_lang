@@ -27,7 +27,7 @@ impl ValueType {
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
-            Self::String(s) => format!("\"{}\"", s),
+            Self::String(s) => format!("\"{s}\""),
             Self::List(ls) => format!(
                 "[{}]",
                 ls.read(|l| l.clone())
@@ -65,6 +65,10 @@ pub type Value = Located<ValueType>;
 // then make them call native functions with "mothNative" or something
 // see https://github.com/ElaraLang/elara/blob/master/prim.elr
 // PIE anyone?
+// 
+// TODO: also move the vars in error messages into the string some time
+//
+// NOTE: btw clippy complains about usize being cast to i32, just so you know
 pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
     (
         "+",

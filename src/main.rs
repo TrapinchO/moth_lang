@@ -17,15 +17,15 @@ fn main() {
     } else if args.len() == 2 {
         let file_name = &args[1];
         let Ok(src) = fs::read_to_string(file_name) else {
-            println!("File \"{}\" not found.", file_name);
+            println!("File \"{file_name}\" not found.");
             return;
         };
         // TODO: windows newlines have \r which messes up the lexer
         let src = src.trim_end().replace('\r', "");
 
         let mut interp = Interpreter::new(get_builtins());
-        match run(&mut interp, src.to_string(), true) {
-            Ok(_) => {}
+        match run(&mut interp, &src, true) {
+            Ok(()) => {}
             Err(errs) => {
                 for e in errs {
                     println!("{}\n", e.format_message(&src));
@@ -48,8 +48,8 @@ fn repl() {
         io::stdin().read_line(&mut input).unwrap();
         input = input.trim().to_string();
 
-        match run(&mut interp, input.clone(), false) {
-            Ok(_) => {}
+        match run(&mut interp, &input, false) {
+            Ok(()) => {}
             Err(errs) => {
                 for e in errs {
                     println!("{}", e.format_message(&input));
