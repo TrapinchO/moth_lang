@@ -127,7 +127,7 @@ fn lex_string_err() {
 #[test]
 fn lex_symbols() {
     let symbols = [
-        "+", "-", "*", "/", "==", "<", ">", "!", "|", "..", "$", "&", "@", "#", "??", "~", "^", ":", "%",
+        "+", "-", "*", "/", "==", "<", ">", "!", "..", "$", "&", "@", "#", "??", "~", "^", ":", "%",
     ];
 
     for s in symbols {
@@ -142,6 +142,7 @@ fn lex_symbols_special() {
         ("=", TokenType::Equals),
         ("?", TokenType::QuestionMark),
         (".", TokenType::Dot),
+        ("|", TokenType::Pipe),
         (";", TokenType::Semicolon),
         ("(", TokenType::LParen),
         (")", TokenType::RParen),
