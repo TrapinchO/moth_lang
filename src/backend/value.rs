@@ -350,7 +350,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
         let val = &args.first().unwrap();
         Ok(ValueType::Bool(match val {
             ValueType::Bool(b) => !b,
-            _ => return Err(format!("Expected a bool")),
+            _ => return Err("Expected a bool".to_string()),
         }))
     }),
     ("$$neg", |args| {
@@ -361,7 +361,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
         Ok(match val {
             ValueType::Int(n) => ValueType::Int(-n),
             ValueType::Float(n) => ValueType::Float(-n),
-            _ => return Err(format!("Expected a number")),
+            _ => return Err("Expected a number".to_string()),
         })
     }),
 ];
