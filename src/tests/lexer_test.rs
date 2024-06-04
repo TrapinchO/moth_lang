@@ -405,7 +405,10 @@ fn lex_example() {
 fn comment_operator() {
     assert_eq!(
         lex("/* fun -*/() {} */").unwrap(),
-        vec![Token { val: TokenType::Eof, loc: Location { start: 18, end: 18 } }],
+        vec![Token {
+            val: TokenType::Eof,
+            loc: Location { start: 18, end: 18 }
+        }],
     )
 }
 
@@ -413,7 +416,10 @@ fn comment_operator() {
 fn comment_stars() {
     assert_eq!(
         lex("/*** fun -*/() {} ***/").unwrap(),
-        vec![Token { val: TokenType::Eof, loc: Location { start: 22, end: 22 } }],
+        vec![Token {
+            val: TokenType::Eof,
+            loc: Location { start: 22, end: 22 }
+        }],
     )
 }
 
