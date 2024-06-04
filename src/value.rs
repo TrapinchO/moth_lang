@@ -5,10 +5,10 @@ use std::time::SystemTime;
 use crate::associativity::{Associativity, Precedence};
 use crate::exprstmt::Stmt;
 use crate::located::Located;
-use crate::mref::{MList, MRef};
+use crate::mref::{MList, MMap};
 
 pub type NativeFunction = fn(Vec<ValueType>) -> Result<ValueType, String>;
-pub type Closure = Vec<MRef<HashMap<String, ValueType>>>;
+pub type Closure = Vec<MMap<ValueType>>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ValueType {
