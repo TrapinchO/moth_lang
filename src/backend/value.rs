@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::time::SystemTime;
 
 use crate::associativity::{Associativity, Precedence};
-use crate::exprstmt::Stmt;
+use super::lowexprstmt::Stmt;
 use crate::located::Located;
 use crate::mref::{MList, MMap};
 
@@ -40,7 +40,7 @@ impl ValueType {
             Self::Function(params, body, _) => format!(
                 "fun({}) {{ {} }}",
                 params.join(", "),
-                body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
+                body.iter().map(|s| format!("{s:?}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
         }
@@ -315,7 +315,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
     ),
 ];
 
-pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
+pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
     ("print", |args| {
         println!(
             "{}",
@@ -346,6 +346,27 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
             ValueType::List(ls) => ls.read(|l| l.len()) as i32,
             _ => return Err(format!("Invalid value: {}", val)),
         }))
+    }),
+    ("$$not", |args| {
+        if args.len() != 1 {
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));
+        }
+        let val = &args.first().unwrap();
+        Ok(ValueType::Bool(match val {
+            ValueType::Bool(b) => !b,
+            _ => return Err("Expected a bool".to_string()),
+        }))
+    }),
+    ("$$neg", |args| {
+        if args.len() != 1 {
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));
+        }
+        let val = &args.first().unwrap();
+        Ok(match val {
+            ValueType::Int(n) => ValueType::Int(-n),
+            ValueType::Float(n) => ValueType::Float(-n),
+            _ => return Err("Expected a number".to_string()),
+        })
     }),
 ];
 

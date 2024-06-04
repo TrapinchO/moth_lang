@@ -69,10 +69,12 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
         }
     }
 
+    let simple_ast = backend::simplify::simplify(ast2).map_err(|e| vec![e])?;
+
     let compile_end = compile_start.elapsed();
     let eval_start = Instant::now();
     //println!("===== evaluating =====");
-    interp.interpret(ast2).map_err(|e| vec![e])?;
+    interp.interpret(simple_ast).map_err(|e| vec![e])?;
     //interp.interpret(&resassoc)?;
 
     if time {
