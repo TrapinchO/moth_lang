@@ -102,6 +102,8 @@ impl MList {
         }
     }
 
+    // not necessary for now
+    #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
         self.read(|l| l.len())
     }

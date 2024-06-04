@@ -2,12 +2,6 @@ let a = |a, b, c| a * b + c;
 let b = || print("hahaha");
 print(a(3, 2, 4), b());
 
-/*
-fun a(a, b, c) { return a * b + c; }
-fun b() { return print("hahaha"); }
-print(a(3, 2, 4), b());
-*/
-
 
 
 // "aa\", \\, \naaaa";

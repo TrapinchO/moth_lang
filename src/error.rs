@@ -81,7 +81,7 @@ impl ErrorType {
             Self::ExpectedSemicolon => "Expected a semicolon".to_string(),
             Self::ExpectedToken(msg) => msg.clone(),
             Self::UnknownElement(tok) => format!("Unknown element: {tok}"),
-            Self::UnknownUnaryOperator => format!("Unary operators must be either \"-\" or \"!\""),
+            Self::UnknownUnaryOperator => "Unary operators must be either \"-\" or \"!\"".to_string(),
             Self::InvalidAssignmentTarget => "The left side of an assignment must be either a variable or an index".to_string(),
             Self::InvalidPrecedence => "Precendence value must be an integer".to_string(),
             Self::PrecedenceOutOfRange(n) => format!("Precedence value must be between 0 and 10, got: {n}"),
@@ -121,6 +121,9 @@ impl ErrorType {
     }
 
     pub fn is_warn(&self) -> bool {
+        // done for clarity
+        // also more items will follow eventually
+        #[allow(clippy::match_like_matches_macro)]
         match self {
             Self::ItemNotUsed(_) => true,
             _ => false,
