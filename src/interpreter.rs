@@ -274,6 +274,7 @@ impl Interpreter {
             ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right, loc),
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
+            ExprType::Lambda(params, body) => self.lambda(loc, params, body),
         }?;
         Ok(Value { val, loc: expr.loc })
     }
@@ -402,6 +403,13 @@ impl Interpreter {
                 lines: vec![val.loc],
             }),
         }
+    }
+    fn lambda(&mut self, _: Location, params: Vec<Identifier>, body: Vec<Stmt>) -> Result<ValueType, Error> {
+        let mut params2 = vec![];
+        for p in params {
+            params2.push(p.val);
+        }
+        Ok(ValueType::Function(params2, body, self.environment.scopes.clone()))
     }
 
     fn call_fn(

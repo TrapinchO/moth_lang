@@ -56,6 +56,7 @@ pub trait ExprVisitor<T> {
             ExprType::BinaryOperation(left, op, right) => self.binary(loc, *left, op, *right),
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
+            ExprType::Lambda(params, body) => self.lambda(loc, params, body),
         }
     }
     fn unit(&mut self, loc: Location) -> Result<T, Error>;
@@ -70,4 +71,5 @@ pub trait ExprVisitor<T> {
     fn binary(&mut self, loc: Location, left: Expr, op: Symbol, right: Expr) -> Result<T, Error>;
     fn list(&mut self, loc: Location, expr: Vec<Expr>) -> Result<T, Error>;
     fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<T, Error>;
+    fn lambda(&mut self, loc: Location, params: Vec<Identifier>, body: Vec<Stmt>) -> Result<T, Error>;
 }

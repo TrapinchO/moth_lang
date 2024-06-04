@@ -36,6 +36,7 @@ pub enum TokenType {
     Semicolon,
     Dot,
     Comma,
+    Pipe,
 }
 
 impl TokenType {

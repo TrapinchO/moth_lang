@@ -291,4 +291,14 @@ impl ExprVisitor<Expr> for Reassociate {
             loc,
         })
     }
+    fn lambda(&mut self, loc: Location, params: Vec<Identifier>, body: Vec<Stmt>) -> Result<Expr, Error> {
+        let mut body2 = vec![];
+        for s in body {
+            body2.push(self.visit_stmt(s)?);
+        }
+        Ok(Expr {
+            val: ExprType::Lambda(params, body2),
+            loc
+        })
+    }
 }

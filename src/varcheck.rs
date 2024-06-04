@@ -209,6 +209,7 @@ impl VarCheck {
             ExprType::BinaryOperation(left, op, right) => self.binary(loc, left, op, right),
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, expr2, idx),
+            ExprType::Lambda(params, body) => self.lambda(loc, params, body),
         };
     }
     // nothing to check
@@ -264,5 +265,8 @@ impl VarCheck {
     fn index(&mut self, _: Location, expr2: &Expr, idx: &Expr) {
         self.visit_expr(expr2);
         self.visit_expr(idx);
+    }
+    fn lambda(&mut self, loc: Location, params: &Vec<Identifier>, body: &Vec<Stmt>) {
+        self.fun(loc, &Identifier { val: "".to_string(), loc }, params, body);
     }
 }

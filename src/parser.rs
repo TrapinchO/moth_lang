@@ -142,6 +142,19 @@ impl Parser {
         Ok(ls)
     }
 
+    /// used to avoid a lambda in function and operator declarations
+    fn parse_param(&mut self) -> Result<Identifier, Error> {
+        let cur = self.get_current().clone();
+        let Token { val: TokenType::Identifier(name), loc } = cur else {
+            return Err(Error {
+                msg: ErrorType::ExpectedParameterName,
+                lines: vec![cur.loc],
+            });
+        };
+        self.advance();
+        Ok(Identifier { val: name, loc })
+    }
+
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
         let tok = self.get_current().clone();
         match tok.val {
@@ -297,19 +310,6 @@ impl Parser {
                 end: block.loc.end,
             },
         })
-    }
-
-    /// used to avoid a lambda in function and operator declarations
-    fn parse_param(&mut self) -> Result<Identifier, Error> {
-        let cur = self.get_current().clone();
-        let Token { val: TokenType::Identifier(name), loc } = cur else {
-            return Err(Error {
-                msg: ErrorType::ExpectedParameterName,
-                lines: vec![cur.loc],
-            });
-        };
-        self.advance();
-        Ok(Identifier { val: name, loc })
     }
     fn parse_fun(&mut self, force_operator: bool) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
@@ -475,7 +475,10 @@ impl Parser {
         let Token { val: TokenType::Symbol(sym), loc } = self.get_current().clone() else {
             return self.parse_suffix()
         };
-        if !["-", "!"].contains(&sym.as_str()) {
+        if sym.as_str() == "||" {
+            return self.parse_lambda()
+        }
+        else if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
                 msg: ErrorType::UnknownUnaryOperator,
                 lines: vec![loc],
@@ -494,6 +497,7 @@ impl Parser {
         })
     }
 
+    /// things like function call and indexing
     fn parse_suffix(&mut self) -> Result<Expr, Error> {
         let mut expr = self.parse_primary()?;
         let start = expr.loc.start;
@@ -528,6 +532,47 @@ impl Parser {
         Ok(expr)
     }
 
+    /// notes:
+    /// no-parameter lambda is in unary because it catches a symbol
+    fn parse_lambda(&mut self) -> Result<Expr, Error> {
+        let tok = self.get_current().clone();
+        let params = match &tok.val {
+            TokenType::Pipe => {
+                self.sep(
+                    TokenType::Pipe, TokenType::Pipe,
+                    Parser::parse_param
+                )?.0
+            },
+            TokenType::Symbol(s) => {
+                if s.as_str() == "||" { self.advance(); vec![] }
+                else {
+                    return Err(Error {
+                        lines: vec![tok.loc],
+                        msg: ErrorType::UnknownElement(tok.val),
+                    });
+                }
+            },
+            _ => unreachable!(), // it is called from two places and we know the possible tokens
+        };
+        // can be either a block or a single body
+        let (body, end_loc) = if is_typ!(self, LBrace) {
+            let block = self.parse_block()?;
+            let StmtType::BlockStmt(bl) = block.val else { unreachable!() };
+            (bl, block.loc.end)
+        } else {
+            let expr = self.parse_expression()?;
+            let loc = expr.loc.end;
+            // same as { return expr; }
+            (vec![Stmt {
+                loc: expr.loc,
+                val: StmtType::ReturnStmt(expr),
+            }], loc)
+        };
+        Ok(Expr {
+            val: ExprType::Lambda(params, body),
+            loc: Location { start: tok.loc.start, end: end_loc }
+        })
+    }
     fn parse_primary(&mut self) -> Result<Expr, Error> {
         let tok = self.get_current().clone();
         let expr = match &tok.val {
@@ -608,6 +653,9 @@ impl Parser {
                     msg: ErrorType::UnexpectedEof,
                     lines: vec![tok.loc],
                 })
+            }
+            TokenType::Pipe => {
+                return self.parse_lambda();
             }
             _ => {
                 return Err(Error {

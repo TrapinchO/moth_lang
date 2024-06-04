@@ -16,6 +16,7 @@ pub enum ExprType {
     BinaryOperation(Box<Expr>, Symbol, Box<Expr>),
     List(Vec<Expr>),
     Index(Box<Expr>, Box<Expr>), // expr[idx]
+    Lambda(Vec<Identifier>, Vec<Stmt>), // |params| { block }
 }
 
 impl ExprType {
@@ -39,6 +40,11 @@ impl ExprType {
                 ls.iter().map(|e| { format!("{}", e) }).collect::<Vec<_>>().join(", ")
             ),
             Self::Index(expr, idx) => format!("{}[{}]", expr.val, idx.val),
+            Self::Lambda(params, block) => format!(
+                "lambda({params}){block}",
+                params = params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
+                block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+            ),
         }
     }
 }

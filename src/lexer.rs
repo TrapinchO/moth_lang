@@ -120,10 +120,10 @@ impl Lexer {
                         "=" => TokenType::Equals,
                         "?" => TokenType::QuestionMark,
                         "." => TokenType::Dot,
+                        "|" => TokenType::Pipe,
                         // TODO: error underlines the following symbol as well
                         _ if sym.ends_with("*/") && sym[..sym.len() - 2].chars().all(|s| s == '*') => {
-                            println!("{}", sym[..sym.len() - 1].to_string());
-                            return Err(self.error("Block comment ending cannot be an operator".to_string()));
+                            return Err(self.error(ErrorType::CommentSymbol));
                         }
                         // it is a comment if it stars with /* and has only stars afterwards
                         _ if sym.starts_with("/*") && sym[2..].chars().all(|s| s == '*') => {
