@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::time::SystemTime;
 
 use crate::associativity::{Associativity, Precedence};
-use crate::exprstmt::Stmt;
+use super::lowexprstmt::Stmt;
 use crate::located::Located;
 use crate::mref::{MList, MMap};
 
@@ -40,7 +40,7 @@ impl ValueType {
             Self::Function(params, body, _) => format!(
                 "fun({}) {{ {} }}",
                 params.join(", "),
-                body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
+                body.iter().map(|s| format!("{s:?}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
         }

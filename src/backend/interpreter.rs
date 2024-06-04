@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
 use crate::{
-    associativity::Precedence,
     environment::Environment,
     error::{Error, ErrorType},
-    exprstmt::*,
     located::{Located, Location},
     mref::MList,
 };
 use super::value::*;
+use super::lowexprstmt::*;
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new(builtins).interpret(stmts)
@@ -108,8 +107,6 @@ impl Interpreter {
             StmtType::BlockStmt(block) => self.block(loc, block),
             StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
             StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
-            StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
-            StmtType::OperatorDeclStmt(name, params, block, prec) => self.operator(loc, name, params, block, prec),
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
@@ -208,35 +205,6 @@ impl Interpreter {
         let _ = self.visit_expr(expr)?;
         Ok(())
     }
-    fn fun(
-        &mut self,
-        _: Location,
-        name: Identifier,
-        params: Vec<Identifier>,
-        block: Vec<Stmt>,
-    ) -> Result<(), InterpError> {
-        let mut params2 = vec![];
-        for p in params {
-            params2.push(p.val);
-        }
-        if !self.environment.insert(
-            &name.val,
-            ValueType::Function(params2, block, self.environment.scopes.clone()),
-            ) {
-            unreachable!("Item \"{}\" already declared\nLocation: {:?}", name.val, name.loc);
-         }
-        Ok(())
-    }
-    fn operator(
-        &mut self,
-        loc: Location,
-        name: Symbol,
-        params: (Identifier, Identifier),
-        block: Vec<Stmt>,
-        _: Precedence,
-    ) -> Result<(), InterpError> {
-        self.fun(loc, name, vec![params.0, params.1], block)
-    }
     fn brek(&mut self, loc: Location) -> Result<(), InterpError> {
         Err(InterpError {
             val: InterpErrorType::Break,
@@ -268,10 +236,7 @@ impl Interpreter {
             ExprType::String(s) => self.string(s),
             ExprType::Bool(b) => self.bool(b),
             ExprType::Identifier(ident) => self.identifier(ident, loc),
-            ExprType::Parens(expr1) => self.parens(*expr1),
             ExprType::Call(callee, args) => self.call(*callee, args, loc),
-            ExprType::UnaryOperation(op, expr1) => self.unary(op, *expr1),
-            ExprType::BinaryOperation(left, op, right) => self.binary(*left, op, *right, loc),
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
             ExprType::Lambda(params, body) => self.lambda(loc, params, body),
@@ -289,16 +254,13 @@ impl Interpreter {
     }
     fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
         self.environment.get(&ident)
-            .ok_or_else(|| unreachable!("Item \"{}\" already declared\nLocation: {:?}", ident, loc))
+            .ok_or_else(|| unreachable!("Item \"{}\" not declared\nLocation: {:?}", ident, loc))
     }
     fn string(&mut self, s: String) -> Result<ValueType, Error> {
         Ok(ValueType::String(s))
     }
     fn bool(&mut self, b: bool) -> Result<ValueType, Error> {
         Ok(ValueType::Bool(b))
-    }
-    fn parens(&mut self, expr: Expr) -> Result<ValueType, Error> {
-        Ok(self.visit_expr(expr)?.val)
     }
     fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: Location) -> Result<ValueType, Error> {
         let mut args2 = vec![];
@@ -313,53 +275,6 @@ impl Interpreter {
             _ => Err(Error {
                 msg: ErrorType::ItemNotCalleable,
                 lines: vec![callee.loc],
-            }),
-        }
-    }
-    fn unary(&mut self, op: Symbol, expr: Expr) -> Result<ValueType, Error> {
-        let val = self.visit_expr(expr)?;
-        let op_name = op.val;
-        let new_val = match op_name.as_str() {
-            "-" => match val.val {
-                ValueType::Int(n) => ValueType::Int(-n),
-                ValueType::Float(n) => ValueType::Float(-n),
-                _ => {
-                    return Err(Error {
-                        msg: ErrorType::ExpectedUnaryNumber,
-                        lines: vec![val.loc],
-                    })
-                }
-            },
-            "!" => match val.val {
-                ValueType::Bool(b) => ValueType::Bool(!b),
-                _ => {
-                    return Err(Error {
-                        msg: ErrorType::ExpectedUnaryBool,
-                        lines: vec![val.loc],
-                    })
-                }
-            },
-            sym => {
-                unreachable!("unknown unary operator interpreted: {sym}");
-            }
-        };
-
-        Ok(new_val)
-    }
-    fn binary(&mut self, left: Expr, op: Symbol, right: Expr, loc: Location) -> Result<ValueType, Error> {
-        let left2 = self.visit_expr(left)?;
-        let right2 = self.visit_expr(right)?;
-        let op_name = &op.val;
-        let val = self.environment.get(op_name)
-            .unwrap_or_else(|| unreachable!("Item \"{}\" already declared\nLocation: {:?}", op_name, op.loc));
-        match val {
-            ValueType::NativeFunction(func) => self.call_fn_native(func, vec![left2.val, right2.val], loc),
-            ValueType::Function(params, body, closure) => {
-                self.call_fn(params, body, closure, vec![left2.val, right2.val], loc)
-            }
-            _ => Err(Error {
-                msg: ErrorType::ItemNotCalleable,
-                lines: vec![op.loc],
             }),
         }
     }
