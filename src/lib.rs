@@ -1,23 +1,19 @@
 use std::{collections::HashMap, time::Instant};
 
 use error::Error;
-use interpreter::Interpreter;
+use backend::interpreter::Interpreter;
 use located::Location;
-use value::{get_builtins, NATIVE_OPERATORS};
+use backend::value::{get_builtins, NATIVE_OPERATORS};
 
 pub mod associativity;
 pub mod environment;
 pub mod error;
 pub mod exprstmt;
-pub mod interpreter;
-pub mod lexer;
+pub mod frontend;
+pub mod middle;
+pub mod backend;
 pub mod located;
 pub mod mref;
-pub mod parser;
-pub mod reassoc;
-pub mod token;
-pub mod value;
-pub mod varcheck;
 mod visitor;
 
 #[cfg(test)]
@@ -27,7 +23,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
     //println!("===== source =====\n{:?}\n=====        =====", input);
-    let tokens = lexer::lex(&input).map_err(|e| vec![e])?;
+    let tokens = frontend::lexer::lex(&input).map_err(|e| vec![e])?;
     /*
     println!("===== lexing =====");
     for t in &tokens {
@@ -35,7 +31,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     }
     */
 
-    let ast = parser::parse(tokens).map_err(|e| vec![e])?;
+    let ast = frontend::parser::parse(tokens).map_err(|e| vec![e])?;
     /*
     println!("===== parsing =====");
     for s in &ast {
@@ -43,7 +39,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
     }
     */
 
-    let ast2 = reassoc::reassociate(
+    let ast2 = frontend::reassoc::reassociate(
         NATIVE_OPERATORS
             .map(|(name, assoc, _)| (name.to_string(), assoc))
             .into(),
@@ -60,7 +56,7 @@ pub fn run(interp: &mut Interpreter, input: String, time: bool) -> Result<(), Ve
         .keys()
         .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
         .collect::<HashMap<_, _>>();
-    match varcheck::varcheck(builtins, &ast2) {
+    match middle::varcheck::varcheck(builtins, &ast2) {
         Ok(()) => {}
         Err((warns, errs)) => {
             // apparently they are in the reverse order...

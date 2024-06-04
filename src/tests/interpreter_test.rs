@@ -1,6 +1,6 @@
-use crate::interpreter::Interpreter;
+use crate::backend::interpreter::Interpreter;
 use crate::run;
-use crate::value::{get_builtins, ValueType};
+use crate::backend::value::{get_builtins, ValueType};
 
 fn run_code(code: &str, val: &str) -> Option<ValueType> {
     let mut interp = Interpreter::new(get_builtins());

@@ -7,8 +7,8 @@ use crate::{
     exprstmt::*,
     located::{Located, Location},
     mref::MList,
-    value::*,
 };
+use super::value::*;
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new(builtins).interpret(stmts)

@@ -1,8 +1,8 @@
 use crate::{
     error::{Error, ErrorType},
     located::{Located, Location},
-    token::*,
 };
+use super::token::*;
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 

@@ -1,4 +1,4 @@
-use crate::{error::{Error, ErrorType}, lexer::lex, located::Location, token::*};
+use crate::{error::{Error, ErrorType}, frontend::lexer::lex, located::Location, frontend::token::*};
 
 #[test]
 fn lex_empty() {

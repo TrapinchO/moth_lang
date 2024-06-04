@@ -1,4 +1,5 @@
-use moth_lang::{interpreter::Interpreter, run, value::get_builtins};
+use moth_lang::backend::{interpreter::Interpreter, value::get_builtins};
+use moth_lang::run;
 
 use std::{
     env, fs,

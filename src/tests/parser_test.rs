@@ -97,13 +97,13 @@ use std::{collections::HashMap, vec};
 
 use crate::{
     error::Error,
-    lexer::lex,
+    frontend::lexer::lex,
     located::Location,
-    parser::parse,
-    reassoc,
-    token::{Token, TokenType},
-    value::{get_builtins, NATIVE_OPERATORS},
-    varcheck,
+    frontend::parser::parse,
+    frontend::reassoc,
+    frontend::token::{Token, TokenType},
+    backend::value::{get_builtins, NATIVE_OPERATORS},
+    middle::varcheck,
 };
 
 #[test]

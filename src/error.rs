@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 use crate::associativity::Precedence;
 use crate::located::Location;
-use crate::token::TokenType;
+use crate::frontend::token::TokenType;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct Pos {

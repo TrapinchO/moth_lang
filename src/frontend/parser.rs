@@ -5,8 +5,8 @@ use crate::{
     error::{Error, ErrorType},
     exprstmt::*,
     located::Location,
-    token::*,
 };
+use super::token::*;
 
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
