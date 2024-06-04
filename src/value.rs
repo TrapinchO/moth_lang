@@ -36,7 +36,7 @@ impl ValueType {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
-            Self::NativeFunction(_) => "<function>".to_string(), // TODO: improve
+            Self::NativeFunction(_) => "<native function>".to_string(), // TODO: improve
             Self::Function(params, body, _) => format!(
                 "fun({}) {{ {} }}",
                 params.join(", "),
@@ -61,6 +61,9 @@ pub type Value = Located<ValueType>;
 
 // TODO: this is very smart, as it can currently hold only Functions
 // TODO: fix the precedence mess
+// and do this by making a "prelude" module which defines all the functions and whatnot,
+// then make them call native functions with "mothNative" or something
+// see https://github.com/ElaraLang/elara/blob/master/prim.elr
 // PIE anyone?
 pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
     (

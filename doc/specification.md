@@ -19,7 +19,7 @@ Like many other languages, the boolean values are `true` and `false`. Note that 
 ## Strings
 Strings are delmimited by double quotes (`"`). They cannot be multiline, not terminating on newline throws an error.
 
-Escape characters are not supported yet.
+Following escape characters are supported: `\n`, `\t`, `\"`, `\'` and `\\`.
 
 Mothlang does not have a char type (yet).
 

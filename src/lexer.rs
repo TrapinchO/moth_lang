@@ -1,5 +1,5 @@
 use crate::{
-    error::Error,
+    error::{Error, ErrorType},
     located::{Located, Location},
     token::*,
 };
@@ -75,7 +75,7 @@ impl Lexer {
         }
     }
 
-    fn error(&self, msg: String) -> Error {
+    fn error(&self, msg: ErrorType) -> Error {
         Error {
             msg,
             lines: vec![Location {
@@ -139,7 +139,7 @@ impl Lexer {
                         _ => TokenType::Symbol(sym),
                     }
                 }
-                unknown => return Err(self.error(format!("Unknown character: \"{unknown}\""))),
+                unknown => return Err(self.error(ErrorType::UnknownCharacter(unknown))),
             };
             tokens.push(Located {
                 val: typ,
@@ -169,7 +169,7 @@ impl Lexer {
             if cur_char.is_ascii_digit() {
                 num.push(cur_char);
             } else if cur_char.is_alphabetic() {
-                return Err(self.error(format!("Invalid digit: \"{cur_char}\"")));
+                return Err(self.error(ErrorType::InvalidDigit(cur_char)));
             }
             // check if the number is a float
             else if self.is_char('.') {
@@ -177,7 +177,7 @@ impl Lexer {
                 if self.idx < self.code.len() - 1 && !SYMBOLS.contains(self.code[self.idx + 1]) {
                     if is_float {
                         self.advance(); // for prettier error message
-                        return Err(self.error("Found two floating point number delimiters".to_string()));
+                        return Err(self.error(ErrorType::TwoDecimalPoints));
                     }
                     is_float = true;
                     num.push('.');
@@ -193,12 +193,12 @@ impl Lexer {
             // TODO: overflows behaving funny
             TokenType::Float(
                 num.parse::<f32>()
-                    .map_err(|_| self.error("Float overflow".to_string()))?,
+                    .map_err(|_| self.error(ErrorType::IntegerOverflow))?,
             )
         } else {
             TokenType::Int(
                 num.parse::<i32>()
-                    .map_err(|_| self.error("Integer overflow".to_string()))?,
+                    .map_err(|_| self.error(ErrorType::IntegerOverflow))?,
             )
         })
     }
@@ -237,18 +237,41 @@ impl Lexer {
         // move behind the opening quote
         self.advance();
         while !self.is_at_end() {
-            if self.is_char('\"') {
-                // move behind the closing quote
-                self.advance();
-                return Ok(s);
+            match self.get_current() {
+                '\"' => {
+                    // move behind the closing quote
+                    self.advance();
+                    return Ok(s);
+                },
+                '\n' => {
+                    return Err(self.error(ErrorType::StringEol));
+                },
+                '\\' => {
+                    self.advance();
+                    if self.is_at_end() {
+                        return Err(self.error(ErrorType::StringEof))
+                    }
+                    let escaped = match self.get_current() {
+                        'n' => '\n',
+                        't' => '\t',
+                        '\"' => '\"',
+                        '\'' => '\'',
+                        '\\' => '\\',
+                        c => {
+                            // makes sure newlines etc. do not behave funny
+                            let c = c.escape_debug().to_string();
+                            return Err(self.error(ErrorType::InvalidEscapeChar(c)));
+                        }
+                    };
+                    s.push(escaped)
+                }
+                c => {
+                    s.push(c)
+                }
             }
-            if self.is_char('\n') {
-                return Err(self.error("EOL while parsing string".to_string()));
-            }
-            s.push(self.get_current());
             self.advance();
         }
-        Err(self.error("EOF while parsing string".to_string()))
+        Err(self.error(ErrorType::StringEof))
     }
 
     fn lex_line_comment(&mut self) {
@@ -257,7 +280,6 @@ impl Lexer {
         }
     }
 
-    // TODO: stuff like "==*/" at the end
     fn lex_block_comment(&mut self) -> Result<(), Error> {
         let mut state = 0;
         while !self.is_at_end() {
@@ -285,6 +307,6 @@ impl Lexer {
         if state == 2 {
             return Ok(());
         }
-        Err(self.error("EOF while lexing block comment".to_string()))
+        Err(self.error(ErrorType::CommentEof))
     }
 }

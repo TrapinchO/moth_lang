@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{associativity::*, error::Error, exprstmt::*, located::Location, visitor::*};
+use crate::{associativity::*, error::Error, error::ErrorType, exprstmt::*, located::Location, visitor::*};
 
 pub fn reassociate(ops: HashMap<String, Precedence>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
@@ -39,13 +39,13 @@ impl Reassociate {
 
         let op1_sym = &op1.val;
         let prec1 = self.ops.get(op1_sym).ok_or(Error {
-            msg: format!("Operator not found: {}", op1_sym),
+            msg: ErrorType::OperatorNotFound(op1.val.clone()),
             lines: vec![op1.loc],
         })?;
 
         let op2_sym = &op2.val;
         let prec2 = self.ops.get(op2_sym).ok_or(Error {
-            msg: format!("Operator not found: {}", op2_sym),
+            msg: ErrorType::OperatorNotFound(op2.val.clone()),
             lines: vec![op2.loc],
         })?;
         // TODO: make functions like in the SO answer?
@@ -82,10 +82,7 @@ impl Reassociate {
                     val: ExprType::BinaryOperation(left.into(), op1, right.into()),
                 }),
                 _ => Err(Error {
-                    msg: format!(
-                        "Incompatible operator precedence: \"{}\" ({:?}) and \"{}\" ({:?}) - both have precedence {}",
-                        op1.val, prec1.assoc, op2.val, prec2.assoc, prec1.prec
-                    ),
+                    msg: ErrorType::IncompatiblePrecedence(op1.val, *prec1, op2.val, *prec2),
                     lines: vec![op1.loc, op2.loc],
                 }),
             },

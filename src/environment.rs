@@ -7,8 +7,6 @@ pub struct Environment<T> {
     pub scopes: Vec<MMap<T>>,
 }
 
-// TODO: idk if I am happy with Option<T>, but imo it is better than a bool
-// for now.
 impl<T: Clone> Environment<T> {
     pub fn new(defaults: HashMap<String, T>) -> Environment<T> {
         Environment {

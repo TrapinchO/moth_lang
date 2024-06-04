@@ -11,7 +11,7 @@ pub enum ExprType {
     Bool(bool),
     Identifier(String),
     Parens(Box<Expr>),
-    Call(Box<Expr>, Vec<Expr>), // calle(arg1, arg2, arg3)
+    Call(Box<Expr>, Vec<Expr>), // callee(arg1, arg2, arg3)
     UnaryOperation(Symbol, Box<Expr>),
     BinaryOperation(Box<Expr>, Symbol, Box<Expr>),
     List(Vec<Expr>),

@@ -6,6 +6,6 @@ pub enum Associativity {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Precedence {
-    pub prec: usize,
+    pub prec: u8,
     pub assoc: Associativity,
 }
