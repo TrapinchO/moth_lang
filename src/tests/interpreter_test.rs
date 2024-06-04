@@ -96,3 +96,11 @@ let x = f();", "x"),
         Some(ValueType::Int(5))
     )
 }
+
+#[test]
+fn unary_operators() {
+    assert_eq!(
+        run_code("let x = !(1 * 10 == -10);", "x"),
+        Some(ValueType::Bool(true))
+    )
+}

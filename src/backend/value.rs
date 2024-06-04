@@ -311,7 +311,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
     ),
 ];
 
-pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
+pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
     ("print", |args| {
         println!(
             "{}",
@@ -342,6 +342,27 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 3] = [
             ValueType::List(ls) => ls.read(|l| l.len()) as i32,
             _ => return Err(format!("Invalid value: {}", val)),
         }))
+    }),
+    ("$$not", |args| {
+        if args.len() != 1 {
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));
+        }
+        let val = &args.first().unwrap();
+        Ok(ValueType::Bool(match val {
+            ValueType::Bool(b) => !b,
+            _ => return Err(format!("Expected a bool")),
+        }))
+    }),
+    ("$$neg", |args| {
+        if args.len() != 1 {
+            return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));
+        }
+        let val = &args.first().unwrap();
+        Ok(match val {
+            ValueType::Int(n) => ValueType::Int(-n),
+            ValueType::Float(n) => ValueType::Float(-n),
+            _ => return Err(format!("Expected a number")),
+        })
     }),
 ];
 
