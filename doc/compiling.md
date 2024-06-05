@@ -11,11 +11,14 @@ At this point binary operator precedence is ignored and unconditionally right as
 # Reassociating
 The binary operators are reassociated according to their respective precedence and associativity.
 
-Also serves as a validation for operator existance.
+Also serves as a validation for operator existence.
 
 # Variable checking
 Variables and functions are checked for being declared exactly once. Using undeclared variables or redeclaring throws an error.
 
-TBA: checking for unused variables/names.
+During this phase warnings for unused variables  are emitted.
+
+# Simplifying
+The AST is simplified into minimal instruction set. Notably, all operators are changed into function calls (including unary operators) and function declarations are changed into lambda expressions.
 
 # Interpreting
