@@ -109,22 +109,32 @@ impl ExprVisitor<Expr> for Simplifier {
 
     // change into a function call
     fn unary(&mut self, loc: Location, op: exprstmt::Symbol, expr: exprstmt::Expr) -> Result<Expr, Error> {
-        let name = match op.val.as_str() {
-            "!" => "$$not".to_string(),
-            "-" => "$$neg".to_string(),
-            _ => unreachable!()
+        let expr2 = self.visit_expr(expr)?;
+        let val = match &expr2.val {
+            ExprType::Int(n) if op.val.as_str() == "-" => ExprType::Int(-n),
+            ExprType::Float(n) if op.val.as_str() == "-" => ExprType::Float(-n),
+            ExprType::Bool(b) if op.val.as_str() == "!" => ExprType::Bool(!b),
+            _ => {
+                let name = match op.val.as_str() {
+                    "!" => "$$not".to_string(),
+                    "-" => "$$neg".to_string(),
+                    _ => unreachable!()
+                };
+                return Ok(Expr {
+                    val: ExprType::Call(
+                             Expr { val: ExprType::Identifier(name), loc: op.loc }.into(),
+                             vec![expr2]),
+                             loc,
+                });
+            }
         };
-        Ok(Expr {
-            val: ExprType::Call(
-                Expr { val: ExprType::Identifier(name), loc: op.loc }.into(),
-                vec![self.visit_expr(expr)?]),
-            loc,
-        })
+        Ok(Expr { val, loc })
     }
 
     fn binary(&mut self, loc: Location, left: exprstmt::Expr, op: exprstmt::Symbol, right: exprstmt::Expr) -> Result<Expr, Error> {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
+        // try to fold constant literals
         match (&left2.val, &right2.val) {
             (ExprType::Int(n1), ExprType::Int(n2)) => {
                 let val = match op.val.as_str() {
@@ -133,6 +143,7 @@ impl ExprVisitor<Expr> for Simplifier {
                     "*" => n1 * n2,
                     "/" => n1 / n2,
                     "%" => n1 % n2,
+                    // it is not a "primitive" operator, cannot be folded
                     _ => {
                         return Ok(Expr {
                             val: ExprType::Call(
@@ -147,6 +158,7 @@ impl ExprVisitor<Expr> for Simplifier {
                     loc
                 })
             },
+            // TODO: try to merge this into one arm
             (ExprType::Float(n1), ExprType::Float(n2)) => {
                 let val = match op.val.as_str() {
                     "+" => n1 + n2,
@@ -168,6 +180,7 @@ impl ExprVisitor<Expr> for Simplifier {
                     loc
                 })
             },
+            // arguments are not numbers, cannot be folded
             _ => {
                 Ok(Expr {
                     val: ExprType::Call(

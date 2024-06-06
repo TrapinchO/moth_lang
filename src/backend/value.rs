@@ -45,11 +45,6 @@ impl ValueType {
             Self::Unit => "()".to_string(),
         }
     }
-
-    pub fn compare_variant(&self, other: &ValueType) -> bool {
-        // probably courtesy of https://stackoverflow.com/a/32554326
-        std::mem::discriminant(self) == std::mem::discriminant(other)
-    }
 }
 impl Display for ValueType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
