@@ -21,6 +21,6 @@ During this phase warnings for unused variables  are emitted.
 # Simplifying
 The AST is simplified into minimal instruction set. Notably, all operators are changed into function calls (including unary operators) and function declarations are changed into lambda expressions.
 
-Also features basic constant folding for integers and floats
+Also features basic constant folding for integers and floats.
 
 # Interpreting

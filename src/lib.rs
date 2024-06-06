@@ -85,10 +85,11 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
     let eval_start = Instant::now();
     //println!("===== evaluating =====");
     interp.interpret(simple_ast).map_err(|e| vec![e])?;
+    let eval_end = eval_start.elapsed();
 
     if time {
         eprintln!("Compiled in: {compile_end:?}");
-        eprintln!("Evaluated in: {:?}", eval_start.elapsed());
+        eprintln!("Evaluated in: {eval_end:?}");
     }
     Ok(())
 }
