@@ -123,12 +123,60 @@ impl ExprVisitor<Expr> for Simplifier {
     }
 
     fn binary(&mut self, loc: Location, left: exprstmt::Expr, op: exprstmt::Symbol, right: exprstmt::Expr) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Call(
-                Expr { val: ExprType::Identifier(op.val), loc: op.loc }.into(),
-                vec![self.visit_expr(left)?, self.visit_expr(right)?]),
-            loc,
-        })
+        let left2 = self.visit_expr(left)?;
+        let right2 = self.visit_expr(right)?;
+        match (&left2.val, &right2.val) {
+            (ExprType::Int(n1), ExprType::Int(n2)) => {
+                let val = match op.val.as_str() {
+                    "+" => n1 + n2,
+                    "-" => n1 - n2,
+                    "*" => n1 * n2,
+                    "/" => n1 / n2,
+                    "%" => n1 % n2,
+                    _ => {
+                        return Ok(Expr {
+                            val: ExprType::Call(
+                                Expr { val: ExprType::Identifier(op.val), loc: op.loc }.into(),
+                                vec![left2, right2]),
+                            loc,
+                        })
+                    }
+                };
+                Ok(Expr {
+                    val: ExprType::Int(val),
+                    loc
+                })
+            },
+            (ExprType::Float(n1), ExprType::Float(n2)) => {
+                let val = match op.val.as_str() {
+                    "+" => n1 + n2,
+                    "-" => n1 - n2,
+                    "*" => n1 * n2,
+                    "/" => n1 / n2,
+                    "%" => n1 % n2,
+                    _ => {
+                        return Ok(Expr {
+                            val: ExprType::Call(
+                                Expr { val: ExprType::Identifier(op.val), loc: op.loc }.into(),
+                                vec![left2, right2]),
+                            loc,
+                        })
+                    }
+                };
+                Ok(Expr {
+                    val: ExprType::Float(val),
+                    loc
+                })
+            },
+            _ => {
+                Ok(Expr {
+                    val: ExprType::Call(
+                        Expr { val: ExprType::Identifier(op.val), loc: op.loc }.into(),
+                        vec![left2, right2]),
+                    loc,
+                })
+            },
+        }
     }
 }
 

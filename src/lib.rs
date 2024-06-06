@@ -70,12 +70,21 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
     }
 
     let simple_ast = backend::simplify::simplify(ast2).map_err(|e| vec![e])?;
+    // TODO: uncommenting this seems to speed up the evaluation after
+    // ... for some reason
+    // /*
+    //println!("===== simplifying =====");
+    /*
+    for s in &simple_ast {
+        println!("{}", s);
+    }
+    */
+    // */
 
     let compile_end = compile_start.elapsed();
     let eval_start = Instant::now();
     //println!("===== evaluating =====");
     interp.interpret(simple_ast).map_err(|e| vec![e])?;
-    //interp.interpret(&resassoc)?;
 
     if time {
         println!("Compiled in: {compile_end:?}");
