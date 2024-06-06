@@ -22,20 +22,20 @@ mod tests;
 pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<Error>> {
     let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
-    //println!("===== source =====\n{:?}\n=====        =====", input);
+    //eprintln!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = frontend::lexer::lex(input).map_err(|e| vec![e])?;
     /*
-    println!("===== lexing =====");
+    eprintln!("===== lexing =====");
     for t in &tokens {
-        println!("{:?}", t);
+        eprintln!("{:?}", t);
     }
     */
 
     let ast = frontend::parser::parse(tokens).map_err(|e| vec![e])?;
     /*
-    println!("===== parsing =====");
+    eprintln!("===== parsing =====");
     for s in &ast {
-        println!("{:?}", s);
+        eprintln!("{:?}", s);
     }
     */
 
@@ -46,9 +46,9 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
         ast,
     ).map_err(|e| vec![e])?;
     /*
-    println!("===== reassociating =====");
+    eprintln!("===== reassociating =====");
     for s in &resassoc {
-        println!("{}", s);
+        eprintln!("{}", s);
     }
     */
 
@@ -61,7 +61,7 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
         Err((warns, errs)) => {
             // apparently they are in the reverse order...
             for w in warns.iter().rev() {
-                println!("{}\n", w.format_message(input));
+                eprintln!("{}\n", w.format_message(input));
             }
             if !errs.is_empty() {
                 return Err(errs);
@@ -73,12 +73,12 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
     // TODO: uncommenting this seems to speed up the evaluation after
     // ... for some reason
     // /*
-    //println!("===== simplifying =====");
-    /*
+    eprintln!("===== simplifying =====");
+    // /*
     for s in &simple_ast {
-        println!("{}", s);
+        eprintln!("{}", s);
     }
-    */
+    // */
     // */
 
     let compile_end = compile_start.elapsed();
@@ -87,8 +87,8 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
     interp.interpret(simple_ast).map_err(|e| vec![e])?;
 
     if time {
-        println!("Compiled in: {compile_end:?}");
-        println!("Evaluated in: {:?}", eval_start.elapsed());
+        eprintln!("Compiled in: {compile_end:?}");
+        eprintln!("Evaluated in: {:?}", eval_start.elapsed());
     }
     Ok(())
 }
