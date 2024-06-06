@@ -23,7 +23,7 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
     let compile_start = Instant::now();
     // the prints are commented in case I wanted to show them
     //eprintln!("===== source =====\n{:?}\n=====        =====", input);
-    let tokens = frontend::lexer::lex(input).map_err(|e| vec![e])?;
+    let tokens = frontend::lexer::lex(input)?;
     /*
     eprintln!("===== lexing =====");
     for t in &tokens {

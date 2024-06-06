@@ -18,6 +18,6 @@ for (n, c) in sorted(ls, key=lambda x: x[1]):
     else:
         total += c
 
-print("total:", total)
+print("total code:", total)
 print("total test:", total_test)
-
+print("total:", total + total_test)

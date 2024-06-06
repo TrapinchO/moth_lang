@@ -32,10 +32,10 @@ fn lex_float() {
 fn lex_float_error() {
     assert_eq!(
         lex("1.1.1"),
-        Err(Error {
+        Err(vec![Error {
             msg: ErrorType::TwoDecimalPoints,
             lines: vec![Location { start: 0, end: 4 }]
-        })
+        }])
     );
 }
 
@@ -50,7 +50,7 @@ fn lex_number_err() {
     )];
     for (n, r) in nums {
         let tok = lex(n);
-        assert_eq!(Err(r), tok);
+        assert_eq!(Err(vec![r]), tok);
     }
 }
 
@@ -105,17 +105,23 @@ fn lex_string_err() {
     let strings = [
         (
             "\"",
-            Error {
+            vec![Error {
                 msg: ErrorType::StringEof,
                 lines: vec![Location { start: 0, end: 1 }],
-            },
+            }],
         ),
         (
             "\"test\n\"",
-            Error {
-                msg: ErrorType::StringEol,
-                lines: vec![Location { start: 0, end: 5 }],
-            },
+            vec![
+                Error {
+                    msg: ErrorType::StringEol,
+                    lines: vec![Location { start: 0, end: 5 }],
+                },
+                Error {
+                    msg: ErrorType::StringEof,
+                    lines: vec![Location { start: 6, end: 7 }],
+                }
+            ],
         ),
     ];
     for (s, e) in strings {
@@ -428,10 +434,10 @@ fn comment_stars() {
 fn comment_operator_invalid() {
     assert_eq!(
         lex("fun */() {}"),
-        Err(Error {
+        Err(vec![Error {
             msg: ErrorType::CommentSymbol,
             lines: vec![Location { start: 4, end: 6 }], // TODO: incorrect end location
-        })
+        }])
     )
 }
 
@@ -439,9 +445,9 @@ fn comment_operator_invalid() {
 fn float_point_letter() {
     assert_eq!(
         lex("1.a1"),
-        Err(Error {
+        Err(vec![Error {
             msg: ErrorType::InvalidDigit('a'),
             lines: vec![Location { start: 0, end: 2 }],
-        })
+        }])
     )
 }

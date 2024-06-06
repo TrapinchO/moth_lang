@@ -32,14 +32,19 @@ const SPECIAL_SYMBOLS: [(char, TokenType); 8] = [
     (',', TokenType::Comma),
 ];
 
-pub fn lex(code: &str) -> Result<Vec<Token>, Error> {
-    Lexer::new(code).lex()
+pub fn lex(code: &str) -> Result<Vec<Token>, Vec<Error>> {
+    let mut lexer = Lexer::new(code);
+    match lexer.lex() {
+        Ok(tok) => Ok(tok),
+        Err(()) => Err(lexer.errs),
+    }
 }
 
 struct Lexer {
     code: Vec<char>,
     start_idx: usize,
     idx: usize,
+    errs: Vec<Error>,
 }
 
 // I know I could add the tokens in the functions themselves, but I like this more
@@ -49,6 +54,7 @@ impl Lexer {
             code: code.chars().collect(),
             start_idx: 0,
             idx: 0,
+            errs: vec![],
         }
     }
 
@@ -84,7 +90,7 @@ impl Lexer {
         }
     }
 
-    pub fn lex(&mut self) -> Result<Vec<Token>, Error> {
+    pub fn lex(&mut self) -> Result<Vec<Token>, ()> {
         let mut tokens = vec![];
 
         while !self.is_at_end() {
@@ -94,11 +100,22 @@ impl Lexer {
                     self.advance();
                     continue;
                 }
-                '\"' => TokenType::String(self.lex_string()?),
+                '\"' => {
+                    match self.lex_string() {
+                        Ok(s) => TokenType::String(s),
+                        Err(err) => {
+                            self.errs.push(err);
+                            continue
+                        }
+                    }
+                },
                 num if num.is_ascii_digit() => {
                     // floats: should be anything that matches <number>.<number>
                     // no spaces, missing whole/decimal part
-                    self.lex_number()?
+                    match self.lex_number() {
+                        Ok(n) => n,
+                        Err(err) => { self.errs.push(err); continue},
+                    }
                 }
                 ident if ident.is_alphabetic() || ident == '_' => {
                     let ident = self.lex_identifier();
@@ -122,11 +139,14 @@ impl Lexer {
                         "|" => TokenType::Pipe,
                         // TODO: error underlines the following symbol as well
                         _ if sym.ends_with("*/") && sym[..sym.len() - 2].chars().all(|s| s == '*') => {
-                            return Err(self.error(ErrorType::CommentSymbol));
+                            self.errs.push(self.error(ErrorType::CommentSymbol));
+                            continue
                         }
                         // it is a comment if it stars with /* and has only stars afterwards
                         _ if sym.starts_with("/*") && sym[2..].chars().all(|s| s == '*') => {
-                            self.lex_block_comment()?;
+                            if let Err(err) = self.lex_block_comment() {
+                                self.errs.push(err);
+                            }
                             continue;
                         }
                         // ignore comments
@@ -138,7 +158,11 @@ impl Lexer {
                         _ => TokenType::Symbol(sym),
                     }
                 }
-                unknown => return Err(self.error(ErrorType::UnknownCharacter(unknown))),
+                unknown => {
+                    self.errs.push(self.error(ErrorType::UnknownCharacter(unknown)));
+                    self.advance();
+                    continue
+                }
             };
             tokens.push(Located {
                 val: typ,
@@ -156,7 +180,13 @@ impl Lexer {
                 end: self.idx,
             },
         });
-        Ok(tokens)
+        if self.errs.is_empty() {
+            Ok(tokens)
+        } else {
+            // cannot move the errors out from this function without cloning
+            // so just mark the error and get them from the outside
+            Err(())
+        }
     }
 
     fn lex_number(&mut self) -> Result<TokenType, Error> {
