@@ -1,5 +1,6 @@
 let x = 10 * (5 - 3) + 8 / -2;
-print(x, (+));
+print(x);
+print(|| 1, |x| x);
 
 
 

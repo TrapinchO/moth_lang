@@ -40,7 +40,7 @@ impl ValueType {
             Self::Function(params, body, _) => format!(
                 "fun({}) {{ {} }}",
                 params.join(", "),
-                body.iter().map(|s| format!("{s:?}")).collect::<Vec<_>>().join(", ")
+                body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
         }

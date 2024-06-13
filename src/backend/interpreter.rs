@@ -282,9 +282,11 @@ impl Interpreter {
     }
     fn list(&mut self, _: Location, ls: Vec<Expr>) -> Result<ValueType, Error> {
         // a nicer version, but requires cloning...
-        //let ls2 = ls.iter()
-        //    .map(|e| self.visit_expr(e.clone()))
-        //    .collect::<Result<Vec<_>, _>>()?;
+        /*
+        let ls2 = ls.into_iter()
+            .map(|e| self.visit_expr(e))
+            .collect::<Result<Vec<_>, _>>()?;
+        */
         let mut ls2 = vec![];
         for e in ls {
             ls2.push(self.visit_expr(e)?);

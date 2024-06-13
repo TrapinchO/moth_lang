@@ -788,3 +788,48 @@ fn unary_parenthesis() {
         }])
     )
 }
+
+#[test]
+fn lambda() {
+    let src = parse(lex("|| 1;").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Lambda(vec![], vec![Stmt {
+                    val: StmtType::ReturnStmt(Expr {
+                        val: ExprType::Int(1),
+                        loc: Location { start: 3, end: 3 },
+                    }.into()),
+                    loc: Location { start: 3, end: 3 },
+                }]),
+                loc: Location { start: 0, end: 3 },
+            }.into()),
+            loc: Location { start: 0, end: 3 },
+        }])
+    )
+}
+
+#[test]
+fn lambda_params() {
+    let src = parse(lex("|x, y| ();").unwrap());
+    assert_eq!(
+        src,
+        Ok(vec![Stmt {
+            val: StmtType::ExprStmt(Expr {
+                val: ExprType::Lambda(vec![
+                    Identifier { val: "x".to_string(), loc: Location { start: 1, end: 1 } },
+                    Identifier { val: "y".to_string(), loc: Location { start: 4, end: 4 } },
+                ], vec![Stmt {
+                    val: StmtType::ReturnStmt(Expr {
+                        val: ExprType::Unit,
+                        loc: Location { start: 7, end: 8 },
+                    }.into()),
+                    loc: Location { start: 7, end: 8 },
+                }]),
+                loc: Location { start: 0, end: 8 },
+            }.into()),
+            loc: Location { start: 0, end: 8 },
+        }])
+    )
+}

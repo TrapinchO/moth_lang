@@ -482,7 +482,7 @@ impl Parser {
             return self.parse_suffix()
         };
         if sym.as_str() == "||" {
-            return self.parse_lambda()
+            return self.parse_lambda(false)
         }
         else if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
@@ -540,25 +540,17 @@ impl Parser {
 
     /// notes:
     /// no-parameter lambda is in unary because it catches a symbol
-    fn parse_lambda(&mut self) -> Result<Expr, Error> {
-        let tok = self.get_current().clone();
-        let params = match &tok.val {
-            TokenType::Pipe => {
-                self.sep(
-                    TokenType::Pipe, TokenType::Pipe,
-                    Self::parse_param
-                )?.0
-            },
-            TokenType::Symbol(s) => {
-                if s.as_str() == "||" { self.advance(); vec![] }
-                else {
-                    return Err(Error {
-                        lines: vec![tok.loc],
-                        msg: ErrorType::UnknownElement(tok.val),
-                    });
-                }
-            },
-            _ => unreachable!(), // it is called from two places and we know the possible tokens
+    /// in that case it is marked with has_params: false and we do not need to match the symbol again
+    fn parse_lambda(&mut self, has_params: bool) -> Result<Expr, Error> {
+        let start = self.get_current().loc.start;
+        let params = if !has_params {
+            self.advance();
+            vec![]
+        } else {
+            self.sep(
+                TokenType::Pipe, TokenType::Pipe,
+                Self::parse_param
+            )?.0
         };
         // can be either a block or a single body
         let (body, end_loc) = if is_typ!(self, LBrace) {
@@ -576,7 +568,7 @@ impl Parser {
         };
         Ok(Expr {
             val: ExprType::Lambda(params, body),
-            loc: Location { start: tok.loc.start, end: end_loc }
+            loc: Location { start, end: end_loc }
         })
     }
     fn parse_primary(&mut self) -> Result<Expr, Error> {
@@ -647,7 +639,7 @@ impl Parser {
                 })
             }
             TokenType::Pipe => {
-                return self.parse_lambda();
+                return self.parse_lambda(true);
             }
             _ => {
                 return Err(Error {
