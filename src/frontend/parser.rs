@@ -64,6 +64,14 @@ impl Parser {
         &self.tokens[self.idx]
     }
 
+    fn peek(&self, n: usize) -> Option<&Token> {
+        if self.idx + n >= self.tokens.len() {
+            None
+        } else {
+            Some(&self.tokens[self.idx+n])
+        }
+    }
+
     fn advance(&mut self) {
         self.idx += 1;
     }
@@ -605,21 +613,13 @@ impl Parser {
                     TokenType::RParen => {
                         ExprType::Unit
                     },
-                    TokenType::Symbol(sym_name) => {
+                    TokenType::Symbol(sym) if matches!(self.peek(1), Some(Token { val: TokenType::RParen, .. })) => {
                         self.advance();
-                        // either a symbol reference or unary operation
-                        if is_typ!(self, RParen) {
-                            // TODO: location includes the parenthesis too, not sure if I like it
-                            ExprType::Identifier(sym_name)
-                        } else {
-                            // TODO: backtracks, try to remove it later
-                            self.idx -= 1;
-                            ExprType::Parens(self.parse_expression()?.into())
-                        }
+                        ExprType::Identifier(sym)
                     },
                     _ => {
                         ExprType::Parens(self.parse_expression()?.into())
-                    },
+                    }
                 };
                 let end = check_variant!(self, RParen, "Expected a closing parenthesis")?.loc.end;
                 return Ok(Expr {
