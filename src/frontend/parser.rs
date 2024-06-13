@@ -97,7 +97,7 @@ impl Parser {
         let start = self.get_current().loc.start;
         self.advance();
 
-        // no items inbetween
+        // no items in between
         if cmp(&self.get_current().val, &end_tok) {
             let end = self.get_current().loc.end;
             self.advance();
