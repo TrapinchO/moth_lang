@@ -4,7 +4,7 @@ use crate::{
     associativity::{Associativity, Precedence},
     error::{Error, ErrorType},
     exprstmt::*,
-    located::Location,
+    located::{Located, Location},
 };
 use super::token::{Token, TokenType};
 
@@ -210,12 +210,18 @@ impl Parser {
                     val: StmtType::ReturnStmt(val),
                 })
             }
-            TokenType::LBrace => self.parse_block(),
+            TokenType::LBrace => {
+                let bl = self.parse_block()?;
+                Ok(Stmt {
+                    val: StmtType::BlockStmt(bl.val),
+                    loc: bl.loc,
+                })
+            },
             _ => self.parse_assignment(),
         }
     }
 
-    fn parse_block(&mut self) -> Result<Stmt, Error> {
+    fn parse_block(&mut self) -> Result<Located<Vec<Stmt>>, Error> {
         // maybe can be changed into get + advance?
         let start = check_variant!(self, LBrace, "Expected { at the beginning of the block")?
             .loc
@@ -232,8 +238,8 @@ impl Parser {
             .loc
             .end;
 
-        Ok(Stmt {
-            val: StmtType::BlockStmt(ls),
+        Ok(Located {
+            val: ls,
             loc: Location { start, end },
         })
     }
@@ -264,10 +270,8 @@ impl Parser {
 
         let cond = self.parse_expression()?;
         let if_block = self.parse_block()?;
-        let StmtType::BlockStmt(bl) = if_block.val else {
-            unreachable!();
-        };
-        blocks.push((cond, bl));
+
+        blocks.push((cond, if_block.val));
         let mut end = if_block.loc.end;
         let mut exit = false;
         while is_typ!(self, Else) {
@@ -285,10 +289,8 @@ impl Parser {
                 }
             };
             let if_block = self.parse_block()?;
-            let StmtType::BlockStmt(bl) = if_block.val else {
-                unreachable!();
-            };
-            blocks.push((cond, bl));
+
+            blocks.push((cond, if_block.val));
             end = if_block.loc.end;
             if exit {
                 break;
@@ -306,11 +308,9 @@ impl Parser {
         self.advance(); // move past while
         let cond = self.parse_expression()?;
         let block = self.parse_block()?;
-        let StmtType::BlockStmt(bl) = block.val else {
-            unreachable!();
-        };
+
         Ok(Stmt {
-            val: StmtType::WhileStmt(cond, bl),
+            val: StmtType::WhileStmt(cond, block.val),
             loc: Location {
                 start,
                 end: block.loc.end,
@@ -348,14 +348,11 @@ impl Parser {
         )?;
         let block = self.parse_block()?;
         // TODO: horrible cheating, but eh
-        let StmtType::BlockStmt(bl) = block.val else {
-            unreachable!();
-        };
         if !op {
             Ok(Stmt {
                 val: StmtType::FunDeclStmt(
                     Identifier { val: name, loc: tok.loc },
-                    params, bl
+                    params, block.val
                 ),
                 loc: Location { start, end: block.loc.end }
             })
@@ -369,7 +366,7 @@ impl Parser {
             Ok(Stmt {
                 val: StmtType::OperatorDeclStmt(
                     Symbol { val: name, loc: tok.loc },
-                    (param1.clone(), param2.clone()), bl,
+                    (param1.clone(), param2.clone()), block.val,
                     Precedence { prec: 0, assoc: Associativity::Left }
                 ),
                 loc: Location { start, end: block.loc.end }
@@ -555,8 +552,7 @@ impl Parser {
         // can be either a block or a single body
         let (body, end_loc) = if is_typ!(self, LBrace) {
             let block = self.parse_block()?;
-            let StmtType::BlockStmt(bl) = block.val else { unreachable!() };
-            (bl, block.loc.end)
+            (block.val, block.loc.end)
         } else {
             let expr = self.parse_expression()?;
             let loc = expr.loc.end;

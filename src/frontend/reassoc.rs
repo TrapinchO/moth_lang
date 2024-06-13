@@ -130,9 +130,9 @@ impl StmtVisitor<Stmt> for Reassociate {
         })
     }
     fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
-        let mut blocks_result: Vec<(Expr, Block)> = vec![];
+        let mut blocks_result = vec![];
         for (cond, stmts) in blocks {
-            let mut block: Block = vec![];
+            let mut block = vec![];
             for s in stmts {
                 block.push(self.visit_stmt(s)?);
             }
@@ -146,7 +146,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<Stmt, Error> {
         let cond = self.visit_expr(cond)?;
-        let mut block2: Block = vec![];
+        let mut block2 = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?);
         }
@@ -162,7 +162,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         params: Vec<Identifier>,
         block: Vec<Stmt>,
     ) -> Result<Stmt, Error> {
-        let mut block2: Block = vec![];
+        let mut block2 = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?);
         }
@@ -181,7 +181,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     ) -> Result<Stmt, Error> {
         let s = name.val.clone();
         self.ops.insert(s, prec);
-        let mut block2: Block = vec![];
+        let mut block2 = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?);
         }

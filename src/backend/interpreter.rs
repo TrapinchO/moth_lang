@@ -112,6 +112,7 @@ impl Interpreter {
             StmtType::ContinueStmt => self.cont(loc),
         }
     }
+
     fn var_decl(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), InterpError> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
