@@ -116,10 +116,13 @@ impl MList {
     // and returns it as a positive index
     // NOTE: for future me, this is also used for indexing strings
     pub fn check_index(idx: i32, length: usize) -> Option<usize> {
-        if length <= idx as usize || idx < -(length as i32) {
-            return None;
+        if idx < 0 {
+            if (idx.unsigned_abs() as usize) > length { None }
+            else { Some(length - (idx.unsigned_abs() as usize)) }
+        } else {
+            if (idx as usize) >= length { None }
+            else { Some(idx as usize) }
         }
-        Some(if idx < 0 { length as i32 + idx } else { idx } as usize)
     }
 }
 struct MListIter {
