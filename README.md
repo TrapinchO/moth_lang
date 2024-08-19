@@ -15,7 +15,8 @@ When running the program without arguments it enters a repl mode, where a line o
   - [x] function definition
   - [x] lambdas
   - [x] lists
-  - [ ] structs
+  - [x] structs
+  - [ ] impls
   - [ ] enums
 
 

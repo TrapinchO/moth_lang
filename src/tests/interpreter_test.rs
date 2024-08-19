@@ -104,3 +104,36 @@ fn unary_operators() {
         Some(ValueType::Bool(true))
     )
 }
+
+#[test]
+fn structs() {
+    assert_eq!(
+        run_code("
+struct Point {
+    x,
+    y,
+}
+let p = Point(1, -20);
+p.x = 10 * 2 + 20;
+let x = p.x + p.y;
+            ", "x"),
+        Some(ValueType::Int(20))
+    )
+}
+
+#[test]
+fn unknown_field() {
+    assert_eq!(
+        run_code("
+struct Point {
+    x,
+    y,
+}
+let p = Point(1, -20);
+p.z;
+            ", "x"),
+        None
+    )
+}
+
+
