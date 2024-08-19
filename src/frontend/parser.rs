@@ -174,6 +174,7 @@ impl Parser {
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(false),
             TokenType::Infixl | TokenType::Infixr => self.parse_operator(),
+            TokenType::Struct => self.parse_struct(),
             TokenType::Continue => {
                 self.advance();
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
@@ -445,6 +446,35 @@ impl Parser {
                 lines: vec![expr.loc],
             }),
         }
+    }
+
+    fn parse_struct(&mut self) -> Result<Stmt, Error> {
+        let start = self.get_current().loc.start;
+        self.advance();
+        let name_tok = self.get_current().clone();
+        let TokenType::Identifier(name) = name_tok.val else {
+            return Err(Error {
+                msg: ErrorType::OtherError("Expected an identifier".to_string()),
+                lines: vec![name_tok.loc],
+            });
+        };
+        self.advance(); // move past name
+        let fields = self.sep(TokenType::LBrace, TokenType::RBrace, |s| {
+            let tok = s.get_current().clone();
+            if let TokenType::Identifier(ident) = tok.val {
+                s.advance();
+                Ok(Identifier { val: ident, loc: tok.loc })
+            } else {
+                Err(Error {
+                    msg: ErrorType::OtherError("Expected an identifier".to_string()),
+                    lines: vec![tok.loc]
+                })
+            }
+        })?;
+        Ok(Stmt {
+            val: StmtType::StructStmt(Identifier { val: name, loc: name_tok.loc }, fields.0),
+            loc: Location { start, end: fields.1.end },
+        })
     }
 
     fn parse_expression(&mut self) -> Result<Expr, Error> {

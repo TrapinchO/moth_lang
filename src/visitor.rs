@@ -16,6 +16,7 @@ pub trait StmtVisitor<T> {
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
+            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
         }
     }
 
@@ -38,6 +39,7 @@ pub trait StmtVisitor<T> {
     fn cont(&mut self, loc: Location) -> Result<T, Error>;
     fn brek(&mut self, loc: Location) -> Result<T, Error>;
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;
+    fn struc(&mut self, loc: Location, name: Identifier, fields: Vec<Identifier>) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {

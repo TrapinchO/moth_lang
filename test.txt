@@ -3,8 +3,15 @@ print(y);
 let x = [1, 2, 3, 4, 5];
 print(x[0], x[-1], x[-5]);
 
-
-
+struct Test {
+    i,
+    j,
+    k
+}
+print(Test);
+let z = Test(1, 2, x);
+x[0] = 1000000;
+print(z);
 
 // print((|| 1())(), |x| { x; 1 + 1; }(1));
 

@@ -13,7 +13,7 @@ When running the program without arguments it enters a repl mode, where a line o
   - [ ] type checking
   - [x] functions
   - [x] function definition
-  - [ ] lambdas
+  - [x] lambdas
   - [x] lists
   - [ ] structs
   - [ ] enums

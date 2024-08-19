@@ -305,4 +305,11 @@ impl StmtVisitor<Stmt> for Simplifier {
         ) -> Result<Stmt, Error> {
         self.fun(loc, name, vec![params.0, params.1], block)
     }
+
+    fn struc(&mut self, loc: Location, name: exprstmt::Identifier, fields: Vec<exprstmt::Identifier>) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::StructStmt(name, fields),
+            loc,
+        })
+    }
 }

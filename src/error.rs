@@ -55,7 +55,7 @@ pub enum ErrorType {
     ExpectedUnaryNumber,
     ExpectedUnaryBool,
     ItemNotIndexable,
-    IncorrectParameterCount(usize, usize),
+    IncorrectParameterCount(usize, usize), // args, paramas
     ReturnOutsideFunction,
     BreakOutsideLoop,
     ContinueOutsideLoop,

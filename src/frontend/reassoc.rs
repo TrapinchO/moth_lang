@@ -208,6 +208,12 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
+    fn struc(&mut self, loc: Location, name: Identifier, fields: Vec<Identifier>) -> Result<Stmt, Error> {
+        Ok(Stmt {
+            val: StmtType::StructStmt(name, fields),
+            loc,
+        })
+    }
 }
 
 impl ExprVisitor<Expr> for Reassociate {

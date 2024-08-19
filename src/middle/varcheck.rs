@@ -85,6 +85,9 @@ impl VarCheck {
                 StmtType::ReturnStmt(..) => {
                     self.visit_stmt(s);
                 }
+                StmtType::StructStmt(name, _) => {
+                    self.declare_item(&name.val, name.loc);
+                }
             }
         }
 
@@ -116,6 +119,7 @@ impl VarCheck {
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
+            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields)
         }
     }
     fn expr(&mut self, _: Location, expr: &Expr) {
@@ -188,6 +192,7 @@ impl VarCheck {
     }
     fn brek(&mut self, _: Location) {}
     fn cont(&mut self, _: Location) {}
+    fn struc(&mut self, _: Location, _: &Identifier, _: &Vec<Identifier>) {}
 }
 impl VarCheck {
     fn visit_expr(&mut self, expr: &Expr) {

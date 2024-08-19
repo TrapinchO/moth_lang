@@ -6,7 +6,7 @@ use super::token::{Token, TokenType};
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
-const KEYWORDS: [(&str, TokenType); 12] = [
+const KEYWORDS: [(&str, TokenType); 13] = [
     ("let", TokenType::Let),
     ("fun", TokenType::Fun),
     ("true", TokenType::True),
@@ -19,6 +19,7 @@ const KEYWORDS: [(&str, TokenType); 12] = [
     ("continue", TokenType::Continue),
     ("infixr", TokenType::Infixr),
     ("infixl", TokenType::Infixl),
+    ("struct", TokenType::Struct),
 ];
 
 const SPECIAL_SYMBOLS: [(char, TokenType); 8] = [

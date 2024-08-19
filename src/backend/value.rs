@@ -3,7 +3,7 @@ use std::fmt::Display;
 use std::time::SystemTime;
 
 use crate::associativity::{Associativity, Precedence};
-use super::lowexprstmt::Stmt;
+use super::lowexprstmt::{Identifier, Stmt};
 use crate::located::Located;
 use crate::mref::{MList, MMap};
 
@@ -19,6 +19,8 @@ pub enum ValueType {
     List(MList),
     NativeFunction(NativeFunction),
     Function(Vec<String>, Vec<Stmt>, Closure), // fn(params) { block }, closure
+    Struct(Identifier, Vec<Identifier>),
+    Instance(String, MMap<ValueType>),
     Unit,
 }
 impl ValueType {
@@ -43,6 +45,8 @@ impl ValueType {
                 body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
+            Self::Struct(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::Instance(name, map) => format!("{}({})", name, map.read(|m| format!("{:?}", m))),
         }
     }
 }

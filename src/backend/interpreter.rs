@@ -4,7 +4,7 @@ use crate::{
     environment::Environment,
     error::{Error, ErrorType},
     located::{Located, Location},
-    mref::MList,
+    mref::{MList, MMap},
 };
 use super::value::*;
 use super::lowexprstmt::*;
@@ -110,6 +110,7 @@ impl Interpreter {
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
+            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
         }
     }
 
@@ -227,6 +228,12 @@ impl Interpreter {
             loc,
         })
     }
+    fn struc(&mut self, _: Location, name: Identifier, fields: Vec<Identifier>) -> Result<(), InterpError> {
+        if !self.environment.insert(&name.val, ValueType::Struct(name.clone(), fields)) {
+            unreachable!("Item \"{}\" already declared\nLocation: {:?}", name.val, name.loc);
+        }
+        Ok(())
+    }
 }
 
 impl Interpreter {
@@ -275,6 +282,7 @@ impl Interpreter {
         match callee.val {
             ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
             ValueType::Function(params, body, closure) => self.call_fn(params, body, closure, args2, loc),
+            ValueType::Struct(name, fields) => self.call_struct(name, fields, args2, loc),
             _ => Err(Error {
                 msg: ErrorType::ItemNotCalleable,
                 lines: vec![callee.loc],
@@ -390,5 +398,27 @@ impl Interpreter {
         loc: Location,
     ) -> Result<ValueType, Error> {
         func(args).map_err(|msg| Error { msg: ErrorType::NativeFunctionError(msg), lines: vec![loc] })
+    }
+
+    fn call_struct(
+        &self,
+        name: Identifier,
+        fields: Vec<Identifier>,
+        args: Vec<ValueType>,
+        loc: Location,
+    ) -> Result<ValueType, Error> {
+        if args.len() != fields.len() {
+            return Err(Error {
+                msg: ErrorType::IncorrectParameterCount(args.len(), fields.len()),
+                lines: vec![loc],
+            });
+        }
+
+        let mut m = HashMap::new();
+        for (a, f) in args.iter().zip(fields) {
+            m.insert(f.val, a.clone());
+        }
+
+        Ok(ValueType::Instance(name.val, MMap::new(m)))
     }
 }
