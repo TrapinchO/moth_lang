@@ -441,6 +441,10 @@ impl Parser {
                 val: StmtType::AssignIndexStmt(*ls, *idx, val),
                 loc,
             }),
+            ExprType::FieldAccess(expr, name) => Ok(Stmt {
+                val: StmtType::AssignStructStmt(*expr, name, val),
+                loc,
+            }),
             _ => Err(Error {
                 msg: ErrorType::InvalidAssignmentTarget,
                 lines: vec![expr.loc],

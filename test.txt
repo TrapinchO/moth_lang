@@ -12,8 +12,12 @@ print(Test);
 let z = Test(1, 2, x);
 let z2 = Test("AAAA", true, z);
 x[0] = 1000000;
-z.k[1] = 2000000;
-print(z.i, z.k, z2.k.a);
+z.i = 2000000;
+//print(z.i, z.k, z2.k.k);
+print(z);
+
+
+
 
 // print((|| 1())(), |x| { x; 1 + 1; }(1));
 

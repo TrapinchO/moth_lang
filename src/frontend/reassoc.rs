@@ -214,6 +214,14 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
+    fn assignstruc(&mut self, loc: Location, expr1: Expr, name: Identifier, expr2: Expr) -> Result<Stmt, Error> {
+        let expr1 = self.visit_expr(expr1)?;
+        let expr2 = self.visit_expr(expr2)?;
+        Ok(Stmt {
+            val: StmtType::AssignStructStmt(expr1, name, expr2),
+            loc,
+        })
+    }
 }
 
 impl ExprVisitor<Expr> for Reassociate {

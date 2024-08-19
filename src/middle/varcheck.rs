@@ -64,10 +64,8 @@ impl VarCheck {
                         });
                     }
                 }
-                StmtType::AssignIndexStmt(ls, idx, val) => {
-                    self.visit_expr(ls);
-                    self.visit_expr(idx);
-                    self.visit_expr(val);
+                StmtType::AssignIndexStmt(..) => {
+                    self.visit_stmt(s);
                 }
                 StmtType::BlockStmt(..) => {
                     self.visit_stmt(s);
@@ -87,6 +85,9 @@ impl VarCheck {
                 }
                 StmtType::StructStmt(name, _) => {
                     self.declare_item(&name.val, name.loc);
+                }
+                StmtType::AssignStructStmt(..) => {
+                    self.visit_stmt(s);
                 }
             }
         }
@@ -119,7 +120,8 @@ impl VarCheck {
             StmtType::ReturnStmt(expr) => self.retur(loc, expr),
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
-            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields)
+            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
+            StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
         }
     }
     fn expr(&mut self, _: Location, expr: &Expr) {
@@ -193,6 +195,10 @@ impl VarCheck {
     fn brek(&mut self, _: Location) {}
     fn cont(&mut self, _: Location) {}
     fn struc(&mut self, _: Location, _: &Identifier, _: &Vec<Identifier>) {}
+    fn assignstruc(&mut self, _: Location, expr1: &Expr, _: &Identifier, expr2: &Expr) {
+        self.visit_expr(expr1);
+        self.visit_expr(expr2);
+    }
 }
 impl VarCheck {
     fn visit_expr(&mut self, expr: &Expr) {

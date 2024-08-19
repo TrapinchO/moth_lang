@@ -64,6 +64,7 @@ pub enum ErrorType {
     NativeFunctionError(String),
     FieldNotFound(String, String),
     ExpectedInstance,
+    UnknownField(String),
     // other
     OtherError(String),
 }
@@ -123,6 +124,7 @@ impl ErrorType {
             Self::NativeFunctionError(msg) => msg.clone(),
             Self::FieldNotFound(field, struc) => format!("Field \"{field}\" not found in \"{struc}\""),
             Self::ExpectedInstance => "Expected struct instance".to_string(),
+            Self::UnknownField(name) => format!("Field \"{name}\" does not exist"),
             // other
             Self::OtherError(msg) => msg.clone(),
         }

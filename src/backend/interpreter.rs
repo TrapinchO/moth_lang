@@ -111,6 +111,7 @@ impl Interpreter {
             StmtType::BreakStmt => self.brek(loc),
             StmtType::ContinueStmt => self.cont(loc),
             StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
+            StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
         }
     }
 
@@ -232,6 +233,25 @@ impl Interpreter {
         if !self.environment.insert(&name.val, ValueType::Struct(name.clone(), fields)) {
             unreachable!("Item \"{}\" already declared\nLocation: {:?}", name.val, name.loc);
         }
+        Ok(())
+    }
+    fn assignstruc(&mut self, _: Location, expr1: Expr, name: Identifier, expr2: Expr) -> Result<(), InterpError> {
+        let expr = self.visit_expr(expr1)?;
+        let ValueType::Instance(_, mut fields) = expr.val else {
+            return Err(Error {
+                msg: ErrorType::ExpectedInstance,
+                lines: vec![expr.loc],
+            }.into());
+        };
+        println!("{:?}", fields.get(&name.val));
+        if fields.get(&name.val).is_none() {
+            return Err(Error {
+                msg: ErrorType::UnknownField(name.val),
+                lines: vec![name.loc],
+            }.into());
+        }
+        let val = self.visit_expr(expr2)?;
+        fields.insert(name.val, val.val);
         Ok(())
     }
 }

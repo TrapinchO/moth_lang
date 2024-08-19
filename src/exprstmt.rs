@@ -80,6 +80,7 @@ pub enum StmtType {
     BreakStmt,
     ContinueStmt,
     StructStmt(Identifier, Vec<Identifier>),
+    AssignStructStmt(Expr, Identifier, Expr), // expr.name = expr
 }
 impl StmtType {
     fn format(&self) -> String {
@@ -129,7 +130,8 @@ impl StmtType {
             Self::ReturnStmt(expr) => format!("return {expr};"),
             Self::BreakStmt => "break;".to_string(),
             Self::ContinueStmt => "continue;".to_string(),
-            Self::StructStmt(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "))
+            Self::StructStmt(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::AssignStructStmt(expr1, name, expr2) => format!("{expr1}.{} = {expr2}", name.val),
         }
     }
 }
