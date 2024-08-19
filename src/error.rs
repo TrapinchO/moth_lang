@@ -46,6 +46,7 @@ pub enum ErrorType {
     AlreadyDeclaredItem,
     UndeclaredItem,
     DuplicateParameter(String),
+    DuplicateField(String),
     // varcheck warns
     ItemNotUsed(String),
     DeadCode,
@@ -109,6 +110,7 @@ impl ErrorType {
             Self::AlreadyDeclaredItem => "Item already declared".to_string(),
             Self::UndeclaredItem => "Item not declared".to_string(),
             Self::DuplicateParameter(s) => format!("Duplicate parameter: {s}"),
+            Self::DuplicateField(f) => format!("Duplicate parameter: {f}"),
             // varcheck warns
             Self::ItemNotUsed(s) => format!("Item \"{s}\" not used"),
             Self::DeadCode => "Unreachable code".to_string(),

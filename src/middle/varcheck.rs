@@ -66,6 +66,7 @@ impl VarCheck {
                 }
                 StmtType::StructStmt(name, _) => {
                     self.declare_item(&name.val, name.loc);
+                    self.visit_stmt(s);
                 }
                 StmtType::BreakStmt
                     | StmtType::ContinueStmt
@@ -221,7 +222,19 @@ impl VarCheck {
     }
     fn brek(&mut self, _: Location) {}
     fn cont(&mut self, _: Location) {}
-    fn struc(&mut self, _: Location, _: &Identifier, _: &Vec<Identifier>) {}
+    fn struc(&mut self, _: Location, _: &Identifier, fields: &Vec<Identifier>) {
+        let mut m: HashMap<String, Location> = HashMap::new();
+        for f in fields {
+            if let Some(field) = m.get(&f.val) {
+                self.errs.push(Error {
+                    msg: ErrorType::DuplicateField(f.val.clone()),
+                    lines: vec![field.clone(), f.loc],
+                });
+            } else {
+                m.insert(f.val.clone(), f.loc);
+            }
+        }
+    }
     fn assignstruc(&mut self, _: Location, expr1: &Expr, _: &Identifier, expr2: &Expr) {
         self.visit_expr(expr1);
         self.visit_expr(expr2);
