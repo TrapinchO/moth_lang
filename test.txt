@@ -3,18 +3,19 @@ print(y);
 let x = [1, 2, 3, 4, 5];
 print(x[0], x[-1], x[-5]);
 
-struct Test {
+struct Test2 {
     i,
     j,
     k,
 }
+let Test = Test2;
 print(Test);
 let z = Test(1, 2, x);
 let z2 = Test("AAAA", true, z);
 x[0] = 1000000;
 z.i = 10 + 20 * 2 + 20;
 //print(z.i, z.k, z2.k.k);
-print(z);
+print(z2);
 
 
 

@@ -243,8 +243,7 @@ impl Interpreter {
                 lines: vec![expr.loc],
             }.into());
         };
-        println!("{:?}", fields.get(&name.val));
-        if fields.get(&name.val).is_none() {
+        if fields.get(&name.val).is_none() { // field not present in the object
             return Err(Error {
                 msg: ErrorType::UnknownField(name.val),
                 lines: vec![name.loc],
@@ -362,17 +361,16 @@ impl Interpreter {
     }
     fn field(&mut self, loc: Location, expr: Expr, name: Identifier) -> Result<ValueType, Error> {
         let expr2 = self.visit_expr(expr)?;
-        if let ValueType::Instance(struct_name, fields) = expr2.val {
-            Ok(fields.get(&name.val).ok_or_else(|| Error {
-                msg: ErrorType::FieldNotFound(name.val, struct_name),
-                lines: vec![loc],
-            })?.clone())
-        } else {
-            Err(Error {
+        let ValueType::Instance(struct_name, fields) = expr2.val else {
+            return Err(Error {
                 msg: ErrorType::ExpectedInstance,
                 lines: vec![expr2.loc],
-            })
-        }
+            });
+        };
+        Ok(fields.get(&name.val).ok_or_else(|| Error {
+            msg: ErrorType::FieldNotFound(name.val, struct_name),
+            lines: vec![loc],
+        })?.clone())
     }
 
     fn call_fn(
@@ -451,11 +449,10 @@ impl Interpreter {
             });
         }
 
-        let mut m = HashMap::new();
-        for (a, f) in args.iter().zip(fields) {
-            m.insert(f.val, a.clone());
-        }
-
+        let m = args.iter()
+            .zip(fields)
+            .map(|(a, f)| (f.val, a.clone()))
+            .collect::<HashMap<_, _>>();
         Ok(ValueType::Instance(name.val, MMap::new(m)))
     }
 }
