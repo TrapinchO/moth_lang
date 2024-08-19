@@ -48,6 +48,9 @@ pub enum ErrorType {
     DuplicateParameter(String),
     // varcheck warns
     ItemNotUsed(String),
+    DeadCode,
+    IfNeverExecutes,
+    LoopNeverExecutes,
     // interpreter
     ExpectedListIndex,
     ExpectedIndex,
@@ -108,6 +111,9 @@ impl ErrorType {
             Self::DuplicateParameter(s) => format!("Duplicate parameter: {s}"),
             // varcheck warns
             Self::ItemNotUsed(s) => format!("Item \"{s}\" not used"),
+            Self::DeadCode => "Unreachable code".to_string(),
+            Self::IfNeverExecutes => "If branch never executes".to_string(),
+            Self::LoopNeverExecutes => "Loop never executes".to_string(),
             // interpreter
             Self::ExpectedListIndex => "Expected a list index expression".to_string(),
             Self::ExpectedIndex => "Expected an integer index".to_string(),

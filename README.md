@@ -9,7 +9,7 @@ Please note that the repl is very primitive and all code MUST be on a single lin
 # Status
 - [x] operator reassociation
 - [x] variable checking
-- [ ] dead code checker
+- [x] dead code checker
 - [ ] optimizations
 - [ ] std library
 - features

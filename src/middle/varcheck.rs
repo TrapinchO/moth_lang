@@ -43,7 +43,7 @@ impl VarCheck {
     }
     fn check_block(&mut self, block: &Vec<Stmt>) {
         self.env.add_scope();
-        for s in block {
+        for (i, s) in block.iter().enumerate() {
             match &s.val {
                 StmtType::VarDeclStmt(t, expr) => {
                     self.visit_expr(expr);
@@ -64,16 +64,28 @@ impl VarCheck {
                         });
                     }
                 }
-                StmtType::BreakStmt | StmtType::ContinueStmt => {}
                 StmtType::StructStmt(name, _) => {
                     self.declare_item(&name.val, name.loc);
                 }
+                StmtType::BreakStmt
+                    | StmtType::ContinueStmt
+                    | StmtType::ReturnStmt(_) => {
+                        if i == block.len()-1 {
+                            break;
+                        }
+                        let start = block[i+1].loc.start;
+                        let end = block.last().unwrap().loc.end;
+                        self.warns.push(Error {
+                            msg:ErrorType::DeadCode,
+                            lines: vec![s.loc, Location { start, end }]
+                        });
+                        break;
+                    }
                 // necessary for pattern matching
                 StmtType::AssignIndexStmt(..)
                     | StmtType::BlockStmt(..)
                     | StmtType::IfStmt(..)
                     | StmtType::WhileStmt(..)
-                    | StmtType::ReturnStmt(..)
                     | StmtType::ExprStmt(..)
                     | StmtType::AssignStructStmt(..) => {
                         self.visit_stmt(s);
@@ -130,13 +142,39 @@ impl VarCheck {
     fn block(&mut self, _: Location, block: &Vec<Stmt>) {
         self.check_block(block);
     }
-    fn if_else(&mut self, _: Location, blocks: &Vec<(Expr, Vec<Stmt>)>) {
-        for (cond, block) in blocks {
+    fn if_else(&mut self, loc: Location, blocks: &Vec<(Expr, Vec<Stmt>)>) {
+        for (i, (cond, block)) in blocks.iter().enumerate() {
+            // NOTE: if let is not supported with additional conditions
+            // check for dead code
+            if i < blocks.len()-1 {
+                if let ExprType::Bool(true) = cond.val {
+                    // TODO: skips the ELSE IF keywords, but otherwise done
+                    let start = blocks[i+1].0.loc.start;
+                    self.warns.push(Error {
+                        msg:ErrorType::DeadCode,
+                        lines: vec![cond.loc, Location { start, end: loc.end }]
+                    });
+                    break;
+                } else if let ExprType::Bool(false) = cond.val {
+                    self.warns.push(Error {
+                        msg:ErrorType::IfNeverExecutes,
+                        lines: vec![cond.loc]
+                    });
+                }
+            }
             self.visit_expr(cond);
             self.check_block(block);
         }
     }
     fn whiles(&mut self, _: Location, cond: &Expr, block: &Vec<Stmt>) {
+        if let ExprType::Bool(false) = cond.val {
+            self.warns.push(Error {
+                msg:ErrorType::LoopNeverExecutes,
+                lines: vec![cond.loc]
+            });
+        }
+        // TODO: do not forget about "true"
+        // but since I have no advanced checks yet (or loop loop), no need ig
         self.visit_expr(cond);
         self.check_block(block);
     }

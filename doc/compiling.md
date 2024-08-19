@@ -16,7 +16,7 @@ Also serves as a validation for operator existence.
 # Variable checking
 Variables and functions are checked for being declared exactly once. Using undeclared variables or redeclaring throws an error.
 
-During this phase warnings for unused variables  are emitted.
+During this phase warnings for unused variables and dead code are emitted.
 
 # Simplifying
 The AST is simplified into minimal instruction set. Notably, all operators are changed into function calls (including unary operators) and function declarations are changed into lambda expressions.
