@@ -212,4 +212,27 @@ print(test(4, 2, false));  // prints 6, returns 2
 print(test(1, 2, true));  // prints 3, returns unit
 ```
 
+# Structs
+NOTE: This is a subject to change once proper type system is implemented. It will be almost surely same as Rust.
+
+Struct are defined using the `struct` keyword, followed by the struct name and a list of fields.
+
+```rs
+struct Point {
+    x,
+    y,
+}
+```
+
+Structs are instantiated just like Python or Kotlin classes (i.e. a regular function call, no `new` keyword or special syntax). Fields are accessed using the dot notation. Additional fields may not be created at runtime.
+```rs
+let p = Point(1, 2);
+print(p.x, p.y);
+p.x = 10;
+p.z = true;  // ERROR: Field \"z\" does not exist
+```
+
+NOTE: Unlike dynamic languages
+NOTE: The validity of fields is NOT enforced during COMPILATION due to the lack of a type system.
+
 
