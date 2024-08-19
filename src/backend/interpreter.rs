@@ -344,12 +344,12 @@ impl Interpreter {
         let expr2 = self.visit_expr(expr)?;
         if let ValueType::Instance(struct_name, fields) = expr2.val {
             Ok(fields.get(&name.val).ok_or_else(|| Error {
-                msg: ErrorType::OtherError(format!("Field not found: {}", name)),
+                msg: ErrorType::FieldNotFound(name.val, struct_name),
                 lines: vec![loc],
             })?.clone())
         } else {
             Err(Error {
-                msg: ErrorType::OtherError("Expected an instance".to_string()),
+                msg: ErrorType::ExpectedInstance,
                 lines: vec![expr2.loc],
             })
         }

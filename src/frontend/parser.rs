@@ -454,7 +454,7 @@ impl Parser {
         let name_tok = self.get_current().clone();
         let TokenType::Identifier(name) = name_tok.val else {
             return Err(Error {
-                msg: ErrorType::OtherError("Expected an identifier".to_string()),
+                msg: ErrorType::ExpectedStructName,
                 lines: vec![name_tok.loc],
             });
         };
@@ -466,7 +466,7 @@ impl Parser {
                 Ok(Identifier { val: ident, loc: tok.loc })
             } else {
                 Err(Error {
-                    msg: ErrorType::OtherError("Expected an identifier".to_string()),
+                    msg: ErrorType::ExpectedFieldName,
                     lines: vec![tok.loc]
                 })
             }
@@ -605,7 +605,7 @@ impl Parser {
             let name_tok = self.get_current().clone();
             let TokenType::Identifier(name) = name_tok.val else {
                 return Err(Error {
-                    msg: ErrorType::OtherError("Expected a field name".to_string()),
+                    msg: ErrorType::ExpectedFieldName,
                     lines: vec![name_tok.loc],
                 });
             };

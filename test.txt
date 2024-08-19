@@ -13,7 +13,7 @@ let z = Test(1, 2, x);
 let z2 = Test("AAAA", true, z);
 x[0] = 1000000;
 z.k[1] = 2000000;
-print(z.i, z.k, z2.k.j);
+print(z.i, z.k, z2.k.a);
 
 // print((|| 1())(), |x| { x; 1 + 1; }(1));
 

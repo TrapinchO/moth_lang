@@ -36,6 +36,8 @@ pub enum ErrorType {
     ExpectedOpeningToken(TokenType),
     ExpectedClosingToken(TokenType),
     ExpectedParameterName,
+    ExpectedStructName,
+    ExpectedFieldName,
     UnexpectedEof,
     // reassoc
     OperatorNotFound(String),
@@ -60,6 +62,8 @@ pub enum ErrorType {
     BreakOutsideLoop,
     ContinueOutsideLoop,
     NativeFunctionError(String),
+    FieldNotFound(String, String),
+    ExpectedInstance,
     // other
     OtherError(String),
 }
@@ -92,6 +96,8 @@ impl ErrorType {
             Self::ExpectedClosingToken(tok) => format!("Expected closing token {tok}"),
             Self::UnexpectedEof => "Expected an element but reached EOF".to_string(),
             Self::ExpectedParameterName => "Expected a parameter name".to_string(),
+            Self::ExpectedFieldName => "Expected a field name".to_string(),
+            ErrorType::ExpectedStructName => "Expected a struct name".to_string(),
             // reassoc
             Self::OperatorNotFound(s) => format!("Operator not found: {s}"),
             Self::IncompatiblePrecedence(op1, prec1, op2, prec2) => format!("Incompatible operator precedence: \"{op1}\" ({prec1:?}) and \"{op2}\" ({prec2:?}) - both have precedence {}", prec1.prec),
@@ -115,6 +121,8 @@ impl ErrorType {
             Self::BreakOutsideLoop => "Cannot use break outside of a loop".to_string(),
             Self::ContinueOutsideLoop => "Cannot use continue outside of a loop".to_string(),
             Self::NativeFunctionError(msg) => msg.clone(),
+            Self::FieldNotFound(field, struc) => format!("Field \"{field}\" not found in \"{struc}\""),
+            Self::ExpectedInstance => "Expected struct instance".to_string(),
             // other
             Self::OtherError(msg) => msg.clone(),
         }

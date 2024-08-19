@@ -271,7 +271,7 @@ impl VarCheck {
     fn lambda(&mut self, loc: Location, params: &Vec<Identifier>, body: &Vec<Stmt>) {
         self.fun(loc, &Identifier { val: "".to_string(), loc }, params, body);
     }
-    fn field(&mut self, _: Location, expr: &Expr, name: &Identifier) {
+    fn field(&mut self, _: Location, expr: &Expr, _: &Identifier) {
         self.visit_expr(expr);
         // TODO: check for fields
     }
