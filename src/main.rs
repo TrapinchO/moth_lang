@@ -9,7 +9,9 @@ use std::{
 fn main() {
     // courtesy of: https://stackoverflow.com/a/71731489
     // provides a backtrace in case of error
-    env::set_var("RUST_BACKTRACE", "1");
+    unsafe {
+        env::set_var("RUST_BACKTRACE", "1");
+    }
 
     let args = env::args().collect::<Vec<_>>();
     if args.len() == 1 {
