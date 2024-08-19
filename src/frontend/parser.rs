@@ -574,14 +574,14 @@ impl Parser {
     /// in that case it is marked with has_params: false and we do not need to match the symbol again
     fn parse_lambda(&mut self, has_params: bool) -> Result<Expr, Error> {
         let start = self.get_current().loc.start;
-        let params = if !has_params {
-            self.advance();
-            vec![]
-        } else {
+        let params = if has_params {
             self.sep(
                 TokenType::Pipe, TokenType::Pipe,
                 Self::parse_param
             )?.0
+        } else {
+            self.advance(); // go past the ||
+            vec![]
         };
         // can be either a block or a single body
         let (body, end_loc) = if is_typ!(self, LBrace) {

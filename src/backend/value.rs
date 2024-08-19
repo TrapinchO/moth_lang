@@ -97,7 +97,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                     }
                     ValueType::List(res.into())
                 }
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -114,7 +114,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
             Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a - b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a - b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -131,7 +131,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
             Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a * b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a * b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -153,7 +153,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                     ValueType::Int(a / b)
                 }
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a / b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -170,7 +170,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
             Ok(match (left, right) {
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Int(a % b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Float(a % b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -189,7 +189,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a == b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a == b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a == b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -208,7 +208,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a != b),
                 (ValueType::String(a), ValueType::String(b)) => ValueType::Bool(a != b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a != b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -226,7 +226,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a >= b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a >= b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a >= b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -244,7 +244,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a <= b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a <= b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a <= b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -262,7 +262,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a > b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a > b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a > b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -280,7 +280,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
                 (ValueType::Int(a), ValueType::Int(b)) => ValueType::Bool(a < b),
                 (ValueType::Float(a), ValueType::Float(b)) => ValueType::Bool(a < b),
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(a < b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -296,7 +296,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
             };
             Ok(match (left, right) {
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a || *b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -312,7 +312,7 @@ pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
             };
             Ok(match (left, right) {
                 (ValueType::Bool(a), ValueType::Bool(b)) => ValueType::Bool(*a && *b),
-                _ => return Err(format!("Invalid values: \"{}\" and \"{}\"", left, right)),
+                _ => return Err(format!("Invalid values: \"{left}\" and \"{right}\"")),
             })
         },
     ),
@@ -347,7 +347,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
             ValueType::List(ls) => ls.read(|l| l.len()) as i32,
-            _ => return Err(format!("Invalid value: {}", val)),
+            _ => return Err(format!("Invalid value: {val}")),
         }))
     }),
     ("$$not", |args| {

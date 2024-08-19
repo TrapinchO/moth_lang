@@ -322,9 +322,9 @@ impl StmtVisitor<Stmt> for Simplifier {
     fn assignstruc(&mut self, loc: Location, expr1: exprstmt::Expr, name: exprstmt::Identifier, expr2: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
             val: StmtType::AssignStructStmt(
-                self.visit_expr(expr1)?.into(),
+                self.visit_expr(expr1)?,
                 name,
-                self.visit_expr(expr2)?.into(),
+                self.visit_expr(expr2)?,
             ),
             loc,
         })

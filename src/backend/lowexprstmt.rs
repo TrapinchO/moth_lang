@@ -49,7 +49,7 @@ impl ExprType {
                 params = params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::FieldAccess(expr, name) => format!("{}.{}", expr, name),
+            Self::FieldAccess(expr, name) => format!("{expr}.{name}"),
         }
     }
 }

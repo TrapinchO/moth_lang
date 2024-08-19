@@ -64,30 +64,19 @@ impl VarCheck {
                         });
                     }
                 }
-                StmtType::AssignIndexStmt(..) => {
-                    self.visit_stmt(s);
-                }
-                StmtType::BlockStmt(..) => {
-                    self.visit_stmt(s);
-                }
-                StmtType::IfStmt(..) => {
-                    self.visit_stmt(s);
-                }
-                StmtType::WhileStmt(..) => {
-                    self.visit_stmt(s);
-                }
-                StmtType::ExprStmt(..) => {
-                    self.visit_stmt(s);
-                }
                 StmtType::BreakStmt | StmtType::ContinueStmt => {}
-                StmtType::ReturnStmt(..) => {
-                    self.visit_stmt(s);
-                }
                 StmtType::StructStmt(name, _) => {
                     self.declare_item(&name.val, name.loc);
                 }
-                StmtType::AssignStructStmt(..) => {
-                    self.visit_stmt(s);
+                // necessary for pattern matching
+                StmtType::AssignIndexStmt(..)
+                    | StmtType::BlockStmt(..)
+                    | StmtType::IfStmt(..)
+                    | StmtType::WhileStmt(..)
+                    | StmtType::ReturnStmt(..)
+                    | StmtType::ExprStmt(..)
+                    | StmtType::AssignStructStmt(..) => {
+                        self.visit_stmt(s);
                 }
             }
         }

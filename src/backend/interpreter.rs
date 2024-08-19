@@ -435,6 +435,8 @@ impl Interpreter {
         func(args).map_err(|msg| Error { msg: ErrorType::NativeFunctionError(msg), lines: vec![loc] })
     }
 
+    // btw the self is technically not needed 2
+    // leaving it here for style for now
     fn call_struct(
         &self,
         name: Identifier,
