@@ -191,6 +191,12 @@ impl ExprVisitor<Expr> for Simplifier {
             },
         }
     }
+    fn field(&mut self, loc: Location, expr: exprstmt::Expr, name: exprstmt::Identifier) -> Result<Expr, Error> {
+        Ok(Expr {
+            val: ExprType::FieldAccess(self.visit_expr(expr)?.into(), name),
+            loc,
+        })
+    }
 }
 
 

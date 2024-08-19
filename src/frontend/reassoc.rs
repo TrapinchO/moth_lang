@@ -304,7 +304,14 @@ impl ExprVisitor<Expr> for Reassociate {
         }
         Ok(Expr {
             val: ExprType::Lambda(params, body2),
-            loc
+            loc,
+        })
+    }
+    fn field(&mut self, loc: Location, expr: Expr, name: Identifier) -> Result<Expr, Error> {
+        let expr2 = self.visit_expr(expr)?;
+        Ok(Expr {
+            val: ExprType::FieldAccess(expr2.into(), name),
+            loc,
         })
     }
 }

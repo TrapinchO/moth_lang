@@ -23,6 +23,7 @@ pub enum ExprType {
     List(Vec<Expr>),
     Index(Box<Expr>, Box<Expr>), // expr[idx]
     Lambda(Vec<Identifier>, Vec<Stmt>), // |params| { block }
+    FieldAccess(Box<Expr>, Identifier),
 }
 
 impl ExprType {
@@ -48,6 +49,7 @@ impl ExprType {
                 params = params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
+            Self::FieldAccess(expr, name) => format!("{}.{}", expr, name),
         }
     }
 }

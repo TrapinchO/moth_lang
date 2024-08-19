@@ -250,6 +250,7 @@ impl Interpreter {
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
             ExprType::Lambda(params, body) => self.lambda(loc, params, body),
+            ExprType::FieldAccess(expr, name) => self.field(loc, *expr, name),
         }?;
         Ok(Value { val, loc: expr.loc })
     }
@@ -338,6 +339,20 @@ impl Interpreter {
             params2.push(p.val);
         }
         Ok(ValueType::Function(params2, body, self.environment.scopes.clone()))
+    }
+    fn field(&mut self, loc: Location, expr: Expr, name: Identifier) -> Result<ValueType, Error> {
+        let expr2 = self.visit_expr(expr)?;
+        if let ValueType::Instance(struct_name, fields) = expr2.val {
+            Ok(fields.get(&name.val).ok_or_else(|| Error {
+                msg: ErrorType::OtherError(format!("Field not found: {}", name)),
+                lines: vec![loc],
+            })?.clone())
+        } else {
+            Err(Error {
+                msg: ErrorType::OtherError("Expected an instance".to_string()),
+                lines: vec![expr2.loc],
+            })
+        }
     }
 
     fn call_fn(

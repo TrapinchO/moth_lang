@@ -46,7 +46,11 @@ impl ValueType {
             ),
             Self::Unit => "()".to_string(),
             Self::Struct(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
-            Self::Instance(name, map) => format!("{}({})", name, map.read(|m| format!("{:?}", m))),
+            Self::Instance(name, map) => format!(
+                "{}({})",
+                name,
+                map.read(|m| format!("{{ {} }}", m.iter().map(|(k, v)| format!("{k}: {v}")).collect::<Vec<_>>().join(", ")))
+            ),
         }
     }
 }

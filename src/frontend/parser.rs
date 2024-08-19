@@ -532,7 +532,7 @@ impl Parser {
 
     /// things like function call and indexing
     fn parse_suffix(&mut self) -> Result<Expr, Error> {
-        let mut expr = self.parse_primary()?;
+        let mut expr = self.parse_field()?;
         let start = expr.loc.start;
         // a condition is not actually needed
         // the parser should figure out by itself
@@ -597,6 +597,27 @@ impl Parser {
             loc: Location { start, end: end_loc }
         })
     }
+
+    fn parse_field(&mut self) -> Result<Expr, Error> {
+        let mut expr = self.parse_primary()?;
+        while is_typ!(self, Dot) {
+            self.advance();
+            let name_tok = self.get_current().clone();
+            let TokenType::Identifier(name) = name_tok.val else {
+                return Err(Error {
+                    msg: ErrorType::OtherError("Expected a field name".to_string()),
+                    lines: vec![name_tok.loc],
+                });
+            };
+            self.advance();
+            expr = Expr {
+                loc: Location { start: expr.loc.start, end: name_tok.loc.end },
+                val: ExprType::FieldAccess(expr.into(), Identifier { val: name, loc: name_tok.loc }),
+            };
+        }
+        Ok(expr)
+    }
+
     fn parse_primary(&mut self) -> Result<Expr, Error> {
         let tok = self.get_current().clone();
         let expr = match &tok.val {

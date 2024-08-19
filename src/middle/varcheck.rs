@@ -211,6 +211,7 @@ impl VarCheck {
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, expr2, idx),
             ExprType::Lambda(params, body) => self.lambda(loc, params, body),
+            ExprType::FieldAccess(expr, name) => self.field(loc, expr, name),
         };
     }
     // nothing to check
@@ -269,5 +270,9 @@ impl VarCheck {
     }
     fn lambda(&mut self, loc: Location, params: &Vec<Identifier>, body: &Vec<Stmt>) {
         self.fun(loc, &Identifier { val: "".to_string(), loc }, params, body);
+    }
+    fn field(&mut self, _: Location, expr: &Expr, name: &Identifier) {
+        self.visit_expr(expr);
+        // TODO: check for fields
     }
 }

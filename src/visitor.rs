@@ -59,6 +59,7 @@ pub trait ExprVisitor<T> {
             ExprType::List(ls) => self.list(loc, ls),
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
             ExprType::Lambda(params, body) => self.lambda(loc, params, body),
+            ExprType::FieldAccess(expr, name) => self.field(loc, *expr, name),
         }
     }
     fn unit(&mut self, loc: Location) -> Result<T, Error>;
@@ -74,4 +75,5 @@ pub trait ExprVisitor<T> {
     fn list(&mut self, loc: Location, expr: Vec<Expr>) -> Result<T, Error>;
     fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<T, Error>;
     fn lambda(&mut self, loc: Location, params: Vec<Identifier>, body: Vec<Stmt>) -> Result<T, Error>;
+    fn field(&mut self, loc: Location, expr: Expr, name: Identifier) -> Result<T, Error>;
 }
