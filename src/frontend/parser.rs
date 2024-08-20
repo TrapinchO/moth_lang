@@ -164,12 +164,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
         let tok = self.get_current().clone();
         match tok.val {
-            TokenType::Let => {
-                self.advance();
-                let stmt = self.parse_var_decl()?;
-                check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
-                Ok(stmt)
-            }
+            TokenType::Let => self.parse_var_decl(),
             TokenType::If => self.parse_if_else(),
             TokenType::While => self.parse_while(),
             TokenType::Fun => self.parse_fun(false),
@@ -246,15 +241,19 @@ impl Parser {
     }
 
     fn parse_var_decl(&mut self) -> Result<Stmt, Error> {
+        let start = self.get_current().loc.start;
+        self.advance();
+
         let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
         let TokenType::Identifier(name) = ident.val else {
             unreachable!()
         };
         check_variant!(self, Equals, "Expected an equals symbol")?;
         let expr = self.parse_expression()?;
+        check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
         Ok(Stmt {
             loc: Location {
-                start: ident.loc.start,
+                start,
                 end: expr.loc.end,
             },
             val: StmtType::VarDeclStmt(
