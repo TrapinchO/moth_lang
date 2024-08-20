@@ -21,6 +21,7 @@ pub enum TokenType {
     Infixr,
     Struct,
     String(String),
+    Impl,
     // NOTE: EOF is needed as a buffer for some stuff in the parser
     // specifically for expressions, I think
     // probably not worth removing it, at least for now

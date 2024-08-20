@@ -1,19 +1,27 @@
-let y = 10 * (5 - 3) + 8 / -2;
-print(y);
-let x = [1, 2, 3, 4, 5];
-print(x[0], x[-1], x[-5]);
-
 struct Test {
     i,
     j,
     k,
 }
+impl Test {
+    //fun x(self, x) { print(self, x); } // TODO: not working yet
+    fun z(x) { print(x * 2 + 1); }
+}
+let x = [1, 2];
 let z = Test(1, 2, x);
 let z2 = Test("AAAA", true, z);
+
 x[0] = 1000000;
 z.i = 10 + 20 * 2 + 20;
-print(z.i, z.k, z2.k.k);
-print(z2);
+
+print(z.i, z2.k.k);
+z2.z(2);
+
+
+
+
+
+
 
 
 

@@ -112,6 +112,7 @@ impl Interpreter {
             StmtType::ContinueStmt => self.cont(loc),
             StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
             StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
+            StmtType::ImplStmt(name, block) => self.imp(loc, name, block)
         }
     }
 
@@ -230,7 +231,7 @@ impl Interpreter {
         })
     }
     fn struc(&mut self, _: Location, name: Identifier, fields: Vec<Identifier>) -> Result<(), InterpError> {
-        if !self.environment.insert(&name.val, ValueType::Struct(name.clone(), fields)) {
+        if !self.environment.insert(&name.val, ValueType::Struct(name.clone(), fields, HashMap::new().into())) {
             unreachable!("Item \"{}\" already declared\nLocation: {:?}", name.val, name.loc);
         }
         Ok(())
@@ -251,6 +252,25 @@ impl Interpreter {
         }
         let val = self.visit_expr(expr2)?;
         fields.insert(name.val, val.val);
+        Ok(())
+    }
+    fn imp(&mut self, _: Location, name: Identifier, block: Vec<Stmt>) -> Result<(), InterpError> {
+        // its existence is checked in varcheck
+        // and though it may be reassigned, the name still MUST exist
+        // it does not have to be a struct anymore though
+        let struc = self.environment.get(&name.val).expect("Struct somehow now defined");
+        let ValueType::Struct(_, _, mut methods) = struc else {
+            return Err(Error {
+                msg: ErrorType::OtherError(format!("Value bound to \"{}\" is not a struct", name.val)),
+                lines: vec![ name.loc ],
+            }.into());
+        };
+        for s in block {
+            let StmtType::VarDeclStmt(name, fun) = s.val else {
+                unreachable!("Checked for in varcheck");
+            };
+            methods.insert(name.val, self.visit_expr(fun)?.val);
+        }
         Ok(())
     }
 }
@@ -302,7 +322,7 @@ impl Interpreter {
         match callee.val {
             ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
             ValueType::Function(params, body, closure) => self.call_fn(params, body, closure, args2, loc),
-            ValueType::Struct(name, fields) => self.call_struct(name, fields, args2, loc),
+            ValueType::Struct(name, fields, methods) => self.call_struct(name, fields, args2, methods, loc),
             _ => Err(Error {
                 msg: ErrorType::ItemNotCalleable,
                 lines: vec![callee.loc],
@@ -440,6 +460,7 @@ impl Interpreter {
         name: Identifier,
         fields: Vec<Identifier>,
         args: Vec<ValueType>,
+        methods: MMap<ValueType>,
         loc: Location,
     ) -> Result<ValueType, Error> {
         if args.len() != fields.len() {
@@ -449,10 +470,23 @@ impl Interpreter {
             });
         }
 
-        let m = args.iter()
+        let mut m = HashMap::new();
+        for (k, v) in methods.iter() {
+            if let Some(f) = fields.iter().find(|f| f.val == k) {
+                return Err(Error {
+                    msg: ErrorType::DuplicateField(k),
+                    lines: vec![f.loc],
+                });
+            }
+            m.insert(k, v);
+        }
+
+        let m2 = args.iter()
             .zip(fields)
             .map(|(a, f)| (f.val, a.clone()))
             .collect::<HashMap<_, _>>();
+        m.extend(m2);
+
         Ok(ValueType::Instance(name.val, MMap::new(m)))
     }
 }

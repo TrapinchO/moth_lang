@@ -18,6 +18,7 @@ pub trait StmtVisitor<T> {
             StmtType::ContinueStmt => self.cont(loc),
             StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
             StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
+            StmtType::ImplStmt(name, block) => self.imp(loc, name, block),
         }
     }
 
@@ -42,6 +43,7 @@ pub trait StmtVisitor<T> {
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<T, Error>;
     fn struc(&mut self, loc: Location, name: Identifier, fields: Vec<Identifier>) -> Result<T, Error>;
     fn assignstruc(&mut self, loc: Location, expr1: Expr, name: Identifier, expr2: Expr) -> Result<T, Error>;
+    fn imp(&mut self, loc: Location, name: Identifier, block: Vec<Stmt>) -> Result<T, Error>;
 }
 
 pub trait ExprVisitor<T> {

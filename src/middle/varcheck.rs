@@ -88,6 +88,7 @@ impl VarCheck {
                     | StmtType::IfStmt(..)
                     | StmtType::WhileStmt(..)
                     | StmtType::ExprStmt(..)
+                    | StmtType::ImplStmt(..)
                     | StmtType::AssignStructStmt(..) => {
                         self.visit_stmt(s);
                 }
@@ -124,6 +125,7 @@ impl VarCheck {
             StmtType::ContinueStmt => self.cont(loc),
             StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
             StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
+            StmtType::ImplStmt(name, block) => self.imp(loc, name, block),
         }
     }
     fn expr(&mut self, _: Location, expr: &Expr) {
@@ -228,7 +230,7 @@ impl VarCheck {
             if let Some(field) = m.get(&f.val) {
                 self.errs.push(Error {
                     msg: ErrorType::DuplicateField(f.val.clone()),
-                    lines: vec![field.clone(), f.loc],
+                    lines: vec![*field, f.loc],
                 });
             } else {
                 m.insert(f.val.clone(), f.loc);
@@ -238,6 +240,15 @@ impl VarCheck {
     fn assignstruc(&mut self, _: Location, expr1: &Expr, _: &Identifier, expr2: &Expr) {
         self.visit_expr(expr1);
         self.visit_expr(expr2);
+    }
+    fn imp(&mut self, _: Location, name: &Identifier, block: &Vec<Stmt>) {
+        if !self.env.contains(&name.val) {
+            self.errs.push(Error {
+                msg: ErrorType::OtherError("Impl must have a corresponding struct".to_string()),
+                lines: vec![name.loc],
+            });
+        }
+        self.check_block(block);
     }
 }
 impl VarCheck {

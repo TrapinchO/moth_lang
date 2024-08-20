@@ -76,6 +76,7 @@ pub enum StmtType {
     ContinueStmt,
     StructStmt(Identifier, Vec<Identifier>),
     AssignStructStmt(Expr, Identifier, Expr), // expr.name = expr
+    ImplStmt(Identifier, Vec<Stmt>),
 }
 
 impl StmtType {
@@ -117,6 +118,10 @@ impl StmtType {
             Self::ContinueStmt => "continue;".to_string(),
             Self::StructStmt(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
             Self::AssignStructStmt(expr1, name, expr2) => format!("{expr1}.{} = {expr2}", name.val),
+            Self::ImplStmt(name, block) => format!(
+                "impl {name} {{\n{block}\n}}",
+                block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
+            ),
         }
     }
 }

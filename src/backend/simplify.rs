@@ -329,4 +329,14 @@ impl StmtVisitor<Stmt> for Simplifier {
             loc,
         })
     }
+    fn imp(&mut self, loc: Location, name: exprstmt::Identifier, block: Vec<exprstmt::Stmt>) -> Result<Stmt, Error> {
+        let mut block2 = vec![];
+        for s in block {
+            block2.push(self.visit_stmt(s)?);
+        }
+        Ok(Stmt {
+            val: StmtType::ImplStmt(name, block2),
+            loc,
+        })
+    }
 }

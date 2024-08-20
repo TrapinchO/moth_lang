@@ -170,6 +170,7 @@ impl Parser {
             TokenType::Fun => self.parse_fun(false),
             TokenType::Infixl | TokenType::Infixr => self.parse_operator(),
             TokenType::Struct => self.parse_struct(),
+            TokenType::Impl => self.parse_impl(),
             TokenType::Continue => {
                 self.advance();
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
@@ -477,6 +478,28 @@ impl Parser {
         Ok(Stmt {
             val: StmtType::StructStmt(Identifier { val: name, loc: name_tok.loc }, fields.0),
             loc: Location { start, end: fields.1.end },
+        })
+    }
+
+    fn parse_impl(&mut self) -> Result<Stmt, Error> {
+        let start = self.get_current().loc.start;
+        self.advance();
+        let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
+        let TokenType::Identifier(name) = ident.val else {
+            unreachable!()
+        };
+        let block = self.parse_block()?;
+        for s in block.val.iter() {
+            if !matches!(s.val, StmtType::FunDeclStmt(..)) {
+                return Err(Error {
+                    msg: ErrorType::OtherError("Only function definitions are allowed".to_string()),
+                    lines: vec![s.loc]
+                });
+            }
+        }
+        Ok(Stmt {
+            val: StmtType::ImplStmt(Identifier { val: name, loc: ident.loc }, block.val),
+            loc: Location { start, end: block.loc.end },
         })
     }
 

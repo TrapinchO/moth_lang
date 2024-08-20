@@ -19,7 +19,7 @@ pub enum ValueType {
     List(MList),
     NativeFunction(NativeFunction),
     Function(Vec<String>, Vec<Stmt>, Closure), // fn(params) { block }, closure
-    Struct(Identifier, Vec<Identifier>),
+    Struct(Identifier, Vec<Identifier>, MMap<ValueType>), // name, fields, methods
     Instance(String, MMap<ValueType>),
     Unit,
 }
@@ -45,7 +45,7 @@ impl ValueType {
                 body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
-            Self::Struct(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::Struct(name, fields, _) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
             Self::Instance(name, map) => format!(
                 "{}({})",
                 name,
