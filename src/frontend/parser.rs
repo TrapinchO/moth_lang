@@ -137,6 +137,19 @@ impl Parser {
         Ok((items, Location { start, end }))
     }
 
+    /// used to avoid a lambda in function and operator declarations
+    fn parse_ident(&mut self) -> Result<Identifier, Error> {
+        let cur = self.get_current().clone();
+        let Token { val: TokenType::Identifier(name), loc } = cur else {
+            return Err(Error {
+                msg: ErrorType::ExpectedIdentifier,
+                lines: vec![cur.loc],
+            });
+        };
+        self.advance();
+        Ok(Identifier { val: name, loc })
+    }
+
     pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
         let mut ls = vec![];
         while !self.is_at_end()
@@ -146,19 +159,6 @@ impl Parser {
         }
 
         Ok(ls)
-    }
-
-    /// used to avoid a lambda in function and operator declarations
-    fn parse_param(&mut self) -> Result<Identifier, Error> {
-        let cur = self.get_current().clone();
-        let Token { val: TokenType::Identifier(name), loc } = cur else {
-            return Err(Error {
-                msg: ErrorType::ExpectedParameterName,
-                lines: vec![cur.loc],
-            });
-        };
-        self.advance();
-        Ok(Identifier { val: name, loc })
     }
 
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
@@ -245,10 +245,8 @@ impl Parser {
         let start = self.get_current().loc.start;
         self.advance();
 
-        let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
-        let TokenType::Identifier(name) = ident.val else {
-            unreachable!()
-        };
+        let name = self.parse_ident()?;
+
         check_variant!(self, Equals, "Expected an equals symbol")?;
         let expr = self.parse_expression()?;
         check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
@@ -257,9 +255,7 @@ impl Parser {
                 start,
                 end: expr.loc.end,
             },
-            val: StmtType::VarDeclStmt(
-                Identifier { val: name, loc: ident.loc },
-                expr),
+            val: StmtType::VarDeclStmt(name, expr),
         })
     }
 
@@ -345,7 +341,7 @@ impl Parser {
 
         let (params, _) = self.sep(
             TokenType::LParen, TokenType::RParen,
-            Self::parse_param,
+            Self::parse_ident,
         )?;
         let block = self.parse_block()?;
         // TODO: horrible cheating, but eh
@@ -455,28 +451,14 @@ impl Parser {
     fn parse_struct(&mut self) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
         self.advance();
-        let name_tok = self.get_current().clone();
-        let TokenType::Identifier(name) = name_tok.val else {
-            return Err(Error {
-                msg: ErrorType::ExpectedStructName,
-                lines: vec![name_tok.loc],
-            });
-        };
-        self.advance(); // move past name
-        let fields = self.sep(TokenType::LBrace, TokenType::RBrace, |s| {
-            let tok = s.get_current().clone();
-            if let TokenType::Identifier(ident) = tok.val {
-                s.advance();
-                Ok(Identifier { val: ident, loc: tok.loc })
-            } else {
-                Err(Error {
-                    msg: ErrorType::ExpectedFieldName,
-                    lines: vec![tok.loc]
-                })
-            }
-        })?;
+
+        let name = self.parse_ident()?;
+
+        // TODO: does not give ExpectedFieldName error
+        let fields = self.sep(TokenType::LBrace, TokenType::RBrace, Self::parse_ident)?;
+
         Ok(Stmt {
-            val: StmtType::StructStmt(Identifier { val: name, loc: name_tok.loc }, fields.0),
+            val: StmtType::StructStmt(name, fields.0),
             loc: Location { start, end: fields.1.end },
         })
     }
@@ -484,10 +466,9 @@ impl Parser {
     fn parse_impl(&mut self) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
         self.advance();
-        let ident = check_variant!(self, Identifier(_), "Expected an identifier")?;
-        let TokenType::Identifier(name) = ident.val else {
-            unreachable!()
-        };
+
+        let name = self.parse_ident()?;
+
         let block = self.parse_block()?;
         for s in block.val.iter() {
             if !matches!(s.val, StmtType::FunDeclStmt(..)) {
@@ -498,7 +479,7 @@ impl Parser {
             }
         }
         Ok(Stmt {
-            val: StmtType::ImplStmt(Identifier { val: name, loc: ident.loc }, block.val),
+            val: StmtType::ImplStmt(name, block.val),
             loc: Location { start, end: block.loc.end },
         })
     }
@@ -585,27 +566,19 @@ impl Parser {
                 }
                 TokenType::Dot => {
                     self.advance();
-                    let name_tok = self.get_current().clone();
-                    let TokenType::Identifier(name) = name_tok.val else {
-                        return Err(Error {
-                            msg: ErrorType::ExpectedFieldName,
-                            lines: vec![name_tok.loc],
-                        });
-                    };
-                    self.advance();
-                    let name = Identifier { val: name, loc: name_tok.loc };
-                    if is_typ!(self, LParen) {
+                    let name = self.parse_ident()?;
+                    if is_typ!(self, LParen) { // check if it is a method (needs special treatment)
                         let (params, end_loc) = self.sep(
                             TokenType::LParen, TokenType::RParen,
                             Self::parse_expression,
                         )?;
                         expr = Expr {
-                            loc: Location { start: expr.loc.start, end: end_loc.end },
+                            loc: Location { start, end: end_loc.end },
                             val: ExprType::MethodAccess(expr.into(), name, params),
                         }
                     } else {
                         expr = Expr {
-                            loc: Location { start: expr.loc.start, end: name_tok.loc.end },
+                            loc: Location { start, end: name.loc.end },
                             val: ExprType::FieldAccess(expr.into(), name),
                         };
                     }
@@ -626,7 +599,7 @@ impl Parser {
         let params = if has_params {
             self.sep(
                 TokenType::Pipe, TokenType::Pipe,
-                Self::parse_param
+                Self::parse_ident
             )?.0
         } else {
             self.advance(); // go past the ||
@@ -668,7 +641,7 @@ impl Parser {
             }
             TokenType::Identifier(ident) => {
                 self.advance();
-                ExprType::Identifier(ident.to_string())
+                ExprType::Identifier(ident.clone())
             }
             TokenType::True => {
                 self.advance();
