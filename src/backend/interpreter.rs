@@ -100,19 +100,19 @@ impl Interpreter {
     fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), InterpError> {
         let loc = stmt.loc;
         match stmt.val {
-            StmtType::ExprStmt(expr) => self.expr(loc, expr),
-            StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
-            StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
-            StmtType::AssignIndexStmt(ls, idx, val) => self.assignindex(loc, ls, idx, val),
-            StmtType::BlockStmt(block) => self.block(loc, block),
-            StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
-            StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
-            StmtType::ReturnStmt(expr) => self.retur(loc, expr),
-            StmtType::BreakStmt => self.brek(loc),
-            StmtType::ContinueStmt => self.cont(loc),
-            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
-            StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
-            StmtType::ImplStmt(name, block) => self.imp(loc, name, block)
+            StmtType::Expr(expr) => self.expr(loc, expr),
+            StmtType::VarDecl(ident, expr) => self.var_decl(loc, ident, expr),
+            StmtType::Assign(ident, expr) => self.assignment(loc, ident, expr),
+            StmtType::AssignIndex(ls, idx, val) => self.assignindex(loc, ls, idx, val),
+            StmtType::Block(block) => self.block(loc, block),
+            StmtType::If(blocks) => self.if_else(loc, blocks),
+            StmtType::While(cond, block) => self.whiles(loc, cond, block),
+            StmtType::Return(expr) => self.retur(loc, expr),
+            StmtType::Break => self.brek(loc),
+            StmtType::Continue => self.cont(loc),
+            StmtType::Struct(name, fields) => self.struc(loc, name, fields),
+            StmtType::AssignStruct(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
+            StmtType::Impl(name, block) => self.imp(loc, name, block)
         }
     }
 
@@ -266,7 +266,7 @@ impl Interpreter {
             }.into());
         };
         for s in block {
-            let StmtType::VarDeclStmt(name, fun) = s.val else {
+            let StmtType::VarDecl(name, fun) = s.val else {
                 unreachable!("Checked for in varcheck");
             };
             methods.insert(name.val, self.visit_expr(fun)?.val);

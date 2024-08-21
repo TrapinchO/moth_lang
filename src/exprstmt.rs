@@ -70,36 +70,36 @@ pub type Identifier = Located<String>; // marks identifiers (names)
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum StmtType {
-    ExprStmt(Expr),
+    Expr(Expr),
     // identifier, expression
-    VarDeclStmt(Identifier, Expr),
-    AssignStmt(Identifier, Expr),
-    AssignIndexStmt(Expr, Expr, Expr), // expr[expr] = expr
-    BlockStmt(Vec<Stmt>),
-    IfStmt(Vec<(Expr, Vec<Stmt>)>),
-    WhileStmt(Expr, Vec<Stmt>),
+    VarDecl(Identifier, Expr),
+    Assign(Identifier, Expr),
+    AssignIndex(Expr, Expr, Expr), // expr[expr] = expr
+    Block(Vec<Stmt>),
+    If(Vec<(Expr, Vec<Stmt>)>),
+    While(Expr, Vec<Stmt>),
     // name, parameters, body
-    FunDeclStmt(Identifier, Vec<Identifier>, Vec<Stmt>),
-    OperatorDeclStmt(Symbol, (Identifier, Identifier), Vec<Stmt>, Precedence),
-    ReturnStmt(Expr),
-    BreakStmt,
-    ContinueStmt,
-    StructStmt(Identifier, Vec<Identifier>),
-    AssignStructStmt(Expr, Identifier, Expr), // expr.name = expr
-    ImplStmt(Identifier, Vec<Stmt>),
+    FunDecl(Identifier, Vec<Identifier>, Vec<Stmt>),
+    OperatorDecl(Symbol, (Identifier, Identifier), Vec<Stmt>, Precedence),
+    Return(Expr),
+    Break,
+    Continue,
+    Struct(Identifier, Vec<Identifier>),
+    AssignStruct(Expr, Identifier, Expr), // expr.name = expr
+    Impl(Identifier, Vec<Stmt>),
 }
 impl StmtType {
     fn format(&self) -> String {
         match self {
-            Self::ExprStmt(expr) => expr.to_string() + ";",
-            Self::VarDeclStmt(ident, expr) => format!("let {ident} = {expr};"),
-            Self::AssignStmt(ident, expr) => format!("{ident} = {expr};"),
-            Self::AssignIndexStmt(ls, idx, val) => format!("{ls}[{idx}] = {val};"),
-            Self::BlockStmt(block) => format!(
+            Self::Expr(expr) => expr.to_string() + ";",
+            Self::VarDecl(ident, expr) => format!("let {ident} = {expr};"),
+            Self::Assign(ident, expr) => format!("{ident} = {expr};"),
+            Self::AssignIndex(ls, idx, val) => format!("{ls}[{idx}] = {val};"),
+            Self::Block(block) => format!(
                 "{{\n{block}\n}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::IfStmt(blocks) => {
+            Self::If(blocks) => {
                 let first = blocks.first().unwrap(); // always present
                 let rest = &blocks[1..]
                     .iter()
@@ -118,27 +118,27 @@ impl StmtType {
                     rest = rest.join("")
                 )
             }
-            Self::WhileStmt(cond, block) => format!(
+            Self::While(cond, block) => format!(
                 "while {cond} {{{block}}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::FunDeclStmt(ident, params, block) => format!(
+            Self::FunDecl(ident, params, block) => format!(
                 "fun {ident}({params}){block}",
                 params = params.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", "),
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::OperatorDeclStmt(ident, params, block, _) => format!(
+            Self::OperatorDecl(ident, params, block, _) => format!(
                 "fun {ident}({}, {}){block}",
                 params.0,
                 params.1,
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::ReturnStmt(expr) => format!("return {expr};"),
-            Self::BreakStmt => "break;".to_string(),
-            Self::ContinueStmt => "continue;".to_string(),
-            Self::StructStmt(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
-            Self::AssignStructStmt(expr1, name, expr2) => format!("{expr1}.{} = {expr2}", name.val),
-            Self::ImplStmt(name, block) => format!(
+            Self::Return(expr) => format!("return {expr};"),
+            Self::Break => "break;".to_string(),
+            Self::Continue => "continue;".to_string(),
+            Self::Struct(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::AssignStruct(expr1, name, expr2) => format!("{expr1}.{} = {expr2}", name.val),
+            Self::Impl(name, block) => format!(
                 "impl {name} {{\n{block}\n}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),

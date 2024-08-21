@@ -93,25 +93,25 @@ impl Reassociate {
 impl StmtVisitor<Stmt> for Reassociate {
     fn expr(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ExprStmt(self.visit_expr(expr)?),
+            val: StmtType::Expr(self.visit_expr(expr)?),
             loc,
         })
     }
     fn var_decl(&mut self, loc: Location, ident: Identifier, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
+            val: StmtType::VarDecl(ident, self.visit_expr(expr)?),
             loc,
         })
     }
     fn assignment(&mut self, loc: Location, ident: Identifier, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
+            val: StmtType::Assign(ident, self.visit_expr(expr)?),
             loc,
         })
     }
     fn assignindex(&mut self, loc: Location, ls: Expr, idx: Expr, val: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::AssignIndexStmt(
+            val: StmtType::AssignIndex(
                 self.visit_expr(ls)?,
                 self.visit_expr(idx)?,
                 self.visit_expr(val)?
@@ -125,7 +125,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::BlockStmt(block2),
+            val: StmtType::Block(block2),
             loc,
         })
     }
@@ -140,7 +140,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         }
 
         Ok(Stmt {
-            val: StmtType::IfStmt(blocks_result),
+            val: StmtType::If(blocks_result),
             loc,
         })
     }
@@ -151,7 +151,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::WhileStmt(cond, block2),
+            val: StmtType::While(cond, block2),
             loc,
         })
     }
@@ -167,7 +167,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::FunDeclStmt(name, params, block2),
+            val: StmtType::FunDecl(name, params, block2),
             loc,
         })
     }
@@ -186,31 +186,31 @@ impl StmtVisitor<Stmt> for Reassociate {
             block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::OperatorDeclStmt(name, params, block2, prec),
+            val: StmtType::OperatorDecl(name, params, block2, prec),
             loc,
         })
     }
     fn retur(&mut self, loc: Location, expr: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ReturnStmt(self.visit_expr(expr)?),
+            val: StmtType::Return(self.visit_expr(expr)?),
             loc,
         })
     }
     fn cont(&mut self, loc: Location) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ContinueStmt,
+            val: StmtType::Continue,
             loc,
         })
     }
     fn brek(&mut self, loc: Location) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ContinueStmt,
+            val: StmtType::Continue,
             loc,
         })
     }
     fn struc(&mut self, loc: Location, name: Identifier, fields: Vec<Identifier>) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::StructStmt(name, fields),
+            val: StmtType::Struct(name, fields),
             loc,
         })
     }
@@ -218,7 +218,7 @@ impl StmtVisitor<Stmt> for Reassociate {
         let expr1 = self.visit_expr(expr1)?;
         let expr2 = self.visit_expr(expr2)?;
         Ok(Stmt {
-            val: StmtType::AssignStructStmt(expr1, name, expr2),
+            val: StmtType::AssignStruct(expr1, name, expr2),
             loc,
         })
     }
@@ -228,7 +228,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::ImplStmt(name, block2),
+            val: StmtType::Impl(name, block2),
             loc,
         })
     }

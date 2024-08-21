@@ -45,17 +45,17 @@ impl VarCheck {
         self.env.add_scope();
         for (i, s) in block.iter().enumerate() {
             match &s.val {
-                StmtType::VarDeclStmt(t, expr) => {
+                StmtType::VarDecl(t, expr) => {
                     self.visit_expr(expr);
 
                     self.declare_item(&t.val, t.loc);
                 }
-                StmtType::FunDeclStmt(t, _, _) | StmtType::OperatorDeclStmt(t, _, _, _) => {
+                StmtType::FunDecl(t, _, _) | StmtType::OperatorDecl(t, _, _, _) => {
                     self.declare_item(&t.val, t.loc);
 
                     self.visit_stmt(s);
                 }
-                StmtType::AssignStmt(t, expr) => {
+                StmtType::Assign(t, expr) => {
                     self.visit_expr(expr);
                     if !self.env.contains(&t.val) {
                         self.errs.push(Error {
@@ -64,13 +64,13 @@ impl VarCheck {
                         });
                     }
                 }
-                StmtType::StructStmt(name, _) => {
+                StmtType::Struct(name, _) => {
                     self.declare_item(&name.val, name.loc);
                     self.visit_stmt(s);
                 }
-                StmtType::BreakStmt
-                    | StmtType::ContinueStmt
-                    | StmtType::ReturnStmt(_) => {
+                StmtType::Break
+                    | StmtType::Continue
+                    | StmtType::Return(_) => {
                         if i == block.len()-1 {
                             break;
                         }
@@ -83,13 +83,13 @@ impl VarCheck {
                         break;
                     }
                 // necessary for pattern matching
-                StmtType::AssignIndexStmt(..)
-                    | StmtType::BlockStmt(..)
-                    | StmtType::IfStmt(..)
-                    | StmtType::WhileStmt(..)
-                    | StmtType::ExprStmt(..)
-                    | StmtType::ImplStmt(..)
-                    | StmtType::AssignStructStmt(..) => {
+                StmtType::AssignIndex(..)
+                    | StmtType::Block(..)
+                    | StmtType::If(..)
+                    | StmtType::While(..)
+                    | StmtType::Expr(..)
+                    | StmtType::Impl(..)
+                    | StmtType::AssignStruct(..) => {
                         self.visit_stmt(s);
                 }
             }
@@ -111,21 +111,21 @@ impl VarCheck {
     fn visit_stmt(&mut self, stmt: &Stmt) {
         let loc = stmt.loc;
         match &stmt.val {
-            StmtType::ExprStmt(expr) => self.expr(loc, expr),
-            StmtType::VarDeclStmt(ident, expr) => self.var_decl(loc, ident, expr),
-            StmtType::AssignStmt(ident, expr) => self.assignment(loc, ident, expr),
-            StmtType::AssignIndexStmt(ls, idx, val) => self.assignindex(loc, ls, idx, val),
-            StmtType::BlockStmt(block) => self.block(loc, block),
-            StmtType::IfStmt(blocks) => self.if_else(loc, blocks),
-            StmtType::WhileStmt(cond, block) => self.whiles(loc, cond, block),
-            StmtType::FunDeclStmt(name, params, block) => self.fun(loc, name, params, block),
-            StmtType::OperatorDeclStmt(name, params, block, prec) => self.operator(loc, name, params, block, prec),
-            StmtType::ReturnStmt(expr) => self.retur(loc, expr),
-            StmtType::BreakStmt => self.brek(loc),
-            StmtType::ContinueStmt => self.cont(loc),
-            StmtType::StructStmt(name, fields) => self.struc(loc, name, fields),
-            StmtType::AssignStructStmt(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
-            StmtType::ImplStmt(name, block) => self.imp(loc, name, block),
+            StmtType::Expr(expr) => self.expr(loc, expr),
+            StmtType::VarDecl(ident, expr) => self.var_decl(loc, ident, expr),
+            StmtType::Assign(ident, expr) => self.assignment(loc, ident, expr),
+            StmtType::AssignIndex(ls, idx, val) => self.assignindex(loc, ls, idx, val),
+            StmtType::Block(block) => self.block(loc, block),
+            StmtType::If(blocks) => self.if_else(loc, blocks),
+            StmtType::While(cond, block) => self.whiles(loc, cond, block),
+            StmtType::FunDecl(name, params, block) => self.fun(loc, name, params, block),
+            StmtType::OperatorDecl(name, params, block, prec) => self.operator(loc, name, params, block, prec),
+            StmtType::Return(expr) => self.retur(loc, expr),
+            StmtType::Break => self.brek(loc),
+            StmtType::Continue => self.cont(loc),
+            StmtType::Struct(name, fields) => self.struc(loc, name, fields),
+            StmtType::AssignStruct(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
+            StmtType::Impl(name, block) => self.imp(loc, name, block),
         }
     }
     fn expr(&mut self, _: Location, expr: &Expr) {

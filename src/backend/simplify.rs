@@ -215,28 +215,28 @@ impl ExprVisitor<Expr> for Simplifier {
 impl StmtVisitor<Stmt> for Simplifier {
     fn expr(&mut self, loc: Location, expr: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ExprStmt(self.visit_expr(expr)?),
+            val: StmtType::Expr(self.visit_expr(expr)?),
             loc,
         })
     }
 
     fn var_decl(&mut self, loc: Location, ident: exprstmt::Identifier, expr: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::VarDeclStmt(ident, self.visit_expr(expr)?),
+            val: StmtType::VarDecl(ident, self.visit_expr(expr)?),
             loc,
         })
     }
 
     fn assignment(&mut self, loc: Location, ident: exprstmt::Identifier, expr: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::AssignStmt(ident, self.visit_expr(expr)?),
+            val: StmtType::Assign(ident, self.visit_expr(expr)?),
             loc,
         })
     }
 
     fn assignindex(&mut self, loc: Location, ls: exprstmt::Expr, idx: exprstmt::Expr, val: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::AssignIndexStmt(
+            val: StmtType::AssignIndex(
                 self.visit_expr(ls)?,
                 self.visit_expr(idx)?,
                 self.visit_expr(val)?),
@@ -250,7 +250,7 @@ impl StmtVisitor<Stmt> for Simplifier {
             bl.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::BlockStmt(bl),
+            val: StmtType::Block(bl),
             loc,
         })
     }
@@ -265,7 +265,7 @@ impl StmtVisitor<Stmt> for Simplifier {
             bl.push((self.visit_expr(c)?, block));
         }
         Ok(Stmt {
-            val: StmtType::IfStmt(bl),
+            val: StmtType::If(bl),
             loc,
         })
     }
@@ -276,28 +276,28 @@ impl StmtVisitor<Stmt> for Simplifier {
             bl.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::WhileStmt(self.visit_expr(cond)?, bl),
+            val: StmtType::While(self.visit_expr(cond)?, bl),
             loc,
         })
     }
 
     fn retur(&mut self, loc: Location, expr: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ReturnStmt(self.visit_expr(expr)?),
+            val: StmtType::Return(self.visit_expr(expr)?),
             loc,
         })
     }
 
     fn brek(&mut self, loc: Location) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::BreakStmt,
+            val: StmtType::Break,
             loc,
         })
     }
 
     fn cont(&mut self, loc: Location) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::ContinueStmt,
+            val: StmtType::Continue,
             loc,
         })
     }
@@ -308,7 +308,7 @@ impl StmtVisitor<Stmt> for Simplifier {
             bl.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::VarDeclStmt(name, Expr { val: ExprType::Lambda(params, bl), loc }),
+            val: StmtType::VarDecl(name, Expr { val: ExprType::Lambda(params, bl), loc }),
             loc,
         })
     }
@@ -326,14 +326,14 @@ impl StmtVisitor<Stmt> for Simplifier {
 
     fn struc(&mut self, loc: Location, name: exprstmt::Identifier, fields: Vec<exprstmt::Identifier>) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::StructStmt(name, fields),
+            val: StmtType::Struct(name, fields),
             loc,
         })
     }
 
     fn assignstruc(&mut self, loc: Location, expr1: exprstmt::Expr, name: exprstmt::Identifier, expr2: exprstmt::Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::AssignStructStmt(
+            val: StmtType::AssignStruct(
                 self.visit_expr(expr1)?,
                 name,
                 self.visit_expr(expr2)?,
@@ -347,7 +347,7 @@ impl StmtVisitor<Stmt> for Simplifier {
             block2.push(self.visit_stmt(s)?);
         }
         Ok(Stmt {
-            val: StmtType::ImplStmt(name, block2),
+            val: StmtType::Impl(name, block2),
             loc,
         })
     }

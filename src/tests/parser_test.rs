@@ -69,11 +69,11 @@ macro_rules! stmt {
 
 fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
     match (&left.val, &right.val) {
-        (StmtType::ExprStmt(expr1), StmtType::ExprStmt(expr2)) => compare_elements_expr(&expr1, &expr2),
-        (StmtType::VarDeclStmt(ident1, expr1), StmtType::VarDeclStmt(ident2, expr2)) => {
+        (StmtType::Expr(expr1), StmtType::Expr(expr2)) => compare_elements_expr(&expr1, &expr2),
+        (StmtType::VarDecl(ident1, expr1), StmtType::VarDecl(ident2, expr2)) => {
             ident1 == ident2 && compare_elements_expr(expr1, expr2)
         }
-        (StmtType::AssignStmt(ident1, expr1), StmtType::AssignStmt(ident2, expr2)) => {
+        (StmtType::Assign(ident1, expr1), StmtType::Assign(ident2, expr2)) => {
             ident1 == ident2 && compare_elements_expr(expr1, expr2)
         }
         (s1, s2) => s1 == s2,
@@ -146,7 +146,7 @@ fn parse_int() {
     assert_eq!(
         parse(lex("1;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Int(1),
                 loc: Location { start: 0, end: 0 },
             }),
@@ -160,7 +160,7 @@ fn parse_float() {
     assert_eq!(
         parse(lex("1.1;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Float(1.1),
                 loc: Location { start: 0, end: 2 },
             }),
@@ -174,7 +174,7 @@ fn parse_string() {
     assert_eq!(
         parse(lex("\"test\";").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::String("test".to_string()),
                 loc: Location { start: 0, end: 5 },
             }),
@@ -188,7 +188,7 @@ fn parse_bool() {
     assert_eq!(
         parse(lex("true;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Bool(true),
                 loc: Location { start: 0, end: 3 },
             }),
@@ -202,7 +202,7 @@ fn parse_identifier() {
     assert_eq!(
         parse(lex("test;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Identifier("test".to_string()),
                 loc: Location { start: 0, end: 3 },
             }),
@@ -216,7 +216,7 @@ fn parse_parens() {
     assert_eq!(
         parse(lex("(1);").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Parens(
                     Expr {
                         val: ExprType::Int(1),
@@ -247,7 +247,7 @@ fn parse_unary() {
     assert_eq!(
         parse(lex("-1;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::UnaryOperation(
                     Symbol {
                         val: "-".to_string(),
@@ -271,7 +271,7 @@ fn parse_unary_nested() {
     assert_eq!(
         parse(lex("- -1;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::UnaryOperation(
                     Symbol {
                         val: "-".to_string(),
@@ -305,7 +305,7 @@ fn parse_binary() {
     assert_eq!(
         parse(lex("1 + 1;").unwrap()).unwrap(),
         vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::BinaryOperation(
                     Expr {
                         val: ExprType::Int(1),
@@ -354,7 +354,7 @@ fn parse_binary2() {
     for (s, op) in ops {
         assert!(compare_elements(
             &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
-            &stmt!(StmtType::ExprStmt(expr!(op)))
+            &stmt!(StmtType::Expr(expr!(op)))
         ));
     }
 }
@@ -369,7 +369,7 @@ fn parse_unary2() {
     for (s, op) in ops {
         assert!(compare_elements(
             &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
-            &stmt!(StmtType::ExprStmt(expr!(op)))
+            &stmt!(StmtType::Expr(expr!(op)))
         ));
     }
 }
@@ -399,7 +399,7 @@ fn test_reassoc() {
     for (s, op) in ops {
         assert!(compare_elements(
             &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()[0],
-            &stmt!(StmtType::ExprStmt(expr!(op)))
+            &stmt!(StmtType::Expr(expr!(op)))
         ));
     }
 }
@@ -410,7 +410,7 @@ fn test_nested_call() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Call(Expr {
                     val: ExprType::Call(Expr {
                         val: ExprType::Identifier("f".to_string()),
@@ -432,7 +432,7 @@ fn test_nested_index() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Index(Expr {
                     val: ExprType::Index(Expr {
                         val: ExprType::Identifier("x".to_string()),
@@ -462,7 +462,7 @@ fn test_no_params() {
         src,
         Ok(vec![
            Stmt {
-               val: StmtType::FunDeclStmt(
+               val: StmtType::FunDecl(
                     Identifier {
                         val: "f".to_string(),
                         loc: Location { start: 4, end: 4 },
@@ -483,7 +483,7 @@ fn test_one_param() {
         src,
         Ok(vec![
            Stmt {
-               val: StmtType::FunDeclStmt(
+               val: StmtType::FunDecl(
                     Identifier {
                         val: "f".to_string(),
                         loc: Location { start: 4, end: 4 },
@@ -504,7 +504,7 @@ fn test_more_params() {
         src,
         Ok(vec![
            Stmt {
-               val: StmtType::FunDeclStmt(
+               val: StmtType::FunDecl(
                     Identifier {
                         val: "f".to_string(),
                         loc: Location { start: 4, end: 4 },
@@ -528,7 +528,7 @@ fn test_index_call() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Call(
                     Expr {
                         val: ExprType::Index(
@@ -558,7 +558,7 @@ fn test_call_index() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Index(
                     Expr {
                         val: ExprType::Call(
@@ -589,7 +589,7 @@ fn test_symbol_ident() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Identifier("-".to_string()),
                 loc: Location { start: 0, end: 2 },
             }),
@@ -604,7 +604,7 @@ fn test_paren_unary() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Parens(Expr {
                     val: ExprType::UnaryOperation(
                         Symbol {
@@ -631,7 +631,7 @@ fn test_assingment() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::AssignStmt(
+            val: StmtType::Assign(
                 Identifier {
                     val: "x".to_string(),
                     loc: Location { start: 0, end: 0 },
@@ -651,7 +651,7 @@ fn test_assingment_index() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::AssignIndexStmt(
+            val: StmtType::AssignIndex(
                 Expr {
                     val: ExprType::Identifier("x".to_string()),
                     loc: Location { start: 0, end: 0 },
@@ -688,7 +688,7 @@ fn list_empty() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::List(vec![]),
                 loc: Location { start: 0, end: 1 },
             }),
@@ -703,7 +703,7 @@ fn list_one() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::List(vec![
                     Expr {
                         val: ExprType::Int(1),
@@ -719,7 +719,7 @@ fn list_one() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::List(vec![
                     Expr {
                         val: ExprType::Int(1),
@@ -739,7 +739,7 @@ fn list_more() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::List(vec![
                     Expr {
                         val: ExprType::Int(1),
@@ -763,7 +763,7 @@ fn unary_parenthesis() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Parens(Expr {
                     val: ExprType::BinaryOperation(
                         Expr {
@@ -795,9 +795,9 @@ fn lambda() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Lambda(vec![], vec![Stmt {
-                    val: StmtType::ReturnStmt(Expr {
+                    val: StmtType::Return(Expr {
                         val: ExprType::Int(1),
                         loc: Location { start: 3, end: 3 },
                     }.into()),
@@ -816,12 +816,12 @@ fn lambda_params() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::ExprStmt(Expr {
+            val: StmtType::Expr(Expr {
                 val: ExprType::Lambda(vec![
                     Identifier { val: "x".to_string(), loc: Location { start: 1, end: 1 } },
                     Identifier { val: "y".to_string(), loc: Location { start: 4, end: 4 } },
                 ], vec![Stmt {
-                    val: StmtType::ReturnStmt(Expr {
+                    val: StmtType::Return(Expr {
                         val: ExprType::Unit,
                         loc: Location { start: 7, end: 8 },
                     }.into()),

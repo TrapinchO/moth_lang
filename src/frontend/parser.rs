@@ -175,7 +175,7 @@ impl Parser {
                 self.advance();
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
-                    val: StmtType::ContinueStmt,
+                    val: StmtType::Continue,
                     loc: tok.loc,
                 })
             }
@@ -183,7 +183,7 @@ impl Parser {
                 self.advance();
                 check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
                 Ok(Stmt {
-                    val: StmtType::BreakStmt,
+                    val: StmtType::Break,
                     loc: tok.loc,
                 })
             }
@@ -204,13 +204,13 @@ impl Parser {
                         start: tok.loc.start,
                         end: val.loc.end,
                     },
-                    val: StmtType::ReturnStmt(val),
+                    val: StmtType::Return(val),
                 })
             }
             TokenType::LBrace => {
                 let bl = self.parse_block()?;
                 Ok(Stmt {
-                    val: StmtType::BlockStmt(bl.val),
+                    val: StmtType::Block(bl.val),
                     loc: bl.loc,
                 })
             },
@@ -255,7 +255,7 @@ impl Parser {
                 start,
                 end: expr.loc.end,
             },
-            val: StmtType::VarDeclStmt(name, expr),
+            val: StmtType::VarDecl(name, expr),
         })
     }
 
@@ -295,7 +295,7 @@ impl Parser {
         }
 
         Ok(Stmt {
-            val: StmtType::IfStmt(blocks),
+            val: StmtType::If(blocks),
             loc: Location { start, end },
         })
     }
@@ -307,7 +307,7 @@ impl Parser {
         let block = self.parse_block()?;
 
         Ok(Stmt {
-            val: StmtType::WhileStmt(cond, block.val),
+            val: StmtType::While(cond, block.val),
             loc: Location {
                 start,
                 end: block.loc.end,
@@ -347,7 +347,7 @@ impl Parser {
         // TODO: horrible cheating, but eh
         if !op {
             Ok(Stmt {
-                val: StmtType::FunDeclStmt(
+                val: StmtType::FunDecl(
                     Identifier { val: name, loc: tok.loc },
                     params, block.val
                 ),
@@ -361,7 +361,7 @@ impl Parser {
                 });
             };
             Ok(Stmt {
-                val: StmtType::OperatorDeclStmt(
+                val: StmtType::OperatorDecl(
                     Symbol { val: name, loc: tok.loc },
                     (param1.clone(), param2.clone()), block.val,
                     Precedence { prec: 0, assoc: Associativity::Left }
@@ -396,9 +396,9 @@ impl Parser {
         self.advance();
         // because we set the flag we know it WILL be an operator
         // basically all we need to do is replace the associativity and starting location
-        let Stmt { val: StmtType::OperatorDeclStmt(name, params, block, _), loc } = self.parse_fun(true)? else { unreachable!() };
+        let Stmt { val: StmtType::OperatorDecl(name, params, block, _), loc } = self.parse_fun(true)? else { unreachable!() };
         Ok(Stmt {
-            val: StmtType::OperatorDeclStmt(
+            val: StmtType::OperatorDecl(
                     name, params, block,
                     Precedence { prec: prec2 as u8, assoc }),
             loc: Location { start: kw.loc.start, end: loc.end }
@@ -412,7 +412,7 @@ impl Parser {
             check_variant!(self, Semicolon, "Expected a semicolon \";\"")?;
             return Ok(Stmt {
                 loc: expr.loc,
-                val: StmtType::ExprStmt(expr),
+                val: StmtType::Expr(expr),
             });
         }
         // parse the rest
@@ -427,18 +427,18 @@ impl Parser {
         // TODO: this will stop being a problem after the parse is able to report multiple errors
         match expr.val {
             ExprType::Identifier(ident) => Ok(Stmt {
-                val: StmtType::AssignStmt(
+                val: StmtType::Assign(
                     Identifier { val: ident, loc: expr.loc },
                     val
                 ),
                 loc,
             }),
             ExprType::Index(ls, idx) => Ok(Stmt {
-                val: StmtType::AssignIndexStmt(*ls, *idx, val),
+                val: StmtType::AssignIndex(*ls, *idx, val),
                 loc,
             }),
             ExprType::FieldAccess(expr, name) => Ok(Stmt {
-                val: StmtType::AssignStructStmt(*expr, name, val),
+                val: StmtType::AssignStruct(*expr, name, val),
                 loc,
             }),
             _ => Err(Error {
@@ -458,7 +458,7 @@ impl Parser {
         let fields = self.sep(TokenType::LBrace, TokenType::RBrace, Self::parse_ident)?;
 
         Ok(Stmt {
-            val: StmtType::StructStmt(name, fields.0),
+            val: StmtType::Struct(name, fields.0),
             loc: Location { start, end: fields.1.end },
         })
     }
@@ -471,7 +471,7 @@ impl Parser {
 
         let block = self.parse_block()?;
         for s in block.val.iter() {
-            if !matches!(s.val, StmtType::FunDeclStmt(..)) {
+            if !matches!(s.val, StmtType::FunDecl(..)) {
                 return Err(Error {
                     msg: ErrorType::OtherError("Only function definitions are allowed".to_string()),
                     lines: vec![s.loc]
@@ -479,7 +479,7 @@ impl Parser {
             }
         }
         Ok(Stmt {
-            val: StmtType::ImplStmt(name, block.val),
+            val: StmtType::Impl(name, block.val),
             loc: Location { start, end: block.loc.end },
         })
     }
@@ -615,7 +615,7 @@ impl Parser {
             // same as { return expr; }
             (vec![Stmt {
                 loc: expr.loc,
-                val: StmtType::ReturnStmt(expr),
+                val: StmtType::Return(expr),
             }], loc)
         };
         Ok(Expr {
