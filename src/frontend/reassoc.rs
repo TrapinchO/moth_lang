@@ -332,4 +332,15 @@ impl ExprVisitor<Expr> for Reassociate {
             loc,
         })
     }
+    fn method(&mut self, loc: Location, callee: Expr, name: Identifier, args: Vec<Expr>) -> Result<Expr, Error> {
+        let callee2 = self.visit_expr(callee)?;
+        let mut args2 = vec![];
+        for e in args {
+            args2.push(self.visit_expr(e)?);
+        }
+        Ok(Expr {
+            val: ExprType::MethodAccess(callee2.into(), name, args2),
+            loc,
+        })
+    }
 }

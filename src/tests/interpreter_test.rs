@@ -136,4 +136,28 @@ p.z;
     )
 }
 
+#[test]
+fn impls() {
+    assert_eq!(
+        run_code("
+struct Point {
+    x, y,
+}
+impl Point {
+    fun manhattan(self) {
+        return self.x + self.y;
+    }
+    // I know this is likely wrong terminology, it is just a quick test
+    fun scale(self, mag) {
+        self.x = self.x * mag;
+        self.y = self.y * mag;
+    }
+}
+let p = Point(1, 2);
+p.scale(3);
+let x = p.manhattan();
+            ", "x"),
+        Some(ValueType::Int(9))
+    );
+}
 

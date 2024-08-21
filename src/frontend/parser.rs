@@ -593,10 +593,22 @@ impl Parser {
                         });
                     };
                     self.advance();
-                    expr = Expr {
-                        loc: Location { start: expr.loc.start, end: name_tok.loc.end },
-                        val: ExprType::FieldAccess(expr.into(), Identifier { val: name, loc: name_tok.loc }),
-                    };
+                    let name = Identifier { val: name, loc: name_tok.loc };
+                    if is_typ!(self, LParen) {
+                        let (params, end_loc) = self.sep(
+                            TokenType::LParen, TokenType::RParen,
+                            Self::parse_expression,
+                        )?;
+                        expr = Expr {
+                            loc: Location { start: expr.loc.start, end: end_loc.end },
+                            val: ExprType::MethodAccess(expr.into(), name, params),
+                        }
+                    } else {
+                        expr = Expr {
+                            loc: Location { start: expr.loc.start, end: name_tok.loc.end },
+                            val: ExprType::FieldAccess(expr.into(), name),
+                        };
+                    }
                 }
                 _ => {
                     break;

@@ -290,6 +290,7 @@ impl Interpreter {
             ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
             ExprType::Lambda(params, body) => self.lambda(loc, params, body),
             ExprType::FieldAccess(expr, name) => self.field(loc, *expr, name),
+            ExprType::MethodAccess(expr, name, args) => self.method(loc, *expr, name, args),
         }?;
         Ok(Value { val, loc: expr.loc })
     }
@@ -392,6 +393,36 @@ impl Interpreter {
             lines: vec![loc],
         })?.clone())
     }
+    fn method(&mut self, loc: Location, callee: Expr, name: Identifier, args: Vec<Expr>) -> Result<ValueType, Error> {
+        let callee2 = self.visit_expr(callee)?;
+
+        let mut args2 = vec![callee2.val.clone()];
+        for arg in args {
+            args2.push(self.visit_expr(arg)?.val);
+        }
+
+        let ValueType::Instance(struct_name, fields) = callee2.val else {
+            return Err(Error {
+                msg: ErrorType::ExpectedInstance,
+                lines: vec![callee2.loc],
+            });
+        };
+        let met = fields.get(&name.val).ok_or_else(|| Error {
+            msg: ErrorType::FieldNotFound(name.val, struct_name),
+            lines: vec![loc],
+        })?.clone();
+
+        match met {
+            ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
+            ValueType::Function(params, body, closure) => self.call_fn(params, body, closure, args2, loc),
+            ValueType::Struct(name, fields, methods) => self.call_struct(name, fields, args2, methods, loc),
+            _ => Err(Error {
+                msg: ErrorType::ItemNotCalleable,
+                lines: vec![callee2.loc],
+            }),
+        }
+    }
+
 
     fn call_fn(
         &mut self,

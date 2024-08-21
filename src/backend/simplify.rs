@@ -74,12 +74,13 @@ impl ExprVisitor<Expr> for Simplifier {
     }
 
     fn call(&mut self, loc: Location, callee: exprstmt::Expr, args: Vec<exprstmt::Expr>) -> Result<Expr, Error> {
+        let callee2 = self.visit_expr(callee)?;
         let mut ls = vec![];
         for e in args {
             ls.push(self.visit_expr(e)?);
         }
         Ok(Expr {
-            val: ExprType::Call(self.visit_expr(callee)?.into(), ls),
+            val: ExprType::Call(callee2.into(), ls),
             loc,
         })
     }
@@ -194,6 +195,17 @@ impl ExprVisitor<Expr> for Simplifier {
     fn field(&mut self, loc: Location, expr: exprstmt::Expr, name: exprstmt::Identifier) -> Result<Expr, Error> {
         Ok(Expr {
             val: ExprType::FieldAccess(self.visit_expr(expr)?.into(), name),
+            loc,
+        })
+    }
+    fn method(&mut self, loc: Location, callee: exprstmt::Expr, name: exprstmt::Identifier, args: Vec<exprstmt::Expr>) -> Result<Expr, Error> {
+        let callee2 = self.visit_expr(callee)?;
+        let mut ls = vec![];
+        for e in args {
+            ls.push(self.visit_expr(e)?);
+        }
+        Ok(Expr {
+            val: ExprType::MethodAccess(callee2.into(), name, ls),
             loc,
         })
     }

@@ -18,6 +18,7 @@ pub enum ExprType {
     Index(Box<Expr>, Box<Expr>), // expr[idx]
     Lambda(Vec<Identifier>, Vec<Stmt>), // |params| { block }
     FieldAccess(Box<Expr>, Identifier),
+    MethodAccess(Box<Expr>, Identifier, Vec<Expr>), // expr.name(args)
 }
 
 impl ExprType {
@@ -47,6 +48,10 @@ impl ExprType {
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
             Self::FieldAccess(expr, name) => format!("{expr}.{name}"),
+            Self::MethodAccess(callee, name, args) => format!(
+                "{callee}.{name}({args})",
+                args = args.iter().map(|e| { format!("{e}") }).collect::<Vec<_>>().join(", ")
+            ),
         }
     }
 }

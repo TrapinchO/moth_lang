@@ -269,6 +269,7 @@ impl VarCheck {
             ExprType::Index(expr2, idx) => self.index(loc, expr2, idx),
             ExprType::Lambda(params, body) => self.lambda(loc, params, body),
             ExprType::FieldAccess(expr, name) => self.field(loc, expr, name),
+            ExprType::MethodAccess(expr, name, args) => self.method(loc, expr, name, args),
         };
     }
     // nothing to check
@@ -331,5 +332,11 @@ impl VarCheck {
     fn field(&mut self, _: Location, expr: &Expr, _: &Identifier) {
         self.visit_expr(expr);
         // TODO: check for fields
+    }
+    fn method(&mut self, _: Location, callee: &Expr, _: &Identifier, args: &Vec<Expr>) {
+        self.visit_expr(callee);
+        for arg in args {
+            self.visit_expr(arg);
+        }
     }
 }
