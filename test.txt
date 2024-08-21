@@ -7,14 +7,14 @@ impl Test {
     //fun x(self, x) { print(self, x); } // TODO: not working yet
     fun z(x) { print(x * 2 + 1); }
 }
-let x = [1, 2];
+let x = [1, Test(true, false, ())];
 let z = Test(1, 2, x);
 let z2 = Test("AAAA", true, z);
 
 x[0] = 1000000;
 z.i = 10 + 20 * 2 + 20;
 
-print(z.i, z2.k.k);
+print(z.k[1].k, z2.k.k);
 z2.z(2);
 
 

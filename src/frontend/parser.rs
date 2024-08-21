@@ -558,7 +558,7 @@ impl Parser {
 
     /// things like function call and indexing
     fn parse_suffix(&mut self) -> Result<Expr, Error> {
-        let mut expr = self.parse_field()?;
+        let mut expr = self.parse_primary()?;
         let start = expr.loc.start;
         // a condition is not actually needed
         // the parser should figure out by itself
@@ -581,6 +581,21 @@ impl Parser {
                     expr = Expr {
                         loc: Location { start, end },
                         val: ExprType::Index(expr.into(), idx.into()),
+                    };
+                }
+                TokenType::Dot => {
+                    self.advance();
+                    let name_tok = self.get_current().clone();
+                    let TokenType::Identifier(name) = name_tok.val else {
+                        return Err(Error {
+                            msg: ErrorType::ExpectedFieldName,
+                            lines: vec![name_tok.loc],
+                        });
+                    };
+                    self.advance();
+                    expr = Expr {
+                        loc: Location { start: expr.loc.start, end: name_tok.loc.end },
+                        val: ExprType::FieldAccess(expr.into(), Identifier { val: name, loc: name_tok.loc }),
                     };
                 }
                 _ => {
@@ -622,26 +637,6 @@ impl Parser {
             val: ExprType::Lambda(params, body),
             loc: Location { start, end: end_loc }
         })
-    }
-
-    fn parse_field(&mut self) -> Result<Expr, Error> {
-        let mut expr = self.parse_primary()?;
-        while is_typ!(self, Dot) {
-            self.advance();
-            let name_tok = self.get_current().clone();
-            let TokenType::Identifier(name) = name_tok.val else {
-                return Err(Error {
-                    msg: ErrorType::ExpectedFieldName,
-                    lines: vec![name_tok.loc],
-                });
-            };
-            self.advance();
-            expr = Expr {
-                loc: Location { start: expr.loc.start, end: name_tok.loc.end },
-                val: ExprType::FieldAccess(expr.into(), Identifier { val: name, loc: name_tok.loc }),
-            };
-        }
-        Ok(expr)
     }
 
     fn parse_primary(&mut self) -> Result<Expr, Error> {
