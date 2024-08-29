@@ -9,7 +9,7 @@ pub trait StmtVisitor<T> {
             StmtType::Assign(ident, expr) => self.assignment(loc, ident, expr),
             StmtType::AssignIndex(ls, idx, val) => self.assignindex(loc, ls, idx, val),
             StmtType::Block(block) => self.block(loc, block),
-            StmtType::If(blocks) => self.if_else(loc, blocks),
+            StmtType::If(blocks, els) => self.if_else(loc, blocks, els),
             StmtType::While(cond, block) => self.whiles(loc, cond, block),
             StmtType::FunDecl(name, params, block) => self.fun(loc, name, params, block),
             StmtType::OperatorDecl(name, params, block, prec) => self.operator(loc, name, params, block, prec),
@@ -27,7 +27,7 @@ pub trait StmtVisitor<T> {
     fn assignment(&mut self, loc: Location, ident: Identifier, expr: Expr) -> Result<T, Error>;
     fn assignindex(&mut self, loc: Location, ls: Expr, idx: Expr, val: Expr) -> Result<T, Error>;
     fn block(&mut self, loc: Location, block: Vec<Stmt>) -> Result<T, Error>;
-    fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<T, Error>;
+    fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>, els: Option<Block>) -> Result<T, Error>;
     fn whiles(&mut self, loc: Location, cond: Expr, block: Vec<Stmt>) -> Result<T, Error>;
     fn fun(&mut self, loc: Location, name: Identifier, params: Vec<Identifier>, block: Vec<Stmt>) -> Result<T, Error>;
     fn operator(

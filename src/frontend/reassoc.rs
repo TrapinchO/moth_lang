@@ -132,7 +132,7 @@ impl StmtVisitor<Stmt> for Reassociate {
             loc,
         })
     }
-    fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<Stmt, Error> {
+    fn if_else(&mut self, loc: Location, blocks: Vec<(Expr, Vec<Stmt>)>, els: Option<Block>) -> Result<Stmt, Error> {
         let mut blocks_result = vec![];
         for (cond, stmts) in blocks {
             let mut block = vec![];
@@ -142,8 +142,14 @@ impl StmtVisitor<Stmt> for Reassociate {
             blocks_result.push((self.visit_expr(cond)?, block));
         }
 
+        let els2 = els
+            .map(|b| b.into_iter()
+                .map(|s| self.visit_stmt(s))
+                .collect::<Result<Vec<_>, _>>())
+            .transpose()?;
+
         Ok(Stmt {
-            val: StmtType::If(blocks_result),
+            val: StmtType::If(blocks_result, els2),
             loc,
         })
     }

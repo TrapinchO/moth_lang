@@ -53,6 +53,7 @@ pub enum ErrorType {
     ItemNotUsed(String),
     DeadCode,
     IfNeverExecutes,
+    IfAlwaysExecutes,
     LoopNeverExecutes,
     // interpreter
     ExpectedListIndex,
@@ -119,6 +120,7 @@ impl ErrorType {
             Self::ItemNotUsed(s) => format!("Item \"{s}\" not used"),
             Self::DeadCode => "Unreachable code".to_string(),
             Self::IfNeverExecutes => "If branch never executes".to_string(),
+            Self::IfAlwaysExecutes => "If branch always executes".to_string(),
             Self::LoopNeverExecutes => "Loop never executes".to_string(),
             // interpreter
             Self::ExpectedListIndex => "Expected a list index expression".to_string(),
@@ -150,6 +152,7 @@ impl ErrorType {
             Self::ItemNotUsed(_)
             | Self::DeadCode
             | Self::IfNeverExecutes
+            | Self::IfAlwaysExecutes
             | Self::LoopNeverExecutes => true,
             _ => false,
         }

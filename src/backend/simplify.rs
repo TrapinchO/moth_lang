@@ -297,7 +297,7 @@ impl StmtVisitor<Stmt> for Simplifier {
         })
     }
 
-    fn if_else(&mut self, loc: Location, blocks: Vec<(exprstmt::Expr, Vec<exprstmt::Stmt>)>) -> Result<Stmt, Error> {
+    fn if_else(&mut self, loc: Location, blocks: Vec<(exprstmt::Expr, Vec<exprstmt::Stmt>)>, els: Option<Vec<exprstmt::Stmt>>) -> Result<Stmt, Error> {
         let mut bl = vec![];
         for (c, b) in blocks {
             let mut block = vec![];
@@ -305,6 +305,13 @@ impl StmtVisitor<Stmt> for Simplifier {
                 block.push(self.visit_stmt(s)?);
             }
             bl.push((self.visit_expr(c)?, block));
+        }
+        if let Some(else_bl) = els {
+            let mut block = vec![];
+            for s in else_bl {
+                block.push(self.visit_stmt(s)?);
+            }
+            bl.push((Expr { val: ExprType::Bool(true), loc }, block));
         }
         Ok(Stmt {
             val: StmtType::If(bl),

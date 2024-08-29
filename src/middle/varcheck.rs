@@ -120,7 +120,7 @@ impl VarCheck {
             StmtType::Assign(ident, expr) => self.assignment(loc, ident, expr),
             StmtType::AssignIndex(ls, idx, val) => self.assignindex(loc, ls, idx, val),
             StmtType::Block(block) => self.block(loc, block),
-            StmtType::If(blocks) => self.if_else(loc, blocks),
+            StmtType::If(blocks, els) => self.if_else(loc, blocks, els),
             StmtType::While(cond, block) => self.whiles(loc, cond, block),
             StmtType::FunDecl(name, params, block) => self.fun(loc, name, params, block),
             StmtType::OperatorDecl(name, params, block, prec) => self.operator(loc, name, params, block, prec),
@@ -149,28 +149,25 @@ impl VarCheck {
     fn block(&mut self, _: Location, block: &Vec<Stmt>) {
         self.check_block(block);
     }
-    fn if_else(&mut self, loc: Location, blocks: &Vec<(Expr, Vec<Stmt>)>) {
-        for (i, (cond, block)) in blocks.iter().enumerate() {
-            // NOTE: if let is not supported with additional conditions
+    fn if_else(&mut self, _: Location, blocks: &Vec<(Expr, Vec<Stmt>)>, els: &Option<Block>) {
+        for (cond, block) in blocks.iter() {
             // check for dead code
-            if i < blocks.len() - 1 {
-                if cond.val == ExprType::Bool(true) {
-                    // TODO: skips the ELSE IF keywords, but otherwise done
-                    let start = blocks[i + 1].0.loc.start;
-                    self.warns.push(Error {
-                        msg: ErrorType::DeadCode,
-                        lines: vec![cond.loc, Location { start, end: loc.end }],
-                    });
-                    break;
-                } else if cond.val  == ExprType::Bool(false) {
-                    self.warns.push(Error {
-                        msg: ErrorType::IfNeverExecutes,
-                        lines: vec![cond.loc],
-                    });
-                }
+            if cond.val == ExprType::Bool(true) {
+                self.warns.push(Error {
+                    msg: ErrorType::IfAlwaysExecutes,
+                    lines: vec![cond.loc]
+                });
+            } else if cond.val  == ExprType::Bool(false) {
+                self.warns.push(Error {
+                    msg: ErrorType::IfNeverExecutes,
+                    lines: vec![cond.loc],
+                });
             }
             self.visit_expr(cond);
             self.check_block(block);
+        }
+        if let Some(bl) = els {
+            self.check_block(bl);
         }
     }
     fn whiles(&mut self, _: Location, cond: &Expr, block: &Vec<Stmt>) {

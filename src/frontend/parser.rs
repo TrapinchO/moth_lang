@@ -311,7 +311,7 @@ impl Parser {
 
         blocks.push((cond, if_block.val));
         let mut end = if_block.loc.end;
-        let mut exit = false;
+        let mut els = None;
         while is_typ!(self, Else) {
             let else_kw = self.get_current().clone();
             self.advance();
@@ -320,23 +320,19 @@ impl Parser {
                 self.advance();
                 self.parse_expression()?
             } else {
-                exit = true;
-                Expr {
-                    val: ExprType::Bool(true),
-                    loc: else_kw.loc,
-                }
+                let bl = self.parse_block()?;
+                end = bl.loc.end;
+                els = Some(bl.val);
+                break;
             };
             let if_block = self.parse_block()?;
 
             blocks.push((cond, if_block.val));
             end = if_block.loc.end;
-            if exit {
-                break;
-            }
         }
 
         Ok(Stmt {
-            val: StmtType::If(blocks),
+            val: StmtType::If(blocks, els),
             loc: Location { start, end },
         })
     }

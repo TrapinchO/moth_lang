@@ -76,7 +76,7 @@ pub enum StmtType {
     Assign(Identifier, Expr),
     AssignIndex(Expr, Expr, Expr), // expr[expr] = expr
     Block(Vec<Stmt>),
-    If(Vec<(Expr, Vec<Stmt>)>),
+    If(Vec<(Expr, Vec<Stmt>)>, Option<Block>),
     While(Expr, Vec<Stmt>),
     // name, parameters, body
     FunDecl(Identifier, Vec<Identifier>, Vec<Stmt>),
@@ -99,7 +99,7 @@ impl StmtType {
                 "{{\n{block}\n}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-            Self::If(blocks) => {
+            Self::If(blocks, els) => {
                 let first = blocks.first().unwrap(); // always present
                 let rest = &blocks[1..]
                     .iter()
@@ -112,10 +112,12 @@ impl StmtType {
                     })
                     .collect::<Vec<_>>();
                 format!(
-                    "if {cond} {{\n{block}\n}} {rest}",
+                    "if {cond} {{\n{block}\n}} {rest} else {el}",
                     cond = first.0,
                     block = first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
-                    rest = rest.join("")
+                    rest = rest.join(""),
+                    //el = els.map(|b| b.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")).unwrap_or("".to_string())
+                    el = "",
                 )
             }
             Self::While(cond, block) => format!(
