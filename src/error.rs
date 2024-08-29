@@ -10,7 +10,7 @@ struct Pos {
     col: usize,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ErrorType {
     // lexer
     UnknownCharacter(char),
@@ -158,7 +158,7 @@ impl Display for ErrorType {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Error {
     pub msg: ErrorType,
     pub lines: Vec<Location>,

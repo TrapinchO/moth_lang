@@ -31,7 +31,7 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
     }
     */
 
-    let ast = frontend::parser::parse(tokens).map_err(|e| vec![e])?;
+    let ast = frontend::parser::parse(tokens)?;
     /*
     eprintln!("===== parsing =====");
     for s in &ast {

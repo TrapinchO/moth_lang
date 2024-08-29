@@ -30,7 +30,7 @@ macro_rules! is_typ {
     };
 }
 
-pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
+pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Vec<Error>> {
     if tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof {
         return Ok(vec![]);
     }
@@ -40,13 +40,14 @@ pub fn parse(tokens: Vec<Token>) -> Result<Vec<Stmt>, Error> {
 struct Parser {
     tokens: Vec<Token>,
     idx: usize,
+    errs: Vec<Error>,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         assert!(!(tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof),
                 "Expected code to parse");
-        Self { tokens, idx: 0 }
+        Self { tokens, idx: 0, errs: vec![] }
     }
 
     fn is_at_end(&self) -> bool {
@@ -74,6 +75,16 @@ impl Parser {
 
     fn advance(&mut self) {
         self.idx += 1;
+    }
+
+    fn synchronize(&mut self) {
+        while !self.is_at_end() && !is_typ!(self, Eof) { // apparently needed
+            if matches!(self.get_current().val, TokenType::Semicolon | TokenType::RBrace) {
+                self.advance();
+                return;
+            }
+            self.advance();
+        }
     }
 
     /// parses an array of items surrounded by opening and closing tokens and delimited by a comma
@@ -150,15 +161,26 @@ impl Parser {
         Ok(Identifier { val: name, loc })
     }
 
-    pub fn parse(&mut self) -> Result<Vec<Stmt>, Error> {
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, Vec<Error>> {
         let mut ls = vec![];
         while !self.is_at_end()
             && !is_typ!(self, Eof)  // apparently needed
         {
-            ls.push(self.parse_statement()?);
+            ls.push(match self.parse_statement() {
+                Ok(s) => s,
+                Err(err) => {
+                    self.errs.push(err);
+                    self.synchronize();
+                    continue;
+                }
+            });
         }
 
-        Ok(ls)
+        if !self.errs.is_empty() {
+            Err(self.errs.clone())
+        } else {
+            Ok(ls)
+        }
     }
 
     fn parse_statement(&mut self) -> Result<Stmt, Error> {
@@ -229,7 +251,14 @@ impl Parser {
             && !is_typ!(self, Eof)  // apparently needed
             && !is_typ!(self, RBrace)
         {
-            ls.push(self.parse_statement()?);
+            ls.push(match self.parse_statement() {
+                Ok(s) => s,
+                Err(err) => {
+                    self.errs.push(err);
+                    self.synchronize();
+                    continue;
+                }
+            });
         }
         let end = check_variant!(self, RBrace, "Expected } at the end of the block")?
             .loc
@@ -423,8 +452,6 @@ impl Parser {
             start: expr.loc.start,
             end: val.loc.end,
         };
-        // return to the left side (aka check it)
-        // TODO: this will stop being a problem after the parse is able to report multiple errors
         match expr.val {
             ExprType::Identifier(ident) => Ok(Stmt {
                 val: StmtType::Assign(

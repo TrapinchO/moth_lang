@@ -1,3 +1,20 @@
+if true {
+    let x = 1
+    print("aha");
+} else if 1 == {
+    fun test( {
+        let 1 = ();
+        return;
+    }
+}
+
+
+
+
+
+
+
+/*
 struct Test {
     i,
     j,
@@ -15,11 +32,7 @@ x[0] = 1000000;
 
 print(z.i, z2.k.k[0]);
 print(z.x(2)[1], z.i);
-
-
-
-
-
+*/
 
 // print((|| 1())(), |x| { x; 1 + 1; }(1));
 

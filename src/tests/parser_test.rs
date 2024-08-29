@@ -107,10 +107,10 @@ use crate::{
 };
 
 #[test]
-fn test_varcheck() -> Result<(), Error> {
+fn test_varcheck() {
     let input = "let x = 10; x = 1;".to_string();
     let tokens = lex(&input).unwrap();
-    let ast = parse(tokens)?;
+    let ast = parse(tokens).unwrap();
     let builtins = get_builtins()
         .keys()
         .map(|name| (name.clone(), (Location { start: 0, end: 0 }, false)))
@@ -126,7 +126,6 @@ fn test_varcheck() -> Result<(), Error> {
             vec![]
         ))
     );
-    Ok(())
 }
 
 #[test]
@@ -235,10 +234,10 @@ fn parse_parens() {
 fn parse_parens_unclosed() {
     assert_eq!(
         parse(lex("(1").unwrap()),
-        Err(Error {
+        Err(vec![Error {
             msg: ErrorType::ExpectedToken("Expected a closing parenthesis".to_string()),
             lines: vec![Location { start: 2, end: 2 }]
-        })
+        }])
     );
 }
 
@@ -331,10 +330,10 @@ fn parse_binary() {
 
 #[test]
 fn expr_error() {
-    let err = Error {
+    let err = vec![Error {
         msg: ErrorType::UnexpectedEof,
         lines: vec![Location { start: 2, end: 2 }],
-    };
+    }];
     let op = parse(lex("1+").unwrap()).unwrap_err();
     assert_eq!(err, op);
 }
@@ -674,10 +673,10 @@ fn test_assingment_error() {
     let src = parse(lex("1 = 1;").unwrap());
     assert_eq!(
         src,
-        Err(Error {
+        Err(vec![Error {
             msg: ErrorType::InvalidAssignmentTarget,
             lines: vec![Location { start: 0, end: 0 }],
-        })
+        }])
     )
 }
 

@@ -346,7 +346,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
         let val = &args.first().unwrap();
         Ok(ValueType::Int(match val {
             ValueType::String(s) => s.len() as i32,
-            ValueType::List(ls) => ls.read(|l| l.len()) as i32,
+            ValueType::List(ls) => ls.read(Vec::len) as i32,
             _ => return Err(format!("Invalid value: {val}")),
         }))
     }),

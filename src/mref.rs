@@ -73,7 +73,7 @@ impl<T> MMapIter<T> {
     fn new(map: MMap<T>) -> Self {
         Self {
             idx: 0,
-            len: map.read(|m| m.len()),
+            len: map.read(HashMap::len),
             keys: map.read(|m| m.keys().cloned().collect::<Vec<_>>()),
             map,
         }
@@ -105,7 +105,7 @@ impl MList {
     // not necessary for now
     #[allow(clippy::len_without_is_empty)]
     pub fn len(&self) -> usize {
-        self.read(|l| l.len())
+        self.read(Vec::len)
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Value> {
@@ -119,10 +119,8 @@ impl MList {
         if idx < 0 {
             if (idx.unsigned_abs() as usize) > length { None }
             else { Some(length - (idx.unsigned_abs() as usize)) }
-        } else {
-            if (idx as usize) >= length { None }
-            else { Some(idx as usize) }
-        }
+        } else if (idx as usize) >= length { None }
+        else { Some(idx as usize) }
     }
 }
 struct MListIter {
@@ -132,7 +130,7 @@ struct MListIter {
 }
 impl MListIter {
     fn new(ls: MList) -> Self {
-        let len = ls.read(|l| l.len());
+        let len = ls.read(Vec::len);
         Self { ls, len, idx: 0 }
     }
 }
