@@ -1,5 +1,11 @@
 #![allow(clippy::ptr_arg)]
-use crate::{associativity::Precedence, environment::Environment, error::{ErrorType, Error}, exprstmt::*, located::Location};
+use crate::{
+    associativity::Precedence,
+    environment::Environment,
+    error::{Error, ErrorType},
+    exprstmt::*,
+    located::Location,
+};
 
 use std::collections::HashMap;
 
@@ -68,29 +74,27 @@ impl VarCheck {
                     self.declare_item(&name.val, name.loc);
                     self.visit_stmt(s);
                 }
-                StmtType::Break
-                    | StmtType::Continue
-                    | StmtType::Return(_) => {
-                        if i == block.len()-1 {
-                            break;
-                        }
-                        let start = block[i+1].loc.start;
-                        let end = block.last().unwrap().loc.end;
-                        self.warns.push(Error {
-                            msg:ErrorType::DeadCode,
-                            lines: vec![s.loc, Location { start, end }]
-                        });
+                StmtType::Break | StmtType::Continue | StmtType::Return(_) => {
+                    if i == block.len() - 1 {
                         break;
                     }
+                    let start = block[i + 1].loc.start;
+                    let end = block.last().unwrap().loc.end;
+                    self.warns.push(Error {
+                        msg: ErrorType::DeadCode,
+                        lines: vec![s.loc, Location { start, end }],
+                    });
+                    break;
+                }
                 // necessary for pattern matching
                 StmtType::AssignIndex(..)
-                    | StmtType::Block(..)
-                    | StmtType::If(..)
-                    | StmtType::While(..)
-                    | StmtType::Expr(..)
-                    | StmtType::Impl(..)
-                    | StmtType::AssignStruct(..) => {
-                        self.visit_stmt(s);
+                | StmtType::Block(..)
+                | StmtType::If(..)
+                | StmtType::While(..)
+                | StmtType::Expr(..)
+                | StmtType::Impl(..)
+                | StmtType::AssignStruct(..) => {
+                    self.visit_stmt(s);
                 }
             }
         }
@@ -149,19 +153,19 @@ impl VarCheck {
         for (i, (cond, block)) in blocks.iter().enumerate() {
             // NOTE: if let is not supported with additional conditions
             // check for dead code
-            if i < blocks.len()-1 {
+            if i < blocks.len() - 1 {
                 if let ExprType::Bool(true) = cond.val {
                     // TODO: skips the ELSE IF keywords, but otherwise done
-                    let start = blocks[i+1].0.loc.start;
+                    let start = blocks[i + 1].0.loc.start;
                     self.warns.push(Error {
-                        msg:ErrorType::DeadCode,
-                        lines: vec![cond.loc, Location { start, end: loc.end }]
+                        msg: ErrorType::DeadCode,
+                        lines: vec![cond.loc, Location { start, end: loc.end }],
                     });
                     break;
                 } else if let ExprType::Bool(false) = cond.val {
                     self.warns.push(Error {
-                        msg:ErrorType::IfNeverExecutes,
-                        lines: vec![cond.loc]
+                        msg: ErrorType::IfNeverExecutes,
+                        lines: vec![cond.loc],
                     });
                 }
             }
@@ -172,8 +176,8 @@ impl VarCheck {
     fn whiles(&mut self, _: Location, cond: &Expr, block: &Vec<Stmt>) {
         if let ExprType::Bool(false) = cond.val {
             self.warns.push(Error {
-                msg:ErrorType::LoopNeverExecutes,
-                lines: vec![cond.loc]
+                msg: ErrorType::LoopNeverExecutes,
+                lines: vec![cond.loc],
             });
         }
         // TODO: do not forget about "true"
@@ -327,7 +331,15 @@ impl VarCheck {
         self.visit_expr(idx);
     }
     fn lambda(&mut self, loc: Location, params: &Vec<Identifier>, body: &Vec<Stmt>) {
-        self.fun(loc, &Identifier { val: "".to_string(), loc }, params, body);
+        self.fun(
+            loc,
+            &Identifier {
+                val: "".to_string(),
+                loc,
+            },
+            params,
+            body,
+        );
     }
     fn field(&mut self, _: Location, expr: &Expr, _: &Identifier) {
         self.visit_expr(expr);

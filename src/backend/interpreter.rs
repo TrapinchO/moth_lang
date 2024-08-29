@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
+use super::lowexprstmt::*;
+use super::value::*;
 use crate::{
     environment::Environment,
     error::{Error, ErrorType},
     located::{Located, Location},
     mref::{MList, MMap},
 };
-use super::value::*;
-use super::lowexprstmt::*;
 
 pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
     Interpreter::new(builtins).interpret(stmts)
@@ -112,7 +112,7 @@ impl Interpreter {
             StmtType::Continue => self.cont(loc),
             StmtType::Struct(name, fields) => self.struc(loc, name, fields),
             StmtType::AssignStruct(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
-            StmtType::Impl(name, block) => self.imp(loc, name, block)
+            StmtType::Impl(name, block) => self.imp(loc, name, block),
         }
     }
 
@@ -148,7 +148,8 @@ impl Interpreter {
             return Err(Error {
                 msg: ErrorType::ExpectedIndex,
                 lines: vec![idx_loc],
-            }.into())
+            }
+            .into());
         };
         let n2 = MList::check_index(n, ls2.len()).ok_or_else(|| Error {
             msg: ErrorType::IndexOutOfRange(n, ls2.len()),
@@ -169,7 +170,8 @@ impl Interpreter {
                 return Err(Error {
                     msg: ErrorType::ExpectedBool,
                     lines: vec![cond.loc],
-                }.into());
+                }
+                .into());
             };
             // do not continue
             if cond2 {
@@ -187,8 +189,9 @@ impl Interpreter {
             let ValueType::Bool(b) = cond.val else {
                 return Err(Error {
                     msg: ErrorType::ExpectedBool,
-                    lines: vec![cond.loc]
-                }.into())
+                    lines: vec![cond.loc],
+                }
+                .into());
             };
             if !b {
                 break;
@@ -231,7 +234,10 @@ impl Interpreter {
         })
     }
     fn struc(&mut self, _: Location, name: Identifier, fields: Vec<Identifier>) -> Result<(), InterpError> {
-        if !self.environment.insert(&name.val, ValueType::Struct(name.clone(), fields, HashMap::new().into())) {
+        if !self.environment.insert(
+            &name.val,
+            ValueType::Struct(name.clone(), fields, HashMap::new().into()),
+        ) {
             unreachable!("Item \"{}\" already declared\nLocation: {:?}", name.val, name.loc);
         }
         Ok(())
@@ -242,13 +248,16 @@ impl Interpreter {
             return Err(Error {
                 msg: ErrorType::ExpectedInstance,
                 lines: vec![expr.loc],
-            }.into());
+            }
+            .into());
         };
-        if fields.get(&name.val).is_none() { // field not present in the object
+        if fields.get(&name.val).is_none() {
+            // field not present in the object
             return Err(Error {
                 msg: ErrorType::UnknownField(name.val),
                 lines: vec![name.loc],
-            }.into());
+            }
+            .into());
         }
         let val = self.visit_expr(expr2)?;
         fields.insert(name.val, val.val);
@@ -262,8 +271,9 @@ impl Interpreter {
         let ValueType::Struct(_, _, mut methods) = struc else {
             return Err(Error {
                 msg: ErrorType::OtherError(format!("Value bound to \"{}\" is not a struct", name.val)),
-                lines: vec![ name.loc ],
-            }.into());
+                lines: vec![name.loc],
+            }
+            .into());
         };
         for s in block {
             let StmtType::VarDecl(name, fun) = s.val else {
@@ -304,7 +314,8 @@ impl Interpreter {
         Ok(ValueType::Float(n))
     }
     fn identifier(&mut self, ident: String, loc: Location) -> Result<ValueType, Error> {
-        self.environment.get(&ident)
+        self.environment
+            .get(&ident)
             .ok_or_else(|| unreachable!("Item \"{}\" not declared\nLocation: {:?}", ident, loc))
     }
     fn string(&mut self, s: String) -> Result<ValueType, Error> {
@@ -388,10 +399,13 @@ impl Interpreter {
                 lines: vec![expr2.loc],
             });
         };
-        Ok(fields.get(&name.val).ok_or_else(|| Error {
-            msg: ErrorType::FieldNotFound(name.val, struct_name),
-            lines: vec![loc],
-        })?.clone())
+        Ok(fields
+            .get(&name.val)
+            .ok_or_else(|| Error {
+                msg: ErrorType::FieldNotFound(name.val, struct_name),
+                lines: vec![loc],
+            })?
+            .clone())
     }
     fn method(&mut self, loc: Location, callee: Expr, name: Identifier, args: Vec<Expr>) -> Result<ValueType, Error> {
         let callee2 = self.visit_expr(callee)?;
@@ -407,10 +421,13 @@ impl Interpreter {
                 lines: vec![callee2.loc],
             });
         };
-        let met = fields.get(&name.val).ok_or_else(|| Error {
-            msg: ErrorType::FieldNotFound(name.val, struct_name),
-            lines: vec![loc],
-        })?.clone();
+        let met = fields
+            .get(&name.val)
+            .ok_or_else(|| Error {
+                msg: ErrorType::FieldNotFound(name.val, struct_name),
+                lines: vec![loc],
+            })?
+            .clone();
 
         match met {
             ValueType::NativeFunction(func) => self.call_fn_native(func, args2, loc),
@@ -422,7 +439,6 @@ impl Interpreter {
             }),
         }
     }
-
 
     fn call_fn(
         &mut self,
@@ -475,13 +491,11 @@ impl Interpreter {
 
     // btw the self is technically not needed
     // leaving it here for style for now
-    fn call_fn_native(
-        &self,
-        func: NativeFunction,
-        args: Vec<ValueType>,
-        loc: Location,
-    ) -> Result<ValueType, Error> {
-        func(args).map_err(|msg| Error { msg: ErrorType::NativeFunctionError(msg), lines: vec![loc] })
+    fn call_fn_native(&self, func: NativeFunction, args: Vec<ValueType>, loc: Location) -> Result<ValueType, Error> {
+        func(args).map_err(|msg| Error {
+            msg: ErrorType::NativeFunctionError(msg),
+            lines: vec![loc],
+        })
     }
 
     // btw the self is technically not needed 2
@@ -512,7 +526,8 @@ impl Interpreter {
             m.insert(k, v);
         }
 
-        let m2 = args.iter()
+        let m2 = args
+            .iter()
             .zip(fields)
             .map(|(a, f)| (f.val, a.clone()))
             .collect::<HashMap<_, _>>();

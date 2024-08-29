@@ -5,9 +5,7 @@ use std::fmt::Display;
 /// i.e. operators (both unary and binary) are changed into function calls
 /// function and operator declarations are changed into lambdas assigned to their respective
 /// identifier
-
 use crate::located::Located;
-
 
 pub type Identifier = Located<String>;
 
@@ -121,7 +119,10 @@ impl StmtType {
             Self::Return(expr) => format!("return {expr};"),
             Self::Break => "break;".to_string(),
             Self::Continue => "continue;".to_string(),
-            Self::Struct(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::Struct(name, fields) => format!(
+                "struct {name} {{ {} }}",
+                fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")
+            ),
             Self::AssignStruct(expr1, name, expr2) => format!("{expr1}.{} = {expr2}", name.val),
             Self::Impl(name, block) => format!(
                 "impl {name} {{\n{block}\n}}",

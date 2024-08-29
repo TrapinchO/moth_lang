@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::time::SystemTime;
 
-use crate::associativity::{Associativity, Precedence};
 use super::lowexprstmt::{Identifier, Stmt};
+use crate::associativity::{Associativity, Precedence};
 use crate::located::Located;
 use crate::mref::{MList, MMap};
 
@@ -45,11 +45,20 @@ impl ValueType {
                 body.iter().map(|s| format!("{s}")).collect::<Vec<_>>().join(", ")
             ),
             Self::Unit => "()".to_string(),
-            Self::Struct(name, fields, _) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::Struct(name, fields, _) => format!(
+                "struct {name} {{ {} }}",
+                fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")
+            ),
             Self::Instance(name, map) => format!(
                 "{}({})",
                 name,
-                map.read(|m| format!("{{ {} }}", m.iter().map(|(k, v)| format!("{k}: {v}")).collect::<Vec<_>>().join(", ")))
+                map.read(|m| format!(
+                    "{{ {} }}",
+                    m.iter()
+                        .map(|(k, v)| format!("{k}: {v}"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
             ),
         }
     }
@@ -68,7 +77,7 @@ pub type Value = Located<ValueType>;
 // then make them call native functions with "mothNative" or something
 // see https://github.com/ElaraLang/elara/blob/master/prim.elr
 // PIE anyone?
-// 
+//
 // TODO: also move the vars in error messages into the string some time
 //
 // NOTE: btw clippy complains about usize being cast to i32, just so you know

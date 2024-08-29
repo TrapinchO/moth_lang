@@ -1,18 +1,18 @@
 use std::{collections::HashMap, time::Instant};
 
-use error::Error;
 use backend::interpreter::Interpreter;
-use located::Location;
 use backend::value::{get_builtins, NATIVE_OPERATORS};
+use error::Error;
+use located::Location;
 
 pub mod associativity;
+pub mod backend;
 pub mod environment;
 pub mod error;
 pub mod exprstmt;
 pub mod frontend;
-pub mod middle;
-pub mod backend;
 pub mod located;
+pub mod middle;
 pub mod mref;
 mod visitor;
 
@@ -44,7 +44,8 @@ pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<
             .map(|(name, assoc, _)| (name.to_string(), assoc))
             .into(),
         ast,
-    ).map_err(|e| vec![e])?;
+    )
+    .map_err(|e| vec![e])?;
     /*
     eprintln!("===== reassociating =====");
     for s in &resassoc {

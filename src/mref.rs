@@ -42,7 +42,6 @@ impl<T: Debug> Debug for MRef<T> {
     }
 }
 
-
 pub type MMap<T> = MRef<HashMap<String, T>>;
 impl<T: Clone> MMap<T> {
     pub fn insert(&mut self, key: String, val: T) {
@@ -92,7 +91,6 @@ impl<T: Clone> Iterator for MMapIter<T> {
     }
 }
 
-
 pub type MList = MRef<Vec<Value>>;
 impl MList {
     pub fn modify(&mut self, idx: usize, val: Value) {
@@ -117,10 +115,16 @@ impl MList {
     // NOTE: for future me, this is also used for indexing strings
     pub fn check_index(idx: i32, length: usize) -> Option<usize> {
         if idx < 0 {
-            if (idx.unsigned_abs() as usize) > length { None }
-            else { Some(length - (idx.unsigned_abs() as usize)) }
-        } else if (idx as usize) >= length { None }
-        else { Some(idx as usize) }
+            if (idx.unsigned_abs() as usize) > length {
+                None
+            } else {
+                Some(length - (idx.unsigned_abs() as usize))
+            }
+        } else if (idx as usize) >= length {
+            None
+        } else {
+            Some(idx as usize)
+        }
     }
 }
 struct MListIter {

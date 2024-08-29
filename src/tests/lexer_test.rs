@@ -1,4 +1,9 @@
-use crate::{error::{Error, ErrorType}, frontend::lexer::lex, located::Location, frontend::token::*};
+use crate::{
+    error::{Error, ErrorType},
+    frontend::lexer::lex,
+    frontend::token::*,
+    located::Location,
+};
 
 #[test]
 fn lex_empty() {
@@ -120,7 +125,7 @@ fn lex_string_err() {
                 Error {
                     msg: ErrorType::StringEof,
                     lines: vec![Location { start: 6, end: 7 }],
-                }
+                },
             ],
         ),
     ];

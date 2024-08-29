@@ -1,4 +1,8 @@
-use crate::{associativity::Precedence, error::ErrorType, exprstmt::{Expr, ExprType, Identifier, Stmt, StmtType, Symbol}};
+use crate::{
+    associativity::Precedence,
+    error::ErrorType,
+    exprstmt::{Expr, ExprType, Identifier, Stmt, StmtType, Symbol},
+};
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
@@ -96,13 +100,13 @@ fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
 use std::{collections::HashMap, vec};
 
 use crate::{
+    backend::value::{get_builtins, NATIVE_OPERATORS},
     error::Error,
     frontend::lexer::lex,
-    located::Location,
     frontend::parser::parse,
     frontend::reassoc,
     frontend::token::{Token, TokenType},
-    backend::value::{get_builtins, NATIVE_OPERATORS},
+    located::Location,
     middle::varcheck,
 };
 
@@ -409,21 +413,31 @@ fn test_nested_call() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Call(Expr {
-                    val: ExprType::Call(Expr {
-                        val: ExprType::Identifier("f".to_string()),
-                        loc: Location { start: 0, end: 0 },
-                    }.into(), vec![]),
-                    loc: Location { start: 0, end: 2 },
-                }.into(), vec![]),
-                loc: Location { start: 0, end: 4 },
-            }.into()),
+            val: StmtType::Expr(
+                Expr {
+                    val: ExprType::Call(
+                        Expr {
+                            val: ExprType::Call(
+                                Expr {
+                                    val: ExprType::Identifier("f".to_string()),
+                                    loc: Location { start: 0, end: 0 },
+                                }
+                                .into(),
+                                vec![]
+                            ),
+                            loc: Location { start: 0, end: 2 },
+                        }
+                        .into(),
+                        vec![]
+                    ),
+                    loc: Location { start: 0, end: 4 },
+                }
+                .into()
+            ),
             loc: Location { start: 0, end: 4 },
         }])
     )
 }
-
 
 #[test]
 fn test_nested_index() {
@@ -431,24 +445,35 @@ fn test_nested_index() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Index(Expr {
-                    val: ExprType::Index(Expr {
-                        val: ExprType::Identifier("x".to_string()),
-                        loc: Location { start: 0, end: 0 },
-                    }.into(),
-                    Expr {
-                        val: ExprType::Int(1),
-                        loc: Location { start: 2, end: 2 },
-                    }.into()),
-                    loc: Location { start: 0, end: 3 },
-                }.into(),
-                    Expr {
-                        val: ExprType::Int(1),
-                        loc: Location { start: 5, end: 5 },
-                    }.into()),
-                loc: Location { start: 0, end: 6 },
-            }.into()),
+            val: StmtType::Expr(
+                Expr {
+                    val: ExprType::Index(
+                        Expr {
+                            val: ExprType::Index(
+                                Expr {
+                                    val: ExprType::Identifier("x".to_string()),
+                                    loc: Location { start: 0, end: 0 },
+                                }
+                                .into(),
+                                Expr {
+                                    val: ExprType::Int(1),
+                                    loc: Location { start: 2, end: 2 },
+                                }
+                                .into()
+                            ),
+                            loc: Location { start: 0, end: 3 },
+                        }
+                        .into(),
+                        Expr {
+                            val: ExprType::Int(1),
+                            loc: Location { start: 5, end: 5 },
+                        }
+                        .into()
+                    ),
+                    loc: Location { start: 0, end: 6 },
+                }
+                .into()
+            ),
             loc: Location { start: 0, end: 6 },
         }])
     )
@@ -459,19 +484,17 @@ fn test_no_params() {
     let src = parse(lex("fun f() {}").unwrap());
     assert_eq!(
         src,
-        Ok(vec![
-           Stmt {
-               val: StmtType::FunDecl(
-                    Identifier {
-                        val: "f".to_string(),
-                        loc: Location { start: 4, end: 4 },
-                    },
-                    vec![],  // NO PARAMS
-                    vec![],
-               ),
-               loc: Location { start: 0, end: 9 },
-           }
-        ])
+        Ok(vec![Stmt {
+            val: StmtType::FunDecl(
+                Identifier {
+                    val: "f".to_string(),
+                    loc: Location { start: 4, end: 4 },
+                },
+                vec![], // NO PARAMS
+                vec![],
+            ),
+            loc: Location { start: 0, end: 9 },
+        }])
     );
 }
 
@@ -480,19 +503,20 @@ fn test_one_param() {
     let src = parse(lex("fun f(x) {}").unwrap());
     assert_eq!(
         src,
-        Ok(vec![
-           Stmt {
-               val: StmtType::FunDecl(
-                    Identifier {
-                        val: "f".to_string(),
-                        loc: Location { start: 4, end: 4 },
-                    },
-                    vec![Identifier { val: "x".to_string(), loc: Location { start: 6, end: 6 } }],
-                    vec![],
-               ),
-               loc: Location { start: 0, end: 10 },
-           }
-        ])
+        Ok(vec![Stmt {
+            val: StmtType::FunDecl(
+                Identifier {
+                    val: "f".to_string(),
+                    loc: Location { start: 4, end: 4 },
+                },
+                vec![Identifier {
+                    val: "x".to_string(),
+                    loc: Location { start: 6, end: 6 }
+                }],
+                vec![],
+            ),
+            loc: Location { start: 0, end: 10 },
+        }])
     );
 }
 
@@ -501,23 +525,30 @@ fn test_more_params() {
     let src = parse(lex("fun f(x, y, z) {}").unwrap());
     assert_eq!(
         src,
-        Ok(vec![
-           Stmt {
-               val: StmtType::FunDecl(
+        Ok(vec![Stmt {
+            val: StmtType::FunDecl(
+                Identifier {
+                    val: "f".to_string(),
+                    loc: Location { start: 4, end: 4 },
+                },
+                vec![
                     Identifier {
-                        val: "f".to_string(),
-                        loc: Location { start: 4, end: 4 },
+                        val: "x".to_string(),
+                        loc: Location { start: 6, end: 6 }
                     },
-                    vec![
-                        Identifier { val: "x".to_string(), loc: Location { start: 6, end: 6 } },
-                        Identifier { val: "y".to_string(), loc: Location { start: 9, end: 9 } },
-                        Identifier { val: "z".to_string(), loc: Location { start: 12, end: 12 } },
-                    ],
-                    vec![],
-               ),
-               loc: Location { start: 0, end: 16 },
-           }
-        ])
+                    Identifier {
+                        val: "y".to_string(),
+                        loc: Location { start: 9, end: 9 }
+                    },
+                    Identifier {
+                        val: "z".to_string(),
+                        loc: Location { start: 12, end: 12 }
+                    },
+                ],
+                vec![],
+            ),
+            loc: Location { start: 0, end: 16 },
+        }])
     );
 }
 
@@ -534,16 +565,22 @@ fn test_index_call() {
                             Expr {
                                 val: ExprType::List(vec![Expr {
                                     val: ExprType::Identifier("print".to_string()),
-                                    loc: Location { start: 1, end: 5 }, }]),
+                                    loc: Location { start: 1, end: 5 },
+                                }]),
                                 loc: Location { start: 0, end: 6 },
-                                }.into(),
+                            }
+                            .into(),
                             Expr {
                                 val: ExprType::Int(0),
                                 loc: Location { start: 8, end: 8 },
-                            }.into()),
+                            }
+                            .into()
+                        ),
                         loc: Location { start: 0, end: 9 },
-                    }.into(),
-                    vec![]),
+                    }
+                    .into(),
+                    vec![]
+                ),
                 loc: Location { start: 0, end: 11 },
             }),
             loc: Location { start: 0, end: 11 },
@@ -564,23 +601,28 @@ fn test_call_index() {
                             Expr {
                                 val: ExprType::List(vec![Expr {
                                     val: ExprType::Identifier("print".to_string()),
-                                    loc: Location { start: 1, end: 5 }, }]),
+                                    loc: Location { start: 1, end: 5 },
+                                }]),
                                 loc: Location { start: 0, end: 6 },
-                                }.into(),
-                            vec![],),
+                            }
+                            .into(),
+                            vec![],
+                        ),
                         loc: Location { start: 0, end: 8 },
-                    }.into(),
+                    }
+                    .into(),
                     Expr {
                         val: ExprType::Int(0),
                         loc: Location { start: 10, end: 10 },
-                    }.into()),
+                    }
+                    .into()
+                ),
                 loc: Location { start: 0, end: 11 },
             }),
             loc: Location { start: 0, end: 11 },
         }]),
     );
 }
-
 
 #[test]
 fn test_symbol_ident() {
@@ -604,19 +646,23 @@ fn test_paren_unary() {
         src,
         Ok(vec![Stmt {
             val: StmtType::Expr(Expr {
-                val: ExprType::Parens(Expr {
-                    val: ExprType::UnaryOperation(
-                        Symbol {
-                            val: "-".to_string(),
-                            loc: Location { start: 1, end: 1 }
-                        },
-                        Expr {
-                            val: ExprType::Int(1),
-                            loc: Location { start: 2, end: 2 },
-                        }.into(),
-                    ),
-                    loc: Location { start: 1, end: 2 },
-                }.into()),
+                val: ExprType::Parens(
+                    Expr {
+                        val: ExprType::UnaryOperation(
+                            Symbol {
+                                val: "-".to_string(),
+                                loc: Location { start: 1, end: 1 }
+                            },
+                            Expr {
+                                val: ExprType::Int(1),
+                                loc: Location { start: 2, end: 2 },
+                            }
+                            .into(),
+                        ),
+                        loc: Location { start: 1, end: 2 },
+                    }
+                    .into()
+                ),
                 loc: Location { start: 0, end: 3 },
             }),
             loc: Location { start: 0, end: 3 },
@@ -638,7 +684,8 @@ fn test_assingment() {
                 Expr {
                     val: ExprType::Int(1),
                     loc: Location { start: 4, end: 4 },
-                }),
+                }
+            ),
             loc: Location { start: 0, end: 4 },
         }])
     )
@@ -662,7 +709,8 @@ fn test_assingment_index() {
                 Expr {
                     val: ExprType::Int(1),
                     loc: Location { start: 7, end: 7 },
-                }),
+                }
+            ),
             loc: Location { start: 0, end: 7 },
         }])
     )
@@ -679,7 +727,6 @@ fn test_assingment_error() {
         }])
     )
 }
-
 
 #[test]
 fn list_empty() {
@@ -703,12 +750,10 @@ fn list_one() {
         src,
         Ok(vec![Stmt {
             val: StmtType::Expr(Expr {
-                val: ExprType::List(vec![
-                    Expr {
-                        val: ExprType::Int(1),
-                        loc: Location { start: 1, end: 1 },
-                    }
-                ]),
+                val: ExprType::List(vec![Expr {
+                    val: ExprType::Int(1),
+                    loc: Location { start: 1, end: 1 },
+                }]),
                 loc: Location { start: 0, end: 2 },
             }),
             loc: Location { start: 0, end: 2 },
@@ -719,12 +764,10 @@ fn list_one() {
         src,
         Ok(vec![Stmt {
             val: StmtType::Expr(Expr {
-                val: ExprType::List(vec![
-                    Expr {
-                        val: ExprType::Int(1),
-                        loc: Location { start: 1, end: 1 },
-                    }
-                ]),
+                val: ExprType::List(vec![Expr {
+                    val: ExprType::Int(1),
+                    loc: Location { start: 1, end: 1 },
+                }]),
                 loc: Location { start: 0, end: 4 },
             }),
             loc: Location { start: 0, end: 4 },
@@ -763,24 +806,38 @@ fn unary_parenthesis() {
         src,
         Ok(vec![Stmt {
             val: StmtType::Expr(Expr {
-                val: ExprType::Parens(Expr {
-                    val: ExprType::BinaryOperation(
-                        Expr {
-                            val: ExprType::UnaryOperation(
-                                Symbol { val: "-".to_string(), loc: Location { start: 1, end: 1 } },
-                                Expr {
-                                    val: ExprType::Int(10),
-                                    loc: Location { start: 2, end: 3 }
-                            }.into()),
-                            loc: Location { start: 1, end: 3 },
-                        }.into(),
-                        Symbol { val: "*".to_string(), loc: Location { start: 5, end: 5 } },
-                        Expr {
-                            val: ExprType::Int(10),
-                            loc: Location { start: 7, end: 8 },
-                        }.into()),
-                    loc: Location { start: 1, end: 8 }
-                }.into()),
+                val: ExprType::Parens(
+                    Expr {
+                        val: ExprType::BinaryOperation(
+                            Expr {
+                                val: ExprType::UnaryOperation(
+                                    Symbol {
+                                        val: "-".to_string(),
+                                        loc: Location { start: 1, end: 1 }
+                                    },
+                                    Expr {
+                                        val: ExprType::Int(10),
+                                        loc: Location { start: 2, end: 3 }
+                                    }
+                                    .into()
+                                ),
+                                loc: Location { start: 1, end: 3 },
+                            }
+                            .into(),
+                            Symbol {
+                                val: "*".to_string(),
+                                loc: Location { start: 5, end: 5 }
+                            },
+                            Expr {
+                                val: ExprType::Int(10),
+                                loc: Location { start: 7, end: 8 },
+                            }
+                            .into()
+                        ),
+                        loc: Location { start: 1, end: 8 }
+                    }
+                    .into()
+                ),
                 loc: Location { start: 0, end: 9 },
             }),
             loc: Location { start: 0, end: 9 },
@@ -794,16 +851,25 @@ fn lambda() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Lambda(vec![], vec![Stmt {
-                    val: StmtType::Return(Expr {
-                        val: ExprType::Int(1),
-                        loc: Location { start: 3, end: 3 },
-                    }.into()),
-                    loc: Location { start: 3, end: 3 },
-                }]),
-                loc: Location { start: 0, end: 3 },
-            }.into()),
+            val: StmtType::Expr(
+                Expr {
+                    val: ExprType::Lambda(
+                        vec![],
+                        vec![Stmt {
+                            val: StmtType::Return(
+                                Expr {
+                                    val: ExprType::Int(1),
+                                    loc: Location { start: 3, end: 3 },
+                                }
+                                .into()
+                            ),
+                            loc: Location { start: 3, end: 3 },
+                        }]
+                    ),
+                    loc: Location { start: 0, end: 3 },
+                }
+                .into()
+            ),
             loc: Location { start: 0, end: 3 },
         }])
     )
@@ -815,19 +881,34 @@ fn lambda_params() {
     assert_eq!(
         src,
         Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Lambda(vec![
-                    Identifier { val: "x".to_string(), loc: Location { start: 1, end: 1 } },
-                    Identifier { val: "y".to_string(), loc: Location { start: 4, end: 4 } },
-                ], vec![Stmt {
-                    val: StmtType::Return(Expr {
-                        val: ExprType::Unit,
-                        loc: Location { start: 7, end: 8 },
-                    }.into()),
-                    loc: Location { start: 7, end: 8 },
-                }]),
-                loc: Location { start: 0, end: 8 },
-            }.into()),
+            val: StmtType::Expr(
+                Expr {
+                    val: ExprType::Lambda(
+                        vec![
+                            Identifier {
+                                val: "x".to_string(),
+                                loc: Location { start: 1, end: 1 }
+                            },
+                            Identifier {
+                                val: "y".to_string(),
+                                loc: Location { start: 4, end: 4 }
+                            },
+                        ],
+                        vec![Stmt {
+                            val: StmtType::Return(
+                                Expr {
+                                    val: ExprType::Unit,
+                                    loc: Location { start: 7, end: 8 },
+                                }
+                                .into()
+                            ),
+                            loc: Location { start: 7, end: 8 },
+                        }]
+                    ),
+                    loc: Location { start: 0, end: 8 },
+                }
+                .into()
+            ),
             loc: Location { start: 0, end: 8 },
         }])
     )

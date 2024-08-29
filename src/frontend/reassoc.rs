@@ -1,6 +1,13 @@
 use std::collections::HashMap;
 
-use crate::{associativity::{Associativity, Precedence}, error::Error, error::ErrorType, exprstmt::*, located::Location, visitor::{ExprVisitor, StmtVisitor}};
+use crate::{
+    associativity::{Associativity, Precedence},
+    error::Error,
+    error::ErrorType,
+    exprstmt::*,
+    located::Location,
+    visitor::{ExprVisitor, StmtVisitor},
+};
 
 pub fn reassociate(ops: HashMap<String, Precedence>, stmt: Vec<Stmt>) -> Result<Vec<Stmt>, Error> {
     let mut reassoc = Reassociate { ops };
@@ -111,11 +118,7 @@ impl StmtVisitor<Stmt> for Reassociate {
     }
     fn assignindex(&mut self, loc: Location, ls: Expr, idx: Expr, val: Expr) -> Result<Stmt, Error> {
         Ok(Stmt {
-            val: StmtType::AssignIndex(
-                self.visit_expr(ls)?,
-                self.visit_expr(idx)?,
-                self.visit_expr(val)?
-            ),
+            val: StmtType::AssignIndex(self.visit_expr(ls)?, self.visit_expr(idx)?, self.visit_expr(val)?),
             loc,
         })
     }
@@ -308,10 +311,7 @@ impl ExprVisitor<Expr> for Reassociate {
     }
     fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<Expr, Error> {
         Ok(Expr {
-            val: ExprType::Index(
-                 self.visit_expr(expr2)?.into(),
-                 self.visit_expr(idx)?.into()
-            ),
+            val: ExprType::Index(self.visit_expr(expr2)?.into(), self.visit_expr(idx)?.into()),
             loc,
         })
     }

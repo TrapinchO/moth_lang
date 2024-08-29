@@ -1,12 +1,12 @@
 use std::{mem, vec};
 
+use super::token::{Token, TokenType};
 use crate::{
     associativity::{Associativity, Precedence},
     error::{Error, ErrorType},
     exprstmt::*,
     located::{Located, Location},
 };
-use super::token::{Token, TokenType};
 
 macro_rules! check_variant {
     ($self:ident, $variant:ident $( ( $($pattern:pat),+ ) )?, $msg:literal) => {
@@ -45,9 +45,15 @@ struct Parser {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        assert!(!(tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof),
-                "Expected code to parse");
-        Self { tokens, idx: 0, errs: vec![] }
+        assert!(
+            !(tokens.is_empty() || tokens.len() == 1 && tokens[0].val == TokenType::Eof),
+            "Expected code to parse"
+        );
+        Self {
+            tokens,
+            idx: 0,
+            errs: vec![],
+        }
     }
 
     fn is_at_end(&self) -> bool {
@@ -60,7 +66,8 @@ impl Parser {
             !self.is_at_end(),
             "Attempted to index token out ouf bounds: {} (length {})",
             self.idx,
-            self.tokens.len());
+            self.tokens.len()
+        );
 
         &self.tokens[self.idx]
     }
@@ -69,7 +76,7 @@ impl Parser {
         if self.idx + n >= self.tokens.len() {
             None
         } else {
-            Some(&self.tokens[self.idx+n])
+            Some(&self.tokens[self.idx + n])
         }
     }
 
@@ -89,7 +96,7 @@ impl Parser {
 
     /// parses an array of items surrounded by opening and closing tokens and delimited by a comma
     /// supports trailing comma
-    /// 
+    ///
     /// "()" // ok
     /// "(a)" // ok
     /// "(a, b)" // ok
@@ -99,7 +106,12 @@ impl Parser {
     ///
     /// "[]" // ok
     /// "[1+1]" // ok
-    fn sep<R>(&mut self, start_tok: TokenType, end_tok: TokenType, f: fn(&mut Self) -> Result<R, Error>) -> Result<(Vec<R>, Location), Error> {
+    fn sep<R>(
+        &mut self,
+        start_tok: TokenType,
+        end_tok: TokenType,
+        f: fn(&mut Self) -> Result<R, Error>,
+    ) -> Result<(Vec<R>, Location), Error> {
         // TODO: fix hack
         // funnily enough, my new system with macros broke this one
         fn cmp(this: &TokenType, other: &TokenType) -> bool {
@@ -235,7 +247,7 @@ impl Parser {
                     val: StmtType::Block(bl.val),
                     loc: bl.loc,
                 })
-            },
+            }
             _ => self.parse_assignment(),
         }
     }
@@ -353,11 +365,11 @@ impl Parser {
                 if force_operator {
                     return Err(Error {
                         msg: ErrorType::InvalidOperatorname,
-                        lines: vec![tok.loc]
-                    })
+                        lines: vec![tok.loc],
+                    });
                 }
                 (false, name)
-            },
+            }
             TokenType::Symbol(name) => (true, name),
             _ => {
                 return Err(Error {
@@ -368,10 +380,7 @@ impl Parser {
         };
         self.advance();
 
-        let (params, _) = self.sep(
-            TokenType::LParen, TokenType::RParen,
-            Self::parse_ident,
-        )?;
+        let (params, _) = self.sep(TokenType::LParen, TokenType::RParen, Self::parse_ident)?;
         let block = self.parse_block()?;
         // TODO: horrible cheating, but eh
         if !op {
@@ -391,13 +400,19 @@ impl Parser {
             };
             Ok(Stmt {
                 val: StmtType::OperatorDecl(
-                    Symbol { val: name, loc: tok.loc },
-                    (param1.clone(), param2.clone()), block.val,
-                    Precedence { prec: 0, assoc: Associativity::Left }
+                    Symbol {
+                        val: name,
+                        loc: tok.loc,
+                    },
+                    (param1.clone(), param2.clone()),
+                    block.val,
+                    Precedence {
+                        prec: 0,
+                        assoc: Associativity::Left,
+                    },
                 ),
                 loc: Location { start, end: block.loc.end }
             })
-            
         }
     }
 
@@ -412,25 +427,44 @@ impl Parser {
         // TODO: better matching for errors
         let prec = self.get_current().clone();
         let prec2 = match prec.val {
-            TokenType::Int(n @ 0..=10) => { n },
-            TokenType::Int(n) => return Err(Error {
-                msg: ErrorType::PrecedenceOutOfRange(n),
-                lines: vec![prec.loc],
-            }),
-            _ => return Err(Error {
-                msg: ErrorType::InvalidPrecedence,
-                lines: vec![prec.loc],
-            })
+            TokenType::Int(n @ 0..=10) => n,
+            TokenType::Int(n) => {
+                return Err(Error {
+                    msg: ErrorType::PrecedenceOutOfRange(n),
+                    lines: vec![prec.loc],
+                })
+            }
+            _ => {
+                return Err(Error {
+                    msg: ErrorType::InvalidPrecedence,
+                    lines: vec![prec.loc],
+                })
+            }
         };
         self.advance();
         // because we set the flag we know it WILL be an operator
         // basically all we need to do is replace the associativity and starting location
-        let Stmt { val: StmtType::OperatorDecl(name, params, block, _), loc } = self.parse_fun(true)? else { unreachable!() };
+        let Stmt {
+            val: StmtType::OperatorDecl(name, params, block, _),
+            loc,
+        } = self.parse_fun(true)?
+        else {
+            unreachable!()
+        };
         Ok(Stmt {
             val: StmtType::OperatorDecl(
-                    name, params, block,
-                    Precedence { prec: prec2 as u8, assoc }),
-            loc: Location { start: kw.loc.start, end: loc.end }
+                name,
+                params,
+                block,
+                Precedence {
+                    prec: prec2 as u8,
+                    assoc,
+                },
+            ),
+            loc: Location {
+                start: kw.loc.start,
+                end: loc.end,
+            },
         })
     }
 
@@ -501,7 +535,7 @@ impl Parser {
             if !matches!(s.val, StmtType::FunDecl(..)) {
                 return Err(Error {
                     msg: ErrorType::OtherError("Only function definitions are allowed".to_string()),
-                    lines: vec![s.loc]
+                    lines: vec![s.loc],
                 });
             }
         }
@@ -518,7 +552,11 @@ impl Parser {
     fn parse_binary(&mut self) -> Result<Expr, Error> {
         let left = self.parse_unary()?;
         // if it is a symbol, look for nested binary operator
-        if let Token { val: TokenType::Symbol(sym_name), loc } = self.get_current().clone() {
+        if let Token {
+            val: TokenType::Symbol(sym_name),
+            loc,
+        } = self.get_current().clone()
+        {
             self.advance();
 
             let right = self.parse_binary()?;
@@ -527,11 +565,7 @@ impl Parser {
                     start: left.loc.start,
                     end: right.loc.end,
                 },
-                val: ExprType::BinaryOperation(
-                    left.into(),
-                    Symbol { val: sym_name, loc },
-                    right.into()
-                ),
+                val: ExprType::BinaryOperation(left.into(), Symbol { val: sym_name, loc }, right.into()),
             })
         } else {
             Ok(left)
@@ -539,13 +573,16 @@ impl Parser {
     }
 
     fn parse_unary(&mut self) -> Result<Expr, Error> {
-        let Token { val: TokenType::Symbol(sym), loc } = self.get_current().clone() else {
-            return self.parse_suffix()
+        let Token {
+            val: TokenType::Symbol(sym),
+            loc,
+        } = self.get_current().clone()
+        else {
+            return self.parse_suffix();
         };
         if sym.as_str() == "||" {
-            return self.parse_lambda(false)
-        }
-        else if !["-", "!"].contains(&sym.as_str()) {
+            return self.parse_lambda(false);
+        } else if !["-", "!"].contains(&sym.as_str()) {
             return Err(Error {
                 msg: ErrorType::UnknownUnaryOperator,
                 lines: vec![loc],
@@ -558,9 +595,7 @@ impl Parser {
                 start: loc.start,
                 end: expr.loc.end,
             },
-            val: ExprType::UnaryOperation(
-                Symbol { val: sym, loc },
-                expr.into()),
+            val: ExprType::UnaryOperation(Symbol { val: sym, loc }, expr.into()),
         })
     }
 
@@ -573,10 +608,7 @@ impl Parser {
         loop {
             match self.get_current().val {
                 TokenType::LParen => {
-                    let (args, loc) = self.sep(
-                        TokenType::LParen, TokenType::RParen,
-                        Self::parse_expression
-                    )?;
+                    let (args, loc) = self.sep(TokenType::LParen, TokenType::RParen, Self::parse_expression)?;
                     expr = Expr {
                         loc: Location { start, end: loc.end },
                         val: ExprType::Call(expr.into(), args),
@@ -594,11 +626,10 @@ impl Parser {
                 TokenType::Dot => {
                     self.advance();
                     let name = self.parse_ident()?;
-                    if is_typ!(self, LParen) { // check if it is a method (needs special treatment)
-                        let (params, end_loc) = self.sep(
-                            TokenType::LParen, TokenType::RParen,
-                            Self::parse_expression,
-                        )?;
+                    if is_typ!(self, LParen) {
+                        // check if it is a method (needs special treatment)
+                        let (params, end_loc) =
+                            self.sep(TokenType::LParen, TokenType::RParen, Self::parse_expression)?;
                         expr = Expr {
                             loc: Location { start, end: end_loc.end },
                             val: ExprType::MethodAccess(expr.into(), name, params),
@@ -624,10 +655,7 @@ impl Parser {
     fn parse_lambda(&mut self, has_params: bool) -> Result<Expr, Error> {
         let start = self.get_current().loc.start;
         let params = if has_params {
-            self.sep(
-                TokenType::Pipe, TokenType::Pipe,
-                Self::parse_ident
-            )?.0
+            self.sep(TokenType::Pipe, TokenType::Pipe, Self::parse_ident)?.0
         } else {
             self.advance(); // go past the ||
             vec![]
@@ -640,14 +668,17 @@ impl Parser {
             let expr = self.parse_expression()?;
             let loc = expr.loc.end;
             // same as { return expr; }
-            (vec![Stmt {
-                loc: expr.loc,
-                val: StmtType::Return(expr),
-            }], loc)
+            (
+                vec![Stmt {
+                    loc: expr.loc,
+                    val: StmtType::Return(expr),
+                }],
+                loc,
+            )
         };
         Ok(Expr {
             val: ExprType::Lambda(params, body),
-            loc: Location { start, end: end_loc }
+            loc: Location { start, end: end_loc },
         })
     }
 
@@ -682,16 +713,20 @@ impl Parser {
                 self.advance();
                 let next = self.get_current().clone();
                 let val = match next.val {
-                    TokenType::RParen => {
-                        ExprType::Unit
-                    },
-                    TokenType::Symbol(sym) if matches!(self.peek(1), Some(Token { val: TokenType::RParen, .. })) => {
+                    TokenType::RParen => ExprType::Unit,
+                    TokenType::Symbol(sym)
+                        if matches!(
+                            self.peek(1),
+                            Some(Token {
+                                val: TokenType::RParen,
+                                ..
+                            })
+                        ) =>
+                    {
                         self.advance();
                         ExprType::Identifier(sym)
-                    },
-                    _ => {
-                        ExprType::Parens(self.parse_expression()?.into())
                     }
+                    _ => ExprType::Parens(self.parse_expression()?.into()),
                 };
                 let end = check_variant!(self, RParen, "Expected a closing parenthesis")?.loc.end;
                 return Ok(Expr {
@@ -703,10 +738,7 @@ impl Parser {
                 });
             }
             TokenType::LBracket => {
-                let (items, loc) = self.sep(
-                    TokenType::LBracket, TokenType::RBracket,
-                    Self::parse_expression
-                )?;
+                let (items, loc) = self.sep(TokenType::LBracket, TokenType::RBracket, Self::parse_expression)?;
                 return Ok(Expr {
                     loc,
                     val: ExprType::List(items),

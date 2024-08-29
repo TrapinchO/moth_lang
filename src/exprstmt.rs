@@ -136,7 +136,10 @@ impl StmtType {
             Self::Return(expr) => format!("return {expr};"),
             Self::Break => "break;".to_string(),
             Self::Continue => "continue;".to_string(),
-            Self::Struct(name, fields) => format!("struct {name} {{ {} }}", fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")),
+            Self::Struct(name, fields) => format!(
+                "struct {name} {{ {} }}",
+                fields.iter().map(|s| s.to_string()).collect::<Vec<_>>().join(", ")
+            ),
             Self::AssignStruct(expr1, name, expr2) => format!("{expr1}.{} = {expr2}", name.val),
             Self::Impl(name, block) => format!(
                 "impl {name} {{\n{block}\n}}",

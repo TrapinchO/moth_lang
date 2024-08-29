@@ -1,6 +1,6 @@
 use crate::backend::interpreter::Interpreter;
-use crate::run;
 use crate::backend::value::{get_builtins, ValueType};
+use crate::run;
 
 fn run_code(code: &str, val: &str) -> Option<ValueType> {
     let mut interp = Interpreter::new(get_builtins());
@@ -17,17 +17,11 @@ fn blank() {
 
 #[test]
 fn unit() {
-    assert_eq!(
-        run_code("let x = ();", "x"),
-        Some(ValueType::Unit)
-    );
+    assert_eq!(run_code("let x = ();", "x"), Some(ValueType::Unit));
 }
 #[test]
 fn expr() {
-    assert_eq!(
-        run_code("let x = 1 + 2 * 2 - 6 / 3;", "x"),
-        Some(ValueType::Int(3))
-    );
+    assert_eq!(run_code("let x = 1 + 2 * 2 - 6 / 3;", "x"), Some(ValueType::Int(3)));
 }
 
 #[test]
@@ -53,7 +47,8 @@ fn t2() {
 #[test]
 fn apply_fun() {
     assert_eq!(
-        run_code("
+        run_code(
+            "
 fun fact(n) {
     let total = 1;
     while n > 1 {
@@ -78,7 +73,8 @@ let x = (fact << len)([1, 2, 3, 4]);",
 #[test]
 fn closure() {
     assert_eq!(
-        run_code("
+        run_code(
+            "
 fun n() {
     let x = 0;
     fun g() {
@@ -92,23 +88,23 @@ f();
 f();
 f();
 f();
-let x = f();", "x"),
+let x = f();",
+            "x"
+        ),
         Some(ValueType::Int(5))
     )
 }
 
 #[test]
 fn unary_operators() {
-    assert_eq!(
-        run_code("let x = !(1 * 10 == -10);", "x"),
-        Some(ValueType::Bool(true))
-    )
+    assert_eq!(run_code("let x = !(1 * 10 == -10);", "x"), Some(ValueType::Bool(true)))
 }
 
 #[test]
 fn structs() {
     assert_eq!(
-        run_code("
+        run_code(
+            "
 struct Point {
     x,
     y,
@@ -116,7 +112,9 @@ struct Point {
 let p = Point(1, -20);
 p.x = 10 * 2 + 20;
 let x = p.x + p.y;
-            ", "x"),
+            ",
+            "x"
+        ),
         Some(ValueType::Int(20))
     )
 }
@@ -124,14 +122,17 @@ let x = p.x + p.y;
 #[test]
 fn unknown_field() {
     assert_eq!(
-        run_code("
+        run_code(
+            "
 struct Point {
     x,
     y,
 }
 let p = Point(1, -20);
 p.z;
-            ", "x"),
+            ",
+            "x"
+        ),
         None
     )
 }
@@ -139,7 +140,8 @@ p.z;
 #[test]
 fn impls() {
     assert_eq!(
-        run_code("
+        run_code(
+            "
 struct Point {
     x, y,
 }
@@ -156,8 +158,9 @@ impl Point {
 let p = Point(1, 2);
 p.scale(3);
 let x = p.manhattan();
-            ", "x"),
+            ",
+            "x"
+        ),
         Some(ValueType::Int(9))
     );
 }
-

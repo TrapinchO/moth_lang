@@ -1,8 +1,8 @@
+use super::token::{Token, TokenType};
 use crate::{
     error::{Error, ErrorType},
     located::{Located, Location},
 };
-use super::token::{Token, TokenType};
 
 const SYMBOLS: &str = "+-*/=<>!|.$&@#?~^:%";
 
@@ -65,8 +65,11 @@ impl Lexer {
     }
 
     fn get_current(&self) -> char {
-        assert!(!self.is_at_end(),
-                "Attempted to index character out of bounds: {}", self.idx);
+        assert!(
+            !self.is_at_end(),
+            "Attempted to index character out of bounds: {}",
+            self.idx
+        );
         self.code[self.idx]
     }
 
@@ -102,13 +105,11 @@ impl Lexer {
                     self.advance();
                     continue;
                 }
-                '\"' => {
-                    match self.lex_string() {
-                        Ok(s) => TokenType::String(s),
-                        Err(err) => {
-                            self.errs.push(err);
-                            continue
-                        }
+                '\"' => match self.lex_string() {
+                    Ok(s) => TokenType::String(s),
+                    Err(err) => {
+                        self.errs.push(err);
+                        continue;
                     }
                 },
                 num if num.is_ascii_digit() => {
@@ -116,7 +117,10 @@ impl Lexer {
                     // no spaces, missing whole/decimal part
                     match self.lex_number() {
                         Ok(n) => n,
-                        Err(err) => { self.errs.push(err); continue},
+                        Err(err) => {
+                            self.errs.push(err);
+                            continue;
+                        }
                     }
                 }
                 ident if ident.is_alphabetic() || ident == '_' => {
@@ -142,7 +146,7 @@ impl Lexer {
                         // TODO: error underlines the following symbol as well
                         _ if sym.ends_with("*/") && sym[..sym.len() - 2].chars().all(|s| s == '*') => {
                             self.errs.push(self.error(ErrorType::CommentSymbol));
-                            continue
+                            continue;
                         }
                         // it is a comment if it stars with /* and has only stars afterwards
                         _ if sym.starts_with("/*") && sym[2..].chars().all(|s| s == '*') => {
@@ -163,7 +167,7 @@ impl Lexer {
                 unknown => {
                     self.errs.push(self.error(ErrorType::UnknownCharacter(unknown)));
                     self.advance();
-                    continue
+                    continue;
                 }
             };
             tokens.push(Located {
@@ -222,15 +226,9 @@ impl Lexer {
         }
         Ok(if is_float {
             // TODO: overflows behaving funny
-            TokenType::Float(
-                num.parse::<f32>()
-                    .map_err(|_| self.error(ErrorType::IntegerOverflow))?,
-            )
+            TokenType::Float(num.parse::<f32>().map_err(|_| self.error(ErrorType::IntegerOverflow))?)
         } else {
-            TokenType::Int(
-                num.parse::<i32>()
-                    .map_err(|_| self.error(ErrorType::IntegerOverflow))?,
-            )
+            TokenType::Int(num.parse::<i32>().map_err(|_| self.error(ErrorType::IntegerOverflow))?)
         })
     }
 
@@ -273,14 +271,14 @@ impl Lexer {
                     // move behind the closing quote
                     self.advance();
                     return Ok(s);
-                },
+                }
                 '\n' => {
                     return Err(self.error(ErrorType::StringEol));
-                },
+                }
                 '\\' => {
                     self.advance();
                     if self.is_at_end() {
-                        return Err(self.error(ErrorType::StringEof))
+                        return Err(self.error(ErrorType::StringEof));
                     }
                     let escaped = match self.get_current() {
                         'n' => '\n',
