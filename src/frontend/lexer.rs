@@ -95,6 +95,18 @@ impl Lexer {
         }
     }
 
+    /// a compromise between messing up the methods and copy-pasting "error"s contents into them
+    /// special case for errors that are reported when the lexer has already moved on
+    /// e.g. CommentSymbol, Overflows or CommentEOF
+    /// which would have one extra character underlined
+    /// I could have just copied it here and have "self.idx-1", but I decided against it
+    fn error_minus_one(&mut self, msg: ErrorType) -> Error {
+        self.idx -= 1;
+        let val = self.error(msg);
+        self.idx += 1;
+        val
+    }
+
     pub fn lex(&mut self) -> Result<Vec<Token>, ()> {
         let mut tokens = vec![];
 
@@ -143,9 +155,9 @@ impl Lexer {
                         "?" => TokenType::QuestionMark,
                         "." => TokenType::Dot,
                         "|" => TokenType::Pipe,
-                        // TODO: error underlines the following symbol as well
                         _ if sym.ends_with("*/") && sym[..sym.len() - 2].chars().all(|s| s == '*') => {
-                            self.errs.push(self.error(ErrorType::CommentSymbol));
+                            let err = self.error_minus_one(ErrorType::CommentSymbol);
+                            self.errs.push(err);
                             continue;
                         }
                         // it is a comment if it stars with /* and has only stars afterwards
@@ -209,9 +221,10 @@ impl Lexer {
             // check if the number is a float
             else if self.is_char('.') {
                 // if it is just a decimal point (and not a symbol)
-                if self.idx < self.code.len() - 1 && !SYMBOLS.contains(self.code[self.idx + 1]) {
+                // or when it is at the end of the file
+                println!("{} {}", self.idx, self.code.len()-1);
+                if self.idx == self.code.len()-1 || (self.idx < self.code.len() - 1 && !SYMBOLS.contains(self.code[self.idx + 1])) {
                     if is_float {
-                        self.advance(); // for prettier error message
                         return Err(self.error(ErrorType::TwoDecimalPoints));
                     }
                     is_float = true;
@@ -226,9 +239,9 @@ impl Lexer {
         }
         Ok(if is_float {
             // TODO: overflows behaving funny
-            TokenType::Float(num.parse::<f32>().map_err(|_| self.error(ErrorType::IntegerOverflow))?)
+            TokenType::Float(num.parse::<f32>().map_err(|_| self.error_minus_one(ErrorType::IntegerOverflow))?)
         } else {
-            TokenType::Int(num.parse::<i32>().map_err(|_| self.error(ErrorType::IntegerOverflow))?)
+            TokenType::Int(num.parse::<i32>().map_err(|_| self.error_minus_one(ErrorType::IntegerOverflow))?)
         })
     }
 
@@ -336,6 +349,6 @@ impl Lexer {
         if state == 2 {
             return Ok(());
         }
-        Err(self.error(ErrorType::CommentEof))
+        Err(self.error_minus_one(ErrorType::CommentEof))
     }
 }

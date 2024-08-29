@@ -154,7 +154,7 @@ impl VarCheck {
             // NOTE: if let is not supported with additional conditions
             // check for dead code
             if i < blocks.len() - 1 {
-                if let ExprType::Bool(true) = cond.val {
+                if cond.val == ExprType::Bool(true) {
                     // TODO: skips the ELSE IF keywords, but otherwise done
                     let start = blocks[i + 1].0.loc.start;
                     self.warns.push(Error {
@@ -162,7 +162,7 @@ impl VarCheck {
                         lines: vec![cond.loc, Location { start, end: loc.end }],
                     });
                     break;
-                } else if let ExprType::Bool(false) = cond.val {
+                } else if cond.val  == ExprType::Bool(false) {
                     self.warns.push(Error {
                         msg: ErrorType::IfNeverExecutes,
                         lines: vec![cond.loc],
@@ -174,7 +174,7 @@ impl VarCheck {
         }
     }
     fn whiles(&mut self, _: Location, cond: &Expr, block: &Vec<Stmt>) {
-        if let ExprType::Bool(false) = cond.val {
+        if cond.val == ExprType::Bool(false) {
             self.warns.push(Error {
                 msg: ErrorType::LoopNeverExecutes,
                 lines: vec![cond.loc],

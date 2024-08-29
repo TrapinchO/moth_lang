@@ -39,7 +39,7 @@ fn lex_float_error() {
         lex("1.1.1"),
         Err(vec![Error {
             msg: ErrorType::TwoDecimalPoints,
-            lines: vec![Location { start: 0, end: 4 }]
+            lines: vec![Location { start: 0, end: 3 }]
         }])
     );
 }
@@ -441,7 +441,7 @@ fn comment_operator_invalid() {
         lex("fun */() {}"),
         Err(vec![Error {
             msg: ErrorType::CommentSymbol,
-            lines: vec![Location { start: 4, end: 6 }], // TODO: incorrect end location
+            lines: vec![Location { start: 4, end: 5 }],
         }])
     )
 }

@@ -20,6 +20,7 @@ pub enum ErrorType {
     TwoDecimalPoints,
     InvalidDigit(char),
     IntegerOverflow,
+    FloatOverflow,
     CommentEof,
     CommentSymbol,
     // parser
@@ -85,6 +86,7 @@ impl ErrorType {
             Self::TwoDecimalPoints => "Found two decimal delimiters".to_string(),
             Self::InvalidDigit(c) => format!("Invalid digit: \"{c}\""),
             Self::IntegerOverflow => "Integer overflow".to_string(),
+            Self::FloatOverflow => "Float overflow".to_string(),
             Self::CommentEof => "EOF while parsing block comment".to_string(),
             Self::CommentSymbol => "Block comment ending cannot be an operator".to_string(),
             // parser
@@ -104,7 +106,7 @@ impl ErrorType {
             //Self::ExpectedParameterName => "Expected a parameter name".to_string(),
             Self::ExpectedIdentifier => "Expected an identifier".to_string(),
             Self::ExpectedFieldName => "Expected a field name".to_string(),
-            ErrorType::ExpectedStructName => "Expected a struct name".to_string(),
+            Self::ExpectedStructName => "Expected a struct name".to_string(),
             // reassoc
             Self::OperatorNotFound(s) => format!("Operator not found: {s}"),
             Self::IncompatiblePrecedence(op1, prec1, op2, prec2) => format!("Incompatible operator precedence: \"{op1}\" ({prec1:?}) and \"{op2}\" ({prec2:?}) - both have precedence {}", prec1.prec),
@@ -145,7 +147,10 @@ impl ErrorType {
         // also more items will follow eventually
         #[allow(clippy::match_like_matches_macro)]
         match self {
-            Self::ItemNotUsed(_) => true,
+            Self::ItemNotUsed(_)
+            | Self::DeadCode
+            | Self::IfNeverExecutes
+            | Self::LoopNeverExecutes => true,
             _ => false,
         }
     }
