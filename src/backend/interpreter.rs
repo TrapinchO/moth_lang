@@ -48,21 +48,18 @@ impl Interpreter {
         // not really needed, but might make a bit less mess when debugging
         self.add_scope();
         for s in stmts {
-            match self.visit_stmt(s.clone()) {
-                Ok(..) => {}
-                Err(err) => {
-                    let msg = match err.val {
-                        InterpErrorType::Error(error) => return Err(error),
-                        InterpErrorType::Return(_) => ErrorType::ReturnOutsideFunction,
-                        InterpErrorType::Break => ErrorType::BreakOutsideLoop,
-                        InterpErrorType::Continue => ErrorType::ContinueOutsideLoop,
-                    };
-                    return Err(Error {
-                        msg,
-                        lines: vec![err.loc],
-                    });
-                }
-            };
+            if let Err(err) = self.visit_stmt(s) {
+                let msg = match err.val {
+                    InterpErrorType::Error(error) => return Err(error),
+                    InterpErrorType::Return(_) => ErrorType::ReturnOutsideFunction,
+                    InterpErrorType::Break => ErrorType::BreakOutsideLoop,
+                    InterpErrorType::Continue => ErrorType::ContinueOutsideLoop,
+                };
+                return Err(Error {
+                    msg,
+                    lines: vec![err.loc],
+                });
+            }
         }
         Ok(())
     }
@@ -83,12 +80,9 @@ impl Interpreter {
     fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), InterpError> {
         self.add_scope();
         for s in block {
-            match self.visit_stmt(s) {
-                Ok(()) => {}
-                Err(err) => {
-                    self.remove_scope();
-                    return Err(err);
-                }
+            if let Err(err) = self.visit_stmt(s) {
+                self.remove_scope();
+                return Err(err);
             }
         }
         self.remove_scope();
@@ -196,14 +190,13 @@ impl Interpreter {
             if !b {
                 break;
             }
-            match self.interpret_block(block.clone()) {
-                Ok(()) => {}
-                Err(err) => match err.val {
+            if let Err(err) = self.interpret_block(block.clone()) {
+                match err.val {
                     InterpErrorType::Error(_) => return Err(err),
                     InterpErrorType::Return(_) => return Err(err),
                     InterpErrorType::Continue => continue,
                     InterpErrorType::Break => break,
-                },
+                };
             }
         }
         Ok(())
