@@ -24,3 +24,5 @@ The AST is simplified into minimal instruction set. Notably, all operators are c
 Also features basic constant folding for integers and floats.
 
 # Interpreting
+Walks down the simplified AST and executes it.
+
