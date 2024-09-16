@@ -47,7 +47,7 @@ x[-1]; // valid - gets 5
 x[1] = 100; // sets 2nd value to 100
 ```
 
-NOTE: until proper types are implemented, the lists do not have to be homogenic.
+NOTE: until proper types are implemented, the lists do not have to be homogeneous.
 
 ## Unit
 The unit type has a single value, `()`. Just like Rust, it is used when there is no meaningful value to be used. Functions by default return unit.
@@ -199,6 +199,7 @@ fun test(a, b, s) {
         return;
     }
     return a / b;
+}
 ```
 
 Functions are called just like in C-style languages.
@@ -214,7 +215,7 @@ Similarly to Haskell operators can have a custom precedence and associativity. H
 ```rs
 // valid
 fun ++(a, b) {
-    return a + a + b +b;
+    return a + a + b + b;
 }
 
 // also valid
