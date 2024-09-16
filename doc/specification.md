@@ -49,9 +49,8 @@ x[1] = 100; // sets 2nd value to 100
 
 NOTE: until proper types are implemented, the lists do not have to be homogenic.
 
-## Other types
-No other types are implemented so far.
-
+## Unit
+The unit type has a single value, `()`. Just like Rust, it is used when there is no meaningful value to be used. Functions by default return unit.
 
 # Operators:
 ## Unary
@@ -202,7 +201,7 @@ fun test(a, b, s) {
     return a / b;
 ```
 
-Functions are called just like the C-style languages.
+Functions are called just like in C-style languages.
 ```
 print(test(4, 2, false));  // prints 6, returns 2
 print(test(1, 2, true));  // prints 3, returns unit
@@ -237,8 +236,13 @@ fun --(x) {
 fun ****/() {}
 ```
 
-### Lambda functions
-
+## Lambda functions
+Anonymous functions are defined just like in Rust, that is parameters separated by `|` and then follow either by a single expression or a block. They behave just like regular functions.
+```rs
+|x, y| x + y; // valid
+|| print(0); // valid - no parameters
+|x, y| { print(x + y); } // valid - body
+```
 
 # Structs
 NOTE: This is a subject to change once proper type system is implemented. It will be almost surely same as Rust.
@@ -260,7 +264,30 @@ p.x = 10;
 p.z = true;  // ERROR: Field \"z\" does not exist
 ```
 
-NOTE: Unlike dynamic languages
-NOTE: The validity of fields is NOT enforced during COMPILATION due to the lack of a type system.
+NOTE: At this point in time the validity of fields is NOT enforced during COMPILATION due to the lack of a type system.
 
+
+## Impls
+All methods for a given struct are in an extra `impl` block. Methods access the struct's data through the first parameter (usually named `self`) and may mutate it at will. They can be called through the field access syntax.
+
+```rs
+struct Point { x, y }
+impl Point {
+    fun manhattan(self) {
+        return self.x + self.y;
+    }
+    fun scale(self, n) {
+        self.x = self.x * n;
+        self.y = self.y * n;
+    }
+    fun static(x, y) { /* ... */ } // doesnt work - `x` would become the new `self`
+}
+
+
+let p = Point(1, 2);
+print(p.manhattan()); // prints 3
+```
+NOTE: static methods are not implemented.
+
+NOTE: operator functions are not supported.
 
