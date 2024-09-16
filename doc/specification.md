@@ -10,7 +10,7 @@ Floating point numbers are internally 32-bit (`f32`). Unlike many languages, bot
 // valid
 0.0; 1.0; 0.1; 1.1;
 // invalid
-.1; 1.;
+.1; 1.; .;
 ```
 
 ## Booleans
