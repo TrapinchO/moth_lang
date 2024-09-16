@@ -19,23 +19,20 @@ fn main() {
     } else if args.len() == 2 {
         let file_name = &args[1];
         let Ok(src) = fs::read_to_string(file_name) else {
-            println!("File \"{file_name}\" not found.");
+            eprintln!("File \"{file_name}\" not found.");
             return;
         };
         // TODO: windows newlines have \r which messes up the lexer
         let src = src.trim_end().replace('\r', "");
 
         let mut interp = Interpreter::new(get_builtins());
-        match run(&mut interp, &src, true) {
-            Ok(()) => {}
-            Err(errs) => {
-                for e in errs {
-                    println!("{}\n", e.format_message(&src));
-                }
+        if let Err(errs) = run(&mut interp, &src, true) {
+            for e in errs {
+                eprintln!("{}\n", e.format_message(&src));
             }
         }
     } else {
-        println!("Unknown amount of arguments: {}", args.len());
+        eprintln!("Unknown amount of arguments: {}", args.len());
     }
 }
 

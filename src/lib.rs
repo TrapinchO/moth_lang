@@ -21,7 +21,6 @@ mod tests;
 
 pub fn run(interp: &mut Interpreter, input: &str, time: bool) -> Result<(), Vec<Error>> {
     let compile_start = Instant::now();
-    // the prints are commented in case I wanted to show them
     //eprintln!("===== source =====\n{:?}\n=====        =====", input);
     let tokens = frontend::lexer::lex(input)?;
     /*

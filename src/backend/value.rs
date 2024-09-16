@@ -79,8 +79,6 @@ pub type Value = Located<ValueType>;
 // PIE anyone?
 //
 // TODO: also move the vars in error messages into the string some time
-//
-// NOTE: btw clippy complains about usize being cast to i32, just so you know
 pub const NATIVE_OPERATORS: [(&str, Precedence, NativeFunction); 13] = [
     (
         "+",
@@ -348,6 +346,7 @@ pub const NATIVE_FUNCS: [(&str, NativeFunction); 5] = [
                 .unwrap(),
         ))
     }),
+    // NOTE: btw clippy complains about usize being cast to i32, just so you know
     ("len", |args| {
         if args.len() != 1 {
             return Err(format!("Function takes exactly 1 argument, got: {}", args.len()));

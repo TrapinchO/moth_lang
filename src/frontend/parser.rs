@@ -1,4 +1,4 @@
-use std::{mem, vec};
+use std::mem;
 
 use super::token::{Token, TokenType};
 use crate::{
@@ -85,7 +85,7 @@ impl Parser {
     }
 
     fn synchronize(&mut self) {
-        while !self.is_at_end() && !is_typ!(self, Eof) { // apparently needed
+        while !self.is_at_end() && !is_typ!(self, Eof) {
             if matches!(self.get_current().val, TokenType::Semicolon | TokenType::RBrace) {
                 self.advance();
                 return;
@@ -302,7 +302,7 @@ impl Parser {
 
     fn parse_if_else(&mut self) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
-        self.advance(); // move past if
+        self.advance(); // move past keyword
 
         let mut blocks = vec![];
 
@@ -313,7 +313,7 @@ impl Parser {
         let mut end = if_block.loc.end;
         let mut els = None;
         while is_typ!(self, Else) {
-            let else_kw = self.get_current().clone();
+            let _else_kw = self.get_current().clone();
             self.advance();
 
             let cond = if is_typ!(self, If) {
@@ -339,7 +339,7 @@ impl Parser {
 
     fn parse_while(&mut self) -> Result<Stmt, Error> {
         let start = self.get_current().loc.start;
-        self.advance(); // move past while
+        self.advance(); // move past keyword
         let cond = self.parse_expression()?;
         let block = self.parse_block()?;
 
@@ -530,7 +530,7 @@ impl Parser {
         for s in block.val.iter() {
             if !matches!(s.val, StmtType::FunDecl(..)) {
                 return Err(Error {
-                    msg: ErrorType::OtherError("Only function definitions are allowed".to_string()),
+                    msg: ErrorType::NonFunStmtInImpl,
                     lines: vec![s.loc],
                 });
             }
@@ -622,20 +622,20 @@ impl Parser {
                 TokenType::Dot => {
                     self.advance();
                     let name = self.parse_ident()?;
-                    if is_typ!(self, LParen) {
+                    expr = if is_typ!(self, LParen) {
                         // check if it is a method (needs special treatment)
                         let (params, end_loc) =
                             self.sep(TokenType::LParen, TokenType::RParen, Self::parse_expression)?;
-                        expr = Expr {
+                        Expr {
                             loc: Location { start, end: end_loc.end },
                             val: ExprType::MethodAccess(expr.into(), name, params),
                         }
                     } else {
-                        expr = Expr {
+                        Expr {
                             loc: Location { start, end: name.loc.end },
                             val: ExprType::FieldAccess(expr.into(), name),
-                        };
-                    }
+                        }
+                    };
                 }
                 _ => {
                     break;

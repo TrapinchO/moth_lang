@@ -245,7 +245,7 @@ impl VarCheck {
     fn imp(&mut self, _: Location, name: &Identifier, block: &Vec<Stmt>) {
         if !self.env.contains(&name.val) {
             self.errs.push(Error {
-                msg: ErrorType::OtherError("Impl must have a corresponding struct".to_string()),
+                msg: ErrorType::ImplWithoutStruct(name.val.clone()),
                 lines: vec![name.loc],
             });
         }

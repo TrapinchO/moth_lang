@@ -78,11 +78,7 @@ impl Lexer {
     }
 
     fn is_char(&self, character: char) -> bool {
-        if self.is_at_end() {
-            false
-        } else {
-            self.get_current() == character
-        }
+        !self.is_at_end() && self.get_current() == character
     }
 
     fn error(&self, msg: ErrorType) -> Error {
@@ -222,7 +218,6 @@ impl Lexer {
             else if self.is_char('.') {
                 // if it is just a decimal point (and not a symbol)
                 // or when it is at the end of the file
-                println!("{} {}", self.idx, self.code.len()-1);
                 if self.idx == self.code.len()-1 || (self.idx < self.code.len() - 1 && !SYMBOLS.contains(self.code[self.idx + 1])) {
                     if is_float {
                         return Err(self.error(ErrorType::TwoDecimalPoints));

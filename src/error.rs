@@ -36,6 +36,7 @@ pub enum ErrorType {
     InvalidOperatorname,
     ExpectedOpeningToken(TokenType),
     ExpectedClosingToken(TokenType),
+    NonFunStmtInImpl,
     //ExpectedParameterName,
     ExpectedIdentifier,
     ExpectedStructName,
@@ -49,6 +50,7 @@ pub enum ErrorType {
     UndeclaredItem,
     DuplicateParameter(String),
     DuplicateField(String),
+    ImplWithoutStruct(String),
     // varcheck warns
     ItemNotUsed(String),
     DeadCode,
@@ -72,6 +74,7 @@ pub enum ErrorType {
     FieldNotFound(String, String),
     ExpectedInstance,
     UnknownField(String),
+    ImplNameNotAStruct(String),
     // other
     OtherError(String),
 }
@@ -108,6 +111,7 @@ impl ErrorType {
             Self::ExpectedIdentifier => "Expected an identifier".to_string(),
             Self::ExpectedFieldName => "Expected a field name".to_string(),
             Self::ExpectedStructName => "Expected a struct name".to_string(),
+            Self::NonFunStmtInImpl => "Only function definitions are allowed".to_string(),
             // reassoc
             Self::OperatorNotFound(s) => format!("Operator not found: {s}"),
             Self::IncompatiblePrecedence(op1, prec1, op2, prec2) => format!("Incompatible operator precedence: \"{op1}\" ({prec1:?}) and \"{op2}\" ({prec2:?}) - both have precedence {}", prec1.prec),
@@ -116,6 +120,7 @@ impl ErrorType {
             Self::UndeclaredItem => "Item not declared".to_string(),
             Self::DuplicateParameter(s) => format!("Duplicate parameter: {s}"),
             Self::DuplicateField(f) => format!("Duplicate parameter: {f}"),
+            Self::ImplWithoutStruct(name) => format!("Impl \"{name}\" does not have a corresponding struct"),
             // varcheck warns
             Self::ItemNotUsed(s) => format!("Item \"{s}\" not used"),
             Self::DeadCode => "Unreachable code".to_string(),
@@ -139,23 +144,21 @@ impl ErrorType {
             Self::FieldNotFound(field, struc) => format!("Field \"{field}\" not found in \"{struc}\""),
             Self::ExpectedInstance => "Expected struct instance".to_string(),
             Self::UnknownField(name) => format!("Field \"{name}\" does not exist"),
+            Self::ImplNameNotAStruct(name) => format!("Value bound to \"{}\" is not a struct", name),
             // other
             Self::OtherError(msg) => msg.clone(),
         }
     }
 
     pub fn is_warn(&self) -> bool {
-        // done for clarity
-        // also more items will follow eventually
-        #[allow(clippy::match_like_matches_macro)]
-        match self {
+        matches!(
+            self,
             Self::ItemNotUsed(_)
             | Self::DeadCode
             | Self::IfNeverExecutes
             | Self::IfAlwaysExecutes
-            | Self::LoopNeverExecutes => true,
-            _ => false,
-        }
+            | Self::LoopNeverExecutes
+        )
     }
 }
 

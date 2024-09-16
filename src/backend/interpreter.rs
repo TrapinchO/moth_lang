@@ -270,7 +270,7 @@ impl Interpreter {
         let struc = self.environment.get(&name.val).expect("Struct somehow now defined");
         let ValueType::Struct(_, _, mut methods) = struc else {
             return Err(Error {
-                msg: ErrorType::OtherError(format!("Value bound to \"{}\" is not a struct", name.val)),
+                msg: ErrorType::ImplNameNotAStruct(name.val),
                 lines: vec![name.loc],
             }
             .into());

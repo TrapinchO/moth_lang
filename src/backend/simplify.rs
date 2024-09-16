@@ -156,6 +156,7 @@ impl ExprVisitor<Expr> for Simplifier {
     ) -> Result<Expr, Error> {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
+
         // try to fold constant literals
         match (&left2.val, &right2.val) {
             (ExprType::Int(n1), ExprType::Int(n2)) => {
@@ -185,7 +186,7 @@ impl ExprVisitor<Expr> for Simplifier {
                     loc,
                 })
             }
-            // TODO: try to merge this into one arm
+            // TODO: try to merge this into int arm
             (ExprType::Float(n1), ExprType::Float(n2)) => {
                 let val = match op.val.as_str() {
                     "+" => n1 + n2,

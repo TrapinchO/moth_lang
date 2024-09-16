@@ -112,12 +112,12 @@ impl StmtType {
                     })
                     .collect::<Vec<_>>();
                 format!(
-                    "if {cond} {{\n{block}\n}} {rest} else {el}",
+                    "if {cond} {{\n{block}\n}} {rest} else {{\n{el}\n}}",
                     cond = first.0,
                     block = first.1.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n"),
                     rest = rest.join(""),
-                    //el = els.map(|b| b.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")).unwrap_or("".to_string())
-                    el = "",
+                    // most likely horrible, but works
+                    el = els.clone().map(|b| b.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")).unwrap_or("".to_string())
                 )
             }
             Self::While(cond, block) => format!(

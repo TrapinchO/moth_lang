@@ -1,3 +1,16 @@
+use std::collections::HashMap;
+
+use crate::{
+    backend::value::{get_builtins, NATIVE_OPERATORS},
+    error::Error,
+    frontend::lexer::lex,
+    frontend::parser::parse,
+    frontend::reassoc,
+    frontend::token::{Token, TokenType},
+    located::Location,
+    middle::varcheck,
+};
+
 use crate::{
     associativity::Precedence,
     error::ErrorType,
@@ -96,19 +109,6 @@ fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
         (e1, e2) => e1 == e2,
     }
 }
-
-use std::{collections::HashMap, vec};
-
-use crate::{
-    backend::value::{get_builtins, NATIVE_OPERATORS},
-    error::Error,
-    frontend::lexer::lex,
-    frontend::parser::parse,
-    frontend::reassoc,
-    frontend::token::{Token, TokenType},
-    located::Location,
-    middle::varcheck,
-};
 
 #[test]
 fn test_varcheck() {
