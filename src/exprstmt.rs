@@ -3,34 +3,34 @@ use crate::{associativity::Precedence, located::Located};
 use std::fmt::Display;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ExprType {
+pub enum Expr {
     Unit,
     Int(i32),
     Float(f32),
     String(String),
     Bool(bool),
     Identifier(String),
-    Parens(Box<Expr>),
-    Call(Box<Expr>, Vec<Expr>), // callee(arg1, arg2, arg3)
-    UnaryOperation(Symbol, Box<Expr>),
-    BinaryOperation(Box<Expr>, Symbol, Box<Expr>),
-    List(Vec<Expr>),
-    Index(Box<Expr>, Box<Expr>), // expr[idx]
-    Lambda(Vec<Identifier>, Vec<Stmt>), // |params| { block }
-    FieldAccess(Box<Expr>, Identifier),
-    MethodAccess(Box<Expr>, Identifier, Vec<Expr>), // expr.name(args)
+    Parens(Box<LExpr>),
+    Call(Box<LExpr>, Vec<LExpr>), // callee(arg1, arg2, arg3)
+    UnaryOperation(Symbol, Box<LExpr>),
+    BinaryOperation(Box<LExpr>, Symbol, Box<LExpr>),
+    List(Vec<LExpr>),
+    Index(Box<LExpr>, Box<LExpr>), // expr[idx]
+    Lambda(Vec<Identifier>, Vec<LStmt>), // |params| { block }
+    FieldAccess(Box<LExpr>, Identifier),
+    MethodAccess(Box<LExpr>, Identifier, Vec<LExpr>), // expr.name(args)
 }
 
-impl ExprType {
-    fn format(&self) -> String {
-        match self {
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
             Self::Unit => "()".to_string(),
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
             Self::String(s) => format!("\"{s}\""),
             Self::Bool(b) => b.to_string(),
             Self::Identifier(ident) => ident.to_string(),
-            Self::Parens(expr) => format!("({expr})", expr = expr.val.format()),
+            Self::Parens(expr) => format!("({expr})", expr = expr.val),
             Self::UnaryOperation(op, expr) => format!("({op} {expr})", op = op.val),
             Self::BinaryOperation(left, op, right) => format!("({left} {op} {right})", op = op.val),
             Self::Call(callee, args) => format!(
@@ -52,45 +52,40 @@ impl ExprType {
                 "{callee}.{name}({args})",
                 args = args.iter().map(|e| { format!("{e}") }).collect::<Vec<_>>().join(", ")
             ),
-        }
+        };
+        write!(f, "{s}")
     }
 }
 
-impl Display for ExprType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.format())
-    }
-}
-
-pub type Expr = Located<ExprType>;
+pub type LExpr = Located<Expr>;
 // these were made as a simplification of Token to remove some pointless destructuring
 // they were always followed by "else unreachable" anyways
 pub type Symbol = Located<String>; // marks operators
 pub type Identifier = Located<String>; // marks identifiers (names)
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum StmtType {
-    Expr(Expr),
+pub enum Stmt {
+    Expr(LExpr),
     // identifier, expression
-    VarDecl(Identifier, Expr),
-    Assign(Identifier, Expr),
-    AssignIndex(Expr, Expr, Expr), // expr[expr] = expr
-    Block(Vec<Stmt>),
-    If(Vec<(Expr, Vec<Stmt>)>, Option<Block>),
-    While(Expr, Vec<Stmt>),
+    VarDecl(Identifier, LExpr),
+    Assign(Identifier, LExpr),
+    AssignIndex(LExpr, LExpr, LExpr), // expr[expr] = expr
+    Block(Vec<LStmt>),
+    If(Vec<(LExpr, Vec<LStmt>)>, Option<Block>),
+    While(LExpr, Vec<LStmt>),
     // name, parameters, body
-    FunDecl(Identifier, Vec<Identifier>, Vec<Stmt>),
-    OperatorDecl(Symbol, (Identifier, Identifier), Vec<Stmt>, Precedence),
-    Return(Expr),
+    FunDecl(Identifier, Vec<Identifier>, Vec<LStmt>),
+    OperatorDecl(Symbol, (Identifier, Identifier), Vec<LStmt>, Precedence),
+    Return(LExpr),
     Break,
     Continue,
     Struct(Identifier, Vec<Identifier>),
-    AssignStruct(Expr, Identifier, Expr), // expr.name = expr
-    Impl(Identifier, Vec<Stmt>),
+    AssignStruct(LExpr, Identifier, LExpr), // expr.name = expr
+    Impl(Identifier, Vec<LStmt>),
 }
-impl StmtType {
-    fn format(&self) -> String {
-        match self {
+impl Display for Stmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
             Self::Expr(expr) => expr.to_string() + ";",
             Self::VarDecl(ident, expr) => format!("let {ident} = {expr};"),
             Self::Assign(ident, expr) => format!("{ident} = {expr};"),
@@ -147,15 +142,11 @@ impl StmtType {
                 "impl {name} {{\n{block}\n}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-        }
+        };
+        write!(f, "{s}")
     }
 }
 
-impl Display for StmtType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.format())
-    }
-}
 
-pub type Stmt = Located<StmtType>;
-pub type Block = Vec<Stmt>;
+pub type LStmt = Located<Stmt>;
+pub type Block = Vec<LStmt>;

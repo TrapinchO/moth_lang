@@ -6,16 +6,16 @@ use crate::{
     visitor::{ExprVisitor, StmtVisitor},
 };
 
-use super::lowexprstmt::{Expr, ExprType, Stmt, StmtType};
+use super::lowexprstmt::{LExpr, Expr, LStmt, Stmt};
 
-pub fn simplify(ast: Vec<exprstmt::Stmt>) -> Result<Vec<Stmt>, Error> {
+pub fn simplify(ast: Vec<exprstmt::LStmt>) -> Result<Vec<LStmt>, Error> {
     Simplifier.simplify(ast)
 }
 
 struct Simplifier;
 
 impl Simplifier {
-    pub fn simplify(&mut self, ast: Vec<exprstmt::Stmt>) -> Result<Vec<Stmt>, Error> {
+    pub fn simplify(&mut self, ast: Vec<exprstmt::LStmt>) -> Result<Vec<LStmt>, Error> {
         let mut ls = vec![];
         for s in ast {
             ls.push(self.visit_stmt(s)?);
@@ -24,75 +24,75 @@ impl Simplifier {
     }
 }
 
-impl ExprVisitor<Expr> for Simplifier {
-    fn unit(&mut self, loc: Location) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Unit,
+impl ExprVisitor<LExpr> for Simplifier {
+    fn unit(&mut self, loc: Location) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::Unit,
             loc,
         })
     }
 
-    fn int(&mut self, loc: Location, n: i32) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Int(n),
+    fn int(&mut self, loc: Location, n: i32) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::Int(n),
             loc,
         })
     }
 
-    fn float(&mut self, loc: Location, n: f32) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Float(n),
+    fn float(&mut self, loc: Location, n: f32) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::Float(n),
             loc,
         })
     }
 
-    fn string(&mut self, loc: Location, s: String) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::String(s),
+    fn string(&mut self, loc: Location, s: String) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::String(s),
             loc,
         })
     }
 
-    fn bool(&mut self, loc: Location, b: bool) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Bool(b),
+    fn bool(&mut self, loc: Location, b: bool) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::Bool(b),
             loc,
         })
     }
 
-    fn identifier(&mut self, loc: Location, ident: String) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Identifier(ident),
+    fn identifier(&mut self, loc: Location, ident: String) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::Identifier(ident),
             loc,
         })
     }
 
-    fn list(&mut self, loc: Location, expr: Vec<exprstmt::Expr>) -> Result<Expr, Error> {
+    fn list(&mut self, loc: Location, expr: Vec<exprstmt::LExpr>) -> Result<LExpr, Error> {
         let mut ls = vec![];
         for e in expr {
             ls.push(self.visit_expr(e)?);
         }
-        Ok(Expr {
-            val: ExprType::List(ls),
+        Ok(LExpr {
+            val: Expr::List(ls),
             loc,
         })
     }
 
-    fn call(&mut self, loc: Location, callee: exprstmt::Expr, args: Vec<exprstmt::Expr>) -> Result<Expr, Error> {
+    fn call(&mut self, loc: Location, callee: exprstmt::LExpr, args: Vec<exprstmt::LExpr>) -> Result<LExpr, Error> {
         let callee2 = self.visit_expr(callee)?;
         let mut ls = vec![];
         for e in args {
             ls.push(self.visit_expr(e)?);
         }
-        Ok(Expr {
-            val: ExprType::Call(callee2.into(), ls),
+        Ok(LExpr {
+            val: Expr::Call(callee2.into(), ls),
             loc,
         })
     }
 
-    fn index(&mut self, loc: Location, expr2: exprstmt::Expr, idx: exprstmt::Expr) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::Index(self.visit_expr(expr2)?.into(), self.visit_expr(idx)?.into()),
+    fn index(&mut self, loc: Location, expr2: exprstmt::LExpr, idx: exprstmt::LExpr) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::Index(self.visit_expr(expr2)?.into(), self.visit_expr(idx)?.into()),
             loc,
         })
     }
@@ -101,40 +101,40 @@ impl ExprVisitor<Expr> for Simplifier {
         &mut self,
         loc: Location,
         params: Vec<exprstmt::Identifier>,
-        body: Vec<exprstmt::Stmt>,
-    ) -> Result<Expr, Error> {
+        body: Vec<exprstmt::LStmt>,
+    ) -> Result<LExpr, Error> {
         let mut bl = vec![];
         for s in body {
             bl.push(self.visit_stmt(s)?);
         }
-        Ok(Expr {
-            val: ExprType::Lambda(params, bl),
+        Ok(LExpr {
+            val: Expr::Lambda(params, bl),
             loc,
         })
     }
 
     // dont do anything anymore
-    fn parens(&mut self, _: Location, expr: exprstmt::Expr) -> Result<Expr, Error> {
+    fn parens(&mut self, _: Location, expr: exprstmt::LExpr) -> Result<LExpr, Error> {
         self.visit_expr(expr)
     }
 
     // change into a function call
-    fn unary(&mut self, loc: Location, op: exprstmt::Symbol, expr: exprstmt::Expr) -> Result<Expr, Error> {
+    fn unary(&mut self, loc: Location, op: exprstmt::Symbol, expr: exprstmt::LExpr) -> Result<LExpr, Error> {
         let expr2 = self.visit_expr(expr)?;
         let val = match &expr2.val {
-            ExprType::Int(n) if op.val.as_str() == "-" => ExprType::Int(-n),
-            ExprType::Float(n) if op.val.as_str() == "-" => ExprType::Float(-n),
-            ExprType::Bool(b) if op.val.as_str() == "!" => ExprType::Bool(!b),
+            Expr::Int(n) if op.val.as_str() == "-" => Expr::Int(-n),
+            Expr::Float(n) if op.val.as_str() == "-" => Expr::Float(-n),
+            Expr::Bool(b) if op.val.as_str() == "!" => Expr::Bool(!b),
             _ => {
                 let name = match op.val.as_str() {
                     "!" => "$$not".to_string(),
                     "-" => "$$neg".to_string(),
                     _ => unreachable!(),
                 };
-                return Ok(Expr {
-                    val: ExprType::Call(
-                        Expr {
-                            val: ExprType::Identifier(name),
+                return Ok(LExpr {
+                    val: Expr::Call(
+                        LExpr {
+                            val: Expr::Identifier(name),
                             loc: op.loc,
                         }
                         .into(),
@@ -144,22 +144,22 @@ impl ExprVisitor<Expr> for Simplifier {
                 });
             }
         };
-        Ok(Expr { val, loc })
+        Ok(LExpr { val, loc })
     }
 
     fn binary(
         &mut self,
         loc: Location,
-        left: exprstmt::Expr,
+        left: exprstmt::LExpr,
         op: exprstmt::Symbol,
-        right: exprstmt::Expr,
-    ) -> Result<Expr, Error> {
+        right: exprstmt::LExpr,
+    ) -> Result<LExpr, Error> {
         let left2 = self.visit_expr(left)?;
         let right2 = self.visit_expr(right)?;
 
         // try to fold constant literals
         match (&left2.val, &right2.val) {
-            (ExprType::Int(n1), ExprType::Int(n2)) => {
+            (Expr::Int(n1), Expr::Int(n2)) => {
                 let val = match op.val.as_str() {
                     "+" => n1 + n2,
                     "-" => n1 - n2,
@@ -168,10 +168,10 @@ impl ExprVisitor<Expr> for Simplifier {
                     "%" => n1 % n2,
                     // it is not a "primitive" operator, cannot be folded
                     _ => {
-                        return Ok(Expr {
-                            val: ExprType::Call(
-                                Expr {
-                                    val: ExprType::Identifier(op.val),
+                        return Ok(LExpr {
+                            val: Expr::Call(
+                                LExpr {
+                                    val: Expr::Identifier(op.val),
                                     loc: op.loc,
                                 }
                                 .into(),
@@ -181,13 +181,13 @@ impl ExprVisitor<Expr> for Simplifier {
                         })
                     }
                 };
-                Ok(Expr {
-                    val: ExprType::Int(val),
+                Ok(LExpr {
+                    val: Expr::Int(val),
                     loc,
                 })
             }
             // TODO: try to merge this into int arm
-            (ExprType::Float(n1), ExprType::Float(n2)) => {
+            (Expr::Float(n1), Expr::Float(n2)) => {
                 let val = match op.val.as_str() {
                     "+" => n1 + n2,
                     "-" => n1 - n2,
@@ -195,10 +195,10 @@ impl ExprVisitor<Expr> for Simplifier {
                     "/" => n1 / n2,
                     "%" => n1 % n2,
                     _ => {
-                        return Ok(Expr {
-                            val: ExprType::Call(
-                                Expr {
-                                    val: ExprType::Identifier(op.val),
+                        return Ok(LExpr {
+                            val: Expr::Call(
+                                LExpr {
+                                    val: Expr::Identifier(op.val),
                                     loc: op.loc,
                                 }
                                 .into(),
@@ -208,16 +208,16 @@ impl ExprVisitor<Expr> for Simplifier {
                         })
                     }
                 };
-                Ok(Expr {
-                    val: ExprType::Float(val),
+                Ok(LExpr {
+                    val: Expr::Float(val),
                     loc,
                 })
             }
             // arguments are not numbers, cannot be folded
-            _ => Ok(Expr {
-                val: ExprType::Call(
-                    Expr {
-                        val: ExprType::Identifier(op.val),
+            _ => Ok(LExpr {
+                val: Expr::Call(
+                    LExpr {
+                        val: Expr::Identifier(op.val),
                         loc: op.loc,
                     }
                     .into(),
@@ -227,49 +227,49 @@ impl ExprVisitor<Expr> for Simplifier {
             }),
         }
     }
-    fn field(&mut self, loc: Location, expr: exprstmt::Expr, name: exprstmt::Identifier) -> Result<Expr, Error> {
-        Ok(Expr {
-            val: ExprType::FieldAccess(self.visit_expr(expr)?.into(), name),
+    fn field(&mut self, loc: Location, expr: exprstmt::LExpr, name: exprstmt::Identifier) -> Result<LExpr, Error> {
+        Ok(LExpr {
+            val: Expr::FieldAccess(self.visit_expr(expr)?.into(), name),
             loc,
         })
     }
     fn method(
         &mut self,
         loc: Location,
-        callee: exprstmt::Expr,
+        callee: exprstmt::LExpr,
         name: exprstmt::Identifier,
-        args: Vec<exprstmt::Expr>,
-    ) -> Result<Expr, Error> {
+        args: Vec<exprstmt::LExpr>,
+    ) -> Result<LExpr, Error> {
         let callee2 = self.visit_expr(callee)?;
         let mut ls = vec![];
         for e in args {
             ls.push(self.visit_expr(e)?);
         }
-        Ok(Expr {
-            val: ExprType::MethodAccess(callee2.into(), name, ls),
+        Ok(LExpr {
+            val: Expr::MethodAccess(callee2.into(), name, ls),
             loc,
         })
     }
 }
 
-impl StmtVisitor<Stmt> for Simplifier {
-    fn expr(&mut self, loc: Location, expr: exprstmt::Expr) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::Expr(self.visit_expr(expr)?),
+impl StmtVisitor<LStmt> for Simplifier {
+    fn expr(&mut self, loc: Location, expr: exprstmt::LExpr) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::Expr(self.visit_expr(expr)?),
             loc,
         })
     }
 
-    fn var_decl(&mut self, loc: Location, ident: exprstmt::Identifier, expr: exprstmt::Expr) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::VarDecl(ident, self.visit_expr(expr)?),
+    fn var_decl(&mut self, loc: Location, ident: exprstmt::Identifier, expr: exprstmt::LExpr) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::VarDecl(ident, self.visit_expr(expr)?),
             loc,
         })
     }
 
-    fn assignment(&mut self, loc: Location, ident: exprstmt::Identifier, expr: exprstmt::Expr) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::Assign(ident, self.visit_expr(expr)?),
+    fn assignment(&mut self, loc: Location, ident: exprstmt::Identifier, expr: exprstmt::LExpr) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::Assign(ident, self.visit_expr(expr)?),
             loc,
         })
     }
@@ -277,28 +277,28 @@ impl StmtVisitor<Stmt> for Simplifier {
     fn assignindex(
         &mut self,
         loc: Location,
-        ls: exprstmt::Expr,
-        idx: exprstmt::Expr,
-        val: exprstmt::Expr,
-    ) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::AssignIndex(self.visit_expr(ls)?, self.visit_expr(idx)?, self.visit_expr(val)?),
+        ls: exprstmt::LExpr,
+        idx: exprstmt::LExpr,
+        val: exprstmt::LExpr,
+    ) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::AssignIndex(self.visit_expr(ls)?, self.visit_expr(idx)?, self.visit_expr(val)?),
             loc,
         })
     }
 
-    fn block(&mut self, loc: Location, block: Vec<exprstmt::Stmt>) -> Result<Stmt, Error> {
+    fn block(&mut self, loc: Location, block: Vec<exprstmt::LStmt>) -> Result<LStmt, Error> {
         let mut bl = vec![];
         for s in block {
             bl.push(self.visit_stmt(s)?);
         }
-        Ok(Stmt {
-            val: StmtType::Block(bl),
+        Ok(LStmt {
+            val: Stmt::Block(bl),
             loc,
         })
     }
 
-    fn if_else(&mut self, loc: Location, blocks: Vec<(exprstmt::Expr, Vec<exprstmt::Stmt>)>, els: Option<Vec<exprstmt::Stmt>>) -> Result<Stmt, Error> {
+    fn if_else(&mut self, loc: Location, blocks: Vec<(exprstmt::LExpr, Vec<exprstmt::LStmt>)>, els: Option<Vec<exprstmt::LStmt>>) -> Result<LStmt, Error> {
         let mut bl = vec![];
         for (c, b) in blocks {
             let mut block = vec![];
@@ -312,42 +312,42 @@ impl StmtVisitor<Stmt> for Simplifier {
             for s in else_bl {
                 block.push(self.visit_stmt(s)?);
             }
-            bl.push((Expr { val: ExprType::Bool(true), loc }, block));
+            bl.push((LExpr { val: Expr::Bool(true), loc }, block));
         }
-        Ok(Stmt {
-            val: StmtType::If(bl),
+        Ok(LStmt {
+            val: Stmt::If(bl),
             loc,
         })
     }
 
-    fn whiles(&mut self, loc: Location, cond: exprstmt::Expr, block: Vec<exprstmt::Stmt>) -> Result<Stmt, Error> {
+    fn whiles(&mut self, loc: Location, cond: exprstmt::LExpr, block: Vec<exprstmt::LStmt>) -> Result<LStmt, Error> {
         let mut bl = vec![];
         for s in block {
             bl.push(self.visit_stmt(s)?);
         }
-        Ok(Stmt {
-            val: StmtType::While(self.visit_expr(cond)?, bl),
+        Ok(LStmt {
+            val: Stmt::While(self.visit_expr(cond)?, bl),
             loc,
         })
     }
 
-    fn retur(&mut self, loc: Location, expr: exprstmt::Expr) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::Return(self.visit_expr(expr)?),
+    fn retur(&mut self, loc: Location, expr: exprstmt::LExpr) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::Return(self.visit_expr(expr)?),
             loc,
         })
     }
 
-    fn brek(&mut self, loc: Location) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::Break,
+    fn brek(&mut self, loc: Location) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::Break,
             loc,
         })
     }
 
-    fn cont(&mut self, loc: Location) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::Continue,
+    fn cont(&mut self, loc: Location) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::Continue,
             loc,
         })
     }
@@ -357,17 +357,17 @@ impl StmtVisitor<Stmt> for Simplifier {
         loc: Location,
         name: exprstmt::Identifier,
         params: Vec<exprstmt::Identifier>,
-        block: Vec<exprstmt::Stmt>,
-    ) -> Result<Stmt, Error> {
+        block: Vec<exprstmt::LStmt>,
+    ) -> Result<LStmt, Error> {
         let mut bl = vec![];
         for s in block {
             bl.push(self.visit_stmt(s)?);
         }
-        Ok(Stmt {
-            val: StmtType::VarDecl(
+        Ok(LStmt {
+            val: Stmt::VarDecl(
                 name,
-                Expr {
-                    val: ExprType::Lambda(params, bl),
+                LExpr {
+                    val: Expr::Lambda(params, bl),
                     loc,
                 },
             ),
@@ -380,9 +380,9 @@ impl StmtVisitor<Stmt> for Simplifier {
         loc: Location,
         name: exprstmt::Symbol,
         params: (exprstmt::Identifier, exprstmt::Identifier),
-        block: Vec<exprstmt::Stmt>,
+        block: Vec<exprstmt::LStmt>,
         _: Precedence,
-    ) -> Result<Stmt, Error> {
+    ) -> Result<LStmt, Error> {
         self.fun(loc, name, vec![params.0, params.1], block)
     }
 
@@ -391,9 +391,9 @@ impl StmtVisitor<Stmt> for Simplifier {
         loc: Location,
         name: exprstmt::Identifier,
         fields: Vec<exprstmt::Identifier>,
-    ) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::Struct(name, fields),
+    ) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::Struct(name, fields),
             loc,
         })
     }
@@ -401,22 +401,22 @@ impl StmtVisitor<Stmt> for Simplifier {
     fn assignstruc(
         &mut self,
         loc: Location,
-        expr1: exprstmt::Expr,
+        expr1: exprstmt::LExpr,
         name: exprstmt::Identifier,
-        expr2: exprstmt::Expr,
-    ) -> Result<Stmt, Error> {
-        Ok(Stmt {
-            val: StmtType::AssignStruct(self.visit_expr(expr1)?, name, self.visit_expr(expr2)?),
+        expr2: exprstmt::LExpr,
+    ) -> Result<LStmt, Error> {
+        Ok(LStmt {
+            val: Stmt::AssignStruct(self.visit_expr(expr1)?, name, self.visit_expr(expr2)?),
             loc,
         })
     }
-    fn imp(&mut self, loc: Location, name: exprstmt::Identifier, block: Vec<exprstmt::Stmt>) -> Result<Stmt, Error> {
+    fn imp(&mut self, loc: Location, name: exprstmt::Identifier, block: Vec<exprstmt::LStmt>) -> Result<LStmt, Error> {
         let mut block2 = vec![];
         for s in block {
             block2.push(self.visit_stmt(s)?);
         }
-        Ok(Stmt {
-            val: StmtType::Impl(name, block2),
+        Ok(LStmt {
+            val: Stmt::Impl(name, block2),
             loc,
         })
     }

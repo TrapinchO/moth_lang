@@ -10,24 +10,24 @@ use crate::located::Located;
 pub type Identifier = Located<String>;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum ExprType {
+pub enum Expr {
     Unit,
     Int(i32),
     Float(f32),
     String(String),
     Bool(bool),
     Identifier(String),
-    Call(Box<Expr>, Vec<Expr>), // callee(arg1, arg2, arg3)
-    List(Vec<Expr>),
-    Index(Box<Expr>, Box<Expr>), // expr[idx]
-    Lambda(Vec<Identifier>, Vec<Stmt>), // |params| { block }
-    FieldAccess(Box<Expr>, Identifier),
-    MethodAccess(Box<Expr>, Identifier, Vec<Expr>), // expr.name(args)
+    Call(Box<LExpr>, Vec<LExpr>), // callee(arg1, arg2, arg3)
+    List(Vec<LExpr>),
+    Index(Box<LExpr>, Box<LExpr>), // expr[idx]
+    Lambda(Vec<Identifier>, Vec<LStmt>), // |params| { block }
+    FieldAccess(Box<LExpr>, Identifier),
+    MethodAccess(Box<LExpr>, Identifier, Vec<LExpr>), // expr.name(args)
 }
 
-impl ExprType {
-    fn format(&self) -> String {
-        match self {
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
             Self::Unit => "()".to_string(),
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
@@ -53,38 +53,34 @@ impl ExprType {
                 "{callee}.{name}({args})",
                 args = args.iter().map(|e| { format!("{e}") }).collect::<Vec<_>>().join(", ")
             ),
-        }
+        };
+        write!(f, "{s}")
     }
 }
 
-impl Display for ExprType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.format())
-    }
-}
 
-pub type Expr = Located<ExprType>;
+pub type LExpr = Located<Expr>;
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum StmtType {
-    Expr(Expr),
-    VarDecl(Identifier, Expr),
-    Assign(Identifier, Expr),
-    AssignIndex(Expr, Expr, Expr), // expr[expr] = expr
-    Block(Vec<Stmt>),
-    If(Vec<(Expr, Vec<Stmt>)>),
-    While(Expr, Vec<Stmt>),
-    Return(Expr),
+pub enum Stmt {
+    Expr(LExpr),
+    VarDecl(Identifier, LExpr),
+    Assign(Identifier, LExpr),
+    AssignIndex(LExpr, LExpr, LExpr), // expr[expr] = expr
+    Block(Vec<LStmt>),
+    If(Vec<(LExpr, Vec<LStmt>)>),
+    While(LExpr, Vec<LStmt>),
+    Return(LExpr),
     Break,
     Continue,
     Struct(Identifier, Vec<Identifier>),
-    AssignStruct(Expr, Identifier, Expr), // expr.name = expr
-    Impl(Identifier, Vec<Stmt>),
+    AssignStruct(LExpr, Identifier, LExpr), // expr.name = expr
+    Impl(Identifier, Vec<LStmt>),
 }
 
-impl StmtType {
-    fn format(&self) -> String {
-        match self {
+impl Display for Stmt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
             Self::Expr(expr) => expr.to_string() + ";",
             Self::VarDecl(ident, expr) => format!("let {ident} = {expr};"),
             Self::Assign(ident, expr) => format!("{ident} = {expr};"),
@@ -128,14 +124,9 @@ impl StmtType {
                 "impl {name} {{\n{block}\n}}",
                 block = block.iter().map(|s| s.to_string()).collect::<Vec<_>>().join("\n")
             ),
-        }
+        };
+        write!(f, "{s}")
     }
 }
 
-impl Display for StmtType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.format())
-    }
-}
-
-pub type Stmt = Located<StmtType>;
+pub type LStmt = Located<Stmt>;

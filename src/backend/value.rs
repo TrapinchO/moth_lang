@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::time::SystemTime;
 
-use super::lowexprstmt::{Identifier, Stmt};
+use super::lowexprstmt::{Identifier, LStmt};
 use crate::associativity::{Associativity, Precedence};
 use crate::located::Located;
 use crate::mref::{MList, MMap};
@@ -18,14 +18,14 @@ pub enum ValueType {
     Float(f32),
     List(MList),
     NativeFunction(NativeFunction),
-    Function(Vec<String>, Vec<Stmt>, Closure), // fn(params) { block }, closure
+    Function(Vec<String>, Vec<LStmt>, Closure), // fn(params) { block }, closure
     Struct(Identifier, Vec<Identifier>, MMap<ValueType>), // name, fields, methods
     Instance(String, MMap<ValueType>),
     Unit,
 }
-impl ValueType {
-    fn format(&self) -> String {
-        match self {
+impl Display for ValueType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
             Self::Int(n) => n.to_string(),
             Self::Float(n) => n.to_string(),
             Self::Bool(b) => b.to_string(),
@@ -34,7 +34,7 @@ impl ValueType {
                 "[{}]",
                 ls.read(|l| l.clone())
                     .iter()
-                    .map(|e| { e.val.format() })
+                    .map(|e| { e.val.to_string() })
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
@@ -60,12 +60,8 @@ impl ValueType {
                         .join(", ")
                 ))
             ),
-        }
-    }
-}
-impl Display for ValueType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.format())
+        };
+        write!(f, "{s}")
     }
 }
 

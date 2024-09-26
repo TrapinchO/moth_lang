@@ -14,13 +14,13 @@ use crate::{
 use crate::{
     associativity::Precedence,
     error::ErrorType,
-    exprstmt::{Expr, ExprType, Identifier, Stmt, StmtType, Symbol},
+    exprstmt::{LExpr, Expr, Identifier, LStmt, Stmt, Symbol},
 };
 
 macro_rules! binop {
     ($left:expr, $op:tt, $right:expr) => {
-        ExprType::BinaryOperation(
-            Expr {
+        Expr::BinaryOperation(
+            LExpr {
                 val: $left.into(),
                 loc: Location { start: 0, end: 0 },
             }
@@ -29,7 +29,7 @@ macro_rules! binop {
                 val: $op.to_string(),
                 loc: Location { start: 0, end: 0 },
             },
-            Expr {
+            LExpr {
                 val: $right.into(),
                 loc: Location { start: 0, end: 0 },
             }
@@ -40,12 +40,12 @@ macro_rules! binop {
 
 macro_rules! unop {
     ($op:tt, $expr:expr) => {
-        ExprType::UnaryOperation(
+        Expr::UnaryOperation(
             Symbol {
                 val: $op.to_string(),
                 loc: Location { start: 0, end: 0 },
             },
-            Expr {
+            LExpr {
                 val: $expr.into(),
                 loc: Location { start: 0, end: 0 },
             }
@@ -56,8 +56,8 @@ macro_rules! unop {
 
 macro_rules! parenop {
     ($e:expr) => {
-        ExprType::Parens(
-            Expr {
+        Expr::Parens(
+            LExpr {
                 val: $e.into(),
                 loc: Location { start: 0, end: 0 },
             }
@@ -68,7 +68,7 @@ macro_rules! parenop {
 
 macro_rules! expr {
     ($e:expr) => {
-        Expr {
+        LExpr {
             val: $e,
             loc: Location { start: 0, end: 0 },
         }
@@ -77,35 +77,35 @@ macro_rules! expr {
 
 macro_rules! stmt {
     ($e:expr) => {
-        Stmt {
+        LStmt {
             val: $e,
             loc: Location { start: 0, end: 0 },
         }
     };
 }
 
-fn compare_elements(left: &Stmt, right: &Stmt) -> bool {
+fn compare_elements(left: &LStmt, right: &LStmt) -> bool {
     match (&left.val, &right.val) {
-        (StmtType::Expr(expr1), StmtType::Expr(expr2)) => compare_elements_expr(&expr1, &expr2),
-        (StmtType::VarDecl(ident1, expr1), StmtType::VarDecl(ident2, expr2)) => {
+        (Stmt::Expr(expr1), Stmt::Expr(expr2)) => compare_elements_expr(&expr1, &expr2),
+        (Stmt::VarDecl(ident1, expr1), Stmt::VarDecl(ident2, expr2)) => {
             ident1 == ident2 && compare_elements_expr(expr1, expr2)
         }
-        (StmtType::Assign(ident1, expr1), StmtType::Assign(ident2, expr2)) => {
+        (Stmt::Assign(ident1, expr1), Stmt::Assign(ident2, expr2)) => {
             ident1 == ident2 && compare_elements_expr(expr1, expr2)
         }
         (s1, s2) => s1 == s2,
     }
 }
 
-fn compare_elements_expr(left: &Expr, right: &Expr) -> bool {
+fn compare_elements_expr(left: &LExpr, right: &LExpr) -> bool {
     match (&left.val, &right.val) {
-        (ExprType::BinaryOperation(l1, o1, r1), ExprType::BinaryOperation(l2, o2, r2)) => {
+        (Expr::BinaryOperation(l1, o1, r1), Expr::BinaryOperation(l2, o2, r2)) => {
             compare_elements_expr(&l1, &l2) && o1.val == o2.val && compare_elements_expr(&r1, &r2)
         }
-        (ExprType::UnaryOperation(o1, e1), ExprType::UnaryOperation(o2, e2)) => {
+        (Expr::UnaryOperation(o1, e1), Expr::UnaryOperation(o2, e2)) => {
             o1.val == o2.val && compare_elements_expr(&e1, &e2)
         }
-        (ExprType::Parens(e1), ExprType::Parens(e2)) => compare_elements_expr(&e1, &e2),
+        (Expr::Parens(e1), Expr::Parens(e2)) => compare_elements_expr(&e1, &e2),
         (e1, e2) => e1 == e2,
     }
 }
@@ -148,9 +148,9 @@ fn parse_empty() {
 fn parse_int() {
     assert_eq!(
         parse(lex("1;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Int(1),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Int(1),
                 loc: Location { start: 0, end: 0 },
             }),
             loc: Location { start: 0, end: 0 },
@@ -162,9 +162,9 @@ fn parse_int() {
 fn parse_float() {
     assert_eq!(
         parse(lex("1.1;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Float(1.1),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Float(1.1),
                 loc: Location { start: 0, end: 2 },
             }),
             loc: Location { start: 0, end: 2 },
@@ -176,9 +176,9 @@ fn parse_float() {
 fn parse_string() {
     assert_eq!(
         parse(lex("\"test\";").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::String("test".to_string()),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::String("test".to_string()),
                 loc: Location { start: 0, end: 5 },
             }),
             loc: Location { start: 0, end: 5 },
@@ -190,9 +190,9 @@ fn parse_string() {
 fn parse_bool() {
     assert_eq!(
         parse(lex("true;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Bool(true),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Bool(true),
                 loc: Location { start: 0, end: 3 },
             }),
             loc: Location { start: 0, end: 3 },
@@ -204,9 +204,9 @@ fn parse_bool() {
 fn parse_identifier() {
     assert_eq!(
         parse(lex("test;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Identifier("test".to_string()),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Identifier("test".to_string()),
                 loc: Location { start: 0, end: 3 },
             }),
             loc: Location { start: 0, end: 3 },
@@ -218,11 +218,11 @@ fn parse_identifier() {
 fn parse_parens() {
     assert_eq!(
         parse(lex("(1);").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Parens(
-                    Expr {
-                        val: ExprType::Int(1),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Parens(
+                    LExpr {
+                        val: Expr::Int(1),
                         loc: Location { start: 1, end: 1 },
                     }
                     .into()
@@ -249,15 +249,15 @@ fn parse_parens_unclosed() {
 fn parse_unary() {
     assert_eq!(
         parse(lex("-1;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::UnaryOperation(
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::UnaryOperation(
                     Symbol {
                         val: "-".to_string(),
                         loc: Location { start: 0, end: 0 },
                     },
-                    Expr {
-                        val: ExprType::Int(1),
+                    LExpr {
+                        val: Expr::Int(1),
                         loc: Location { start: 1, end: 1 },
                     }
                     .into()
@@ -273,21 +273,21 @@ fn parse_unary() {
 fn parse_unary_nested() {
     assert_eq!(
         parse(lex("- -1;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::UnaryOperation(
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::UnaryOperation(
                     Symbol {
                         val: "-".to_string(),
                         loc: Location { start: 0, end: 0 },
                     },
-                    Expr {
-                        val: ExprType::UnaryOperation(
+                    LExpr {
+                        val: Expr::UnaryOperation(
                             Symbol {
                                 val: "-".to_string(),
                                 loc: Location { start: 2, end: 2 },
                             },
-                            Expr {
-                                val: ExprType::Int(1),
+                            LExpr {
+                                val: Expr::Int(1),
                                 loc: Location { start: 3, end: 3 },
                             }
                             .into()
@@ -307,11 +307,11 @@ fn parse_unary_nested() {
 fn parse_binary() {
     assert_eq!(
         parse(lex("1 + 1;").unwrap()).unwrap(),
-        vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::BinaryOperation(
-                    Expr {
-                        val: ExprType::Int(1),
+        vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::BinaryOperation(
+                    LExpr {
+                        val: Expr::Int(1),
                         loc: Location { start: 0, end: 0 },
                     }
                     .into(),
@@ -319,8 +319,8 @@ fn parse_binary() {
                         val: "+".to_string(),
                         loc: Location { start: 2, end: 2 },
                     },
-                    Expr {
-                        val: ExprType::Int(1),
+                    LExpr {
+                        val: Expr::Int(1),
                         loc: Location { start: 4, end: 4 },
                     }
                     .into()
@@ -345,19 +345,19 @@ fn expr_error() {
 #[test]
 fn parse_binary2() {
     let ops = [
-        ("1+1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
-        ("1 + 1", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
-        ("1-1", binop!(ExprType::Int(1), "-", ExprType::Int(1))),
-        ("1**1", binop!(ExprType::Int(1), "**", ExprType::Int(1))),
+        ("1+1", binop!(Expr::Int(1), "+", Expr::Int(1))),
+        ("1 + 1", binop!(Expr::Int(1), "+", Expr::Int(1))),
+        ("1-1", binop!(Expr::Int(1), "-", Expr::Int(1))),
+        ("1**1", binop!(Expr::Int(1), "**", Expr::Int(1))),
         (
             "1+1+1",
-            binop!(ExprType::Int(1), "+", binop!(ExprType::Int(1), "+", ExprType::Int(1))),
+            binop!(Expr::Int(1), "+", binop!(Expr::Int(1), "+", Expr::Int(1))),
         ),
     ];
     for (s, op) in ops {
         assert!(compare_elements(
             &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
-            &stmt!(StmtType::Expr(expr!(op)))
+            &stmt!(Stmt::Expr(expr!(op)))
         ));
     }
 }
@@ -365,14 +365,14 @@ fn parse_binary2() {
 #[test]
 fn parse_unary2() {
     let ops = [
-        ("-1", unop!("-", ExprType::Int(1))),
-        ("- - !1", unop!("-", unop!("-", unop!("!", ExprType::Int(1))))),
-        ("(-1)", parenop!(unop!("-", ExprType::Int(1)))),
+        ("-1", unop!("-", Expr::Int(1))),
+        ("- - !1", unop!("-", unop!("-", unop!("!", Expr::Int(1))))),
+        ("(-1)", parenop!(unop!("-", Expr::Int(1)))),
     ];
     for (s, op) in ops {
         assert!(compare_elements(
             &parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()[0],
-            &stmt!(StmtType::Expr(expr!(op)))
+            &stmt!(Stmt::Expr(expr!(op)))
         ));
     }
 }
@@ -382,16 +382,16 @@ fn test_reassoc() {
     let ops = [
         (
             "1 - 1 - 1",
-            binop!(binop!(ExprType::Int(1), "-", ExprType::Int(1)), "-", ExprType::Int(1)),
+            binop!(binop!(Expr::Int(1), "-", Expr::Int(1)), "-", Expr::Int(1)),
         ),
         (
             "-(1 - 1 - 1)",
             unop!(
                 "-",
                 parenop!(binop!(
-                    binop!(ExprType::Int(1), "-", ExprType::Int(1)),
+                    binop!(Expr::Int(1), "-", Expr::Int(1)),
                     "-",
-                    ExprType::Int(1)
+                    Expr::Int(1)
                 ))
             ),
         ),
@@ -402,7 +402,7 @@ fn test_reassoc() {
     for (s, op) in ops {
         assert!(compare_elements(
             &reassoc::reassociate(symbols.clone(), parse(lex(&(s.to_owned() + ";")).unwrap()).unwrap()).unwrap()[0],
-            &stmt!(StmtType::Expr(expr!(op)))
+            &stmt!(Stmt::Expr(expr!(op)))
         ));
     }
 }
@@ -412,14 +412,14 @@ fn test_nested_call() {
     let src = parse(lex("f()();").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(
-                Expr {
-                    val: ExprType::Call(
-                        Expr {
-                            val: ExprType::Call(
-                                Expr {
-                                    val: ExprType::Identifier("f".to_string()),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(
+                LExpr {
+                    val: Expr::Call(
+                        LExpr {
+                            val: Expr::Call(
+                                LExpr {
+                                    val: Expr::Identifier("f".to_string()),
                                     loc: Location { start: 0, end: 0 },
                                 }
                                 .into(),
@@ -444,19 +444,19 @@ fn test_nested_index() {
     let src = parse(lex("x[1][1];").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(
-                Expr {
-                    val: ExprType::Index(
-                        Expr {
-                            val: ExprType::Index(
-                                Expr {
-                                    val: ExprType::Identifier("x".to_string()),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(
+                LExpr {
+                    val: Expr::Index(
+                        LExpr {
+                            val: Expr::Index(
+                                LExpr {
+                                    val: Expr::Identifier("x".to_string()),
                                     loc: Location { start: 0, end: 0 },
                                 }
                                 .into(),
-                                Expr {
-                                    val: ExprType::Int(1),
+                                LExpr {
+                                    val: Expr::Int(1),
                                     loc: Location { start: 2, end: 2 },
                                 }
                                 .into()
@@ -464,8 +464,8 @@ fn test_nested_index() {
                             loc: Location { start: 0, end: 3 },
                         }
                         .into(),
-                        Expr {
-                            val: ExprType::Int(1),
+                        LExpr {
+                            val: Expr::Int(1),
                             loc: Location { start: 5, end: 5 },
                         }
                         .into()
@@ -484,8 +484,8 @@ fn test_no_params() {
     let src = parse(lex("fun f() {}").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::FunDecl(
+        Ok(vec![LStmt {
+            val: Stmt::FunDecl(
                 Identifier {
                     val: "f".to_string(),
                     loc: Location { start: 4, end: 4 },
@@ -503,8 +503,8 @@ fn test_one_param() {
     let src = parse(lex("fun f(x) {}").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::FunDecl(
+        Ok(vec![LStmt {
+            val: Stmt::FunDecl(
                 Identifier {
                     val: "f".to_string(),
                     loc: Location { start: 4, end: 4 },
@@ -525,8 +525,8 @@ fn test_more_params() {
     let src = parse(lex("fun f(x, y, z) {}").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::FunDecl(
+        Ok(vec![LStmt {
+            val: Stmt::FunDecl(
                 Identifier {
                     val: "f".to_string(),
                     loc: Location { start: 4, end: 4 },
@@ -557,21 +557,21 @@ fn test_index_call() {
     let src = parse(lex("[print][0]();").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Call(
-                    Expr {
-                        val: ExprType::Index(
-                            Expr {
-                                val: ExprType::List(vec![Expr {
-                                    val: ExprType::Identifier("print".to_string()),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Call(
+                    LExpr {
+                        val: Expr::Index(
+                            LExpr {
+                                val: Expr::List(vec![LExpr {
+                                    val: Expr::Identifier("print".to_string()),
                                     loc: Location { start: 1, end: 5 },
                                 }]),
                                 loc: Location { start: 0, end: 6 },
                             }
                             .into(),
-                            Expr {
-                                val: ExprType::Int(0),
+                            LExpr {
+                                val: Expr::Int(0),
                                 loc: Location { start: 8, end: 8 },
                             }
                             .into()
@@ -593,14 +593,14 @@ fn test_call_index() {
     let src = parse(lex("[print]()[0];").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Index(
-                    Expr {
-                        val: ExprType::Call(
-                            Expr {
-                                val: ExprType::List(vec![Expr {
-                                    val: ExprType::Identifier("print".to_string()),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Index(
+                    LExpr {
+                        val: Expr::Call(
+                            LExpr {
+                                val: Expr::List(vec![LExpr {
+                                    val: Expr::Identifier("print".to_string()),
                                     loc: Location { start: 1, end: 5 },
                                 }]),
                                 loc: Location { start: 0, end: 6 },
@@ -611,8 +611,8 @@ fn test_call_index() {
                         loc: Location { start: 0, end: 8 },
                     }
                     .into(),
-                    Expr {
-                        val: ExprType::Int(0),
+                    LExpr {
+                        val: Expr::Int(0),
                         loc: Location { start: 10, end: 10 },
                     }
                     .into()
@@ -629,9 +629,9 @@ fn test_symbol_ident() {
     let src = parse(lex("(-);").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Identifier("-".to_string()),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Identifier("-".to_string()),
                 loc: Location { start: 0, end: 2 },
             }),
             loc: Location { start: 0, end: 2 },
@@ -644,17 +644,17 @@ fn test_paren_unary() {
     let src = parse(lex("(-1);").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Parens(
-                    Expr {
-                        val: ExprType::UnaryOperation(
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Parens(
+                    LExpr {
+                        val: Expr::UnaryOperation(
                             Symbol {
                                 val: "-".to_string(),
                                 loc: Location { start: 1, end: 1 }
                             },
-                            Expr {
-                                val: ExprType::Int(1),
+                            LExpr {
+                                val: Expr::Int(1),
                                 loc: Location { start: 2, end: 2 },
                             }
                             .into(),
@@ -675,14 +675,14 @@ fn test_assingment() {
     let src = parse(lex("x = 1;").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Assign(
+        Ok(vec![LStmt {
+            val: Stmt::Assign(
                 Identifier {
                     val: "x".to_string(),
                     loc: Location { start: 0, end: 0 },
                 },
-                Expr {
-                    val: ExprType::Int(1),
+                LExpr {
+                    val: Expr::Int(1),
                     loc: Location { start: 4, end: 4 },
                 }
             ),
@@ -696,18 +696,18 @@ fn test_assingment_index() {
     let src = parse(lex("x[0] = 1;").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::AssignIndex(
-                Expr {
-                    val: ExprType::Identifier("x".to_string()),
+        Ok(vec![LStmt {
+            val: Stmt::AssignIndex(
+                LExpr {
+                    val: Expr::Identifier("x".to_string()),
                     loc: Location { start: 0, end: 0 },
                 },
-                Expr {
-                    val: ExprType::Int(0),
+                LExpr {
+                    val: Expr::Int(0),
                     loc: Location { start: 2, end: 2 },
                 },
-                Expr {
-                    val: ExprType::Int(1),
+                LExpr {
+                    val: Expr::Int(1),
                     loc: Location { start: 7, end: 7 },
                 }
             ),
@@ -733,9 +733,9 @@ fn list_empty() {
     let src = parse(lex("[];").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::List(vec![]),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::List(vec![]),
                 loc: Location { start: 0, end: 1 },
             }),
             loc: Location { start: 0, end: 1 },
@@ -748,10 +748,10 @@ fn list_one() {
     let src = parse(lex("[1];").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::List(vec![Expr {
-                    val: ExprType::Int(1),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::List(vec![LExpr {
+                    val: Expr::Int(1),
                     loc: Location { start: 1, end: 1 },
                 }]),
                 loc: Location { start: 0, end: 2 },
@@ -762,10 +762,10 @@ fn list_one() {
     let src = parse(lex("[1, ];").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::List(vec![Expr {
-                    val: ExprType::Int(1),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::List(vec![LExpr {
+                    val: Expr::Int(1),
                     loc: Location { start: 1, end: 1 },
                 }]),
                 loc: Location { start: 0, end: 4 },
@@ -780,15 +780,15 @@ fn list_more() {
     let src = parse(lex("[1, 2];").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::List(vec![
-                    Expr {
-                        val: ExprType::Int(1),
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::List(vec![
+                    LExpr {
+                        val: Expr::Int(1),
                         loc: Location { start: 1, end: 1 },
                     },
-                    Expr {
-                        val: ExprType::Int(2),
+                    LExpr {
+                        val: Expr::Int(2),
                         loc: Location { start: 4, end: 4 },
                     },
                 ]),
@@ -804,19 +804,19 @@ fn unary_parenthesis() {
     let src = parse(lex("(-10 * 10);").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(Expr {
-                val: ExprType::Parens(
-                    Expr {
-                        val: ExprType::BinaryOperation(
-                            Expr {
-                                val: ExprType::UnaryOperation(
+        Ok(vec![LStmt {
+            val: Stmt::Expr(LExpr {
+                val: Expr::Parens(
+                    LExpr {
+                        val: Expr::BinaryOperation(
+                            LExpr {
+                                val: Expr::UnaryOperation(
                                     Symbol {
                                         val: "-".to_string(),
                                         loc: Location { start: 1, end: 1 }
                                     },
-                                    Expr {
-                                        val: ExprType::Int(10),
+                                    LExpr {
+                                        val: Expr::Int(10),
                                         loc: Location { start: 2, end: 3 }
                                     }
                                     .into()
@@ -828,8 +828,8 @@ fn unary_parenthesis() {
                                 val: "*".to_string(),
                                 loc: Location { start: 5, end: 5 }
                             },
-                            Expr {
-                                val: ExprType::Int(10),
+                            LExpr {
+                                val: Expr::Int(10),
                                 loc: Location { start: 7, end: 8 },
                             }
                             .into()
@@ -850,15 +850,15 @@ fn lambda() {
     let src = parse(lex("|| 1;").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(
-                Expr {
-                    val: ExprType::Lambda(
+        Ok(vec![LStmt {
+            val: Stmt::Expr(
+                LExpr {
+                    val: Expr::Lambda(
                         vec![],
-                        vec![Stmt {
-                            val: StmtType::Return(
-                                Expr {
-                                    val: ExprType::Int(1),
+                        vec![LStmt {
+                            val: Stmt::Return(
+                                LExpr {
+                                    val: Expr::Int(1),
                                     loc: Location { start: 3, end: 3 },
                                 }
                                 .into()
@@ -880,10 +880,10 @@ fn lambda_params() {
     let src = parse(lex("|x, y| ();").unwrap());
     assert_eq!(
         src,
-        Ok(vec![Stmt {
-            val: StmtType::Expr(
-                Expr {
-                    val: ExprType::Lambda(
+        Ok(vec![LStmt {
+            val: Stmt::Expr(
+                LExpr {
+                    val: Expr::Lambda(
                         vec![
                             Identifier {
                                 val: "x".to_string(),
@@ -894,10 +894,10 @@ fn lambda_params() {
                                 loc: Location { start: 4, end: 4 }
                             },
                         ],
-                        vec![Stmt {
-                            val: StmtType::Return(
-                                Expr {
-                                    val: ExprType::Unit,
+                        vec![LStmt {
+                            val: Stmt::Return(
+                                LExpr {
+                                    val: Expr::Unit,
                                     loc: Location { start: 7, end: 8 },
                                 }
                                 .into()

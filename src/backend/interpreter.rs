@@ -9,7 +9,7 @@ use crate::{
     mref::{MList, MMap},
 };
 
-pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<Stmt>) -> Result<(), Error> {
+pub fn interpret(builtins: HashMap<String, ValueType>, stmts: Vec<LStmt>) -> Result<(), Error> {
     Interpreter::new(builtins).interpret(stmts)
 }
 
@@ -44,7 +44,7 @@ impl Interpreter {
         }
     }
 
-    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), Error> {
+    pub fn interpret(&mut self, stmts: Vec<LStmt>) -> Result<(), Error> {
         // not really needed, but might make a bit less mess when debugging
         self.add_scope();
         for s in stmts {
@@ -77,7 +77,7 @@ impl Interpreter {
         self.environment.remove_scope();
     }
 
-    fn interpret_block(&mut self, block: Vec<Stmt>) -> Result<(), InterpError> {
+    fn interpret_block(&mut self, block: Vec<LStmt>) -> Result<(), InterpError> {
         self.add_scope();
         for s in block {
             if let Err(err) = self.visit_stmt(s) {
@@ -91,26 +91,26 @@ impl Interpreter {
 }
 
 impl Interpreter {
-    fn visit_stmt(&mut self, stmt: Stmt) -> Result<(), InterpError> {
+    fn visit_stmt(&mut self, stmt: LStmt) -> Result<(), InterpError> {
         let loc = stmt.loc;
         match stmt.val {
-            StmtType::Expr(expr) => self.expr(loc, expr),
-            StmtType::VarDecl(ident, expr) => self.var_decl(loc, ident, expr),
-            StmtType::Assign(ident, expr) => self.assignment(loc, ident, expr),
-            StmtType::AssignIndex(ls, idx, val) => self.assignindex(loc, ls, idx, val),
-            StmtType::Block(block) => self.block(loc, block),
-            StmtType::If(blocks) => self.if_else(loc, blocks),
-            StmtType::While(cond, block) => self.whiles(loc, cond, block),
-            StmtType::Return(expr) => self.retur(loc, expr),
-            StmtType::Break => self.brek(loc),
-            StmtType::Continue => self.cont(loc),
-            StmtType::Struct(name, fields) => self.struc(loc, name, fields),
-            StmtType::AssignStruct(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
-            StmtType::Impl(name, block) => self.imp(loc, name, block),
+            Stmt::Expr(expr) => self.expr(loc, expr),
+            Stmt::VarDecl(ident, expr) => self.var_decl(loc, ident, expr),
+            Stmt::Assign(ident, expr) => self.assignment(loc, ident, expr),
+            Stmt::AssignIndex(ls, idx, val) => self.assignindex(loc, ls, idx, val),
+            Stmt::Block(block) => self.block(loc, block),
+            Stmt::If(blocks) => self.if_else(loc, blocks),
+            Stmt::While(cond, block) => self.whiles(loc, cond, block),
+            Stmt::Return(expr) => self.retur(loc, expr),
+            Stmt::Break => self.brek(loc),
+            Stmt::Continue => self.cont(loc),
+            Stmt::Struct(name, fields) => self.struc(loc, name, fields),
+            Stmt::AssignStruct(expr1, name, expr2) => self.assignstruc(loc, expr1, name, expr2),
+            Stmt::Impl(name, block) => self.imp(loc, name, block),
         }
     }
 
-    fn var_decl(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), InterpError> {
+    fn var_decl(&mut self, _: Location, ident: Identifier, expr: LExpr) -> Result<(), InterpError> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
         if !self.environment.insert(&name, val.val) {
@@ -119,7 +119,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn assignment(&mut self, _: Location, ident: Identifier, expr: Expr) -> Result<(), InterpError> {
+    fn assignment(&mut self, _: Location, ident: Identifier, expr: LExpr) -> Result<(), InterpError> {
         let name = ident.val;
         let val = self.visit_expr(expr)?;
         if !self.environment.update(&name, val.val) {
@@ -128,7 +128,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn assignindex(&mut self, _: Location, ls: Expr, idx: Expr, val: Expr) -> Result<(), InterpError> {
+    fn assignindex(&mut self, _: Location, ls: LExpr, idx: LExpr, val: LExpr) -> Result<(), InterpError> {
         let ls_loc = ls.loc;
         let ValueType::List(mut ls2) = self.visit_expr(ls)?.val else {
             return Err(Error {
@@ -153,12 +153,12 @@ impl Interpreter {
         Ok(())
     }
 
-    fn block(&mut self, _: Location, block: Vec<Stmt>) -> Result<(), InterpError> {
+    fn block(&mut self, _: Location, block: Vec<LStmt>) -> Result<(), InterpError> {
         self.interpret_block(block)?;
         Ok(())
     }
 
-    fn if_else(&mut self, _: Location, blocks: Vec<(Expr, Vec<Stmt>)>) -> Result<(), InterpError> {
+    fn if_else(&mut self, _: Location, blocks: Vec<(LExpr, Vec<LStmt>)>) -> Result<(), InterpError> {
         for (cond, block) in blocks {
             let ValueType::Bool(cond2) = self.visit_expr(cond.clone())?.val else {
                 return Err(Error {
@@ -177,7 +177,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn whiles(&mut self, _: Location, cond: Expr, block: Vec<Stmt>) -> Result<(), InterpError> {
+    fn whiles(&mut self, _: Location, cond: LExpr, block: Vec<LStmt>) -> Result<(), InterpError> {
         loop {
             let cond = self.visit_expr(cond.clone())?;
             let ValueType::Bool(b) = cond.val else {
@@ -202,7 +202,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn expr(&mut self, _: Location, expr: Expr) -> Result<(), InterpError> {
+    fn expr(&mut self, _: Location, expr: LExpr) -> Result<(), InterpError> {
         // TODO: later check if it is not unit!
         let _ = self.visit_expr(expr)?;
         Ok(())
@@ -219,7 +219,7 @@ impl Interpreter {
             loc,
         })
     }
-    fn retur(&mut self, loc: Location, expr: Expr) -> Result<(), InterpError> {
+    fn retur(&mut self, loc: Location, expr: LExpr) -> Result<(), InterpError> {
         let val = self.visit_expr(expr)?;
         Err(InterpError {
             val: InterpErrorType::Return(val),
@@ -235,7 +235,7 @@ impl Interpreter {
         }
         Ok(())
     }
-    fn assignstruc(&mut self, _: Location, expr1: Expr, name: Identifier, expr2: Expr) -> Result<(), InterpError> {
+    fn assignstruc(&mut self, _: Location, expr1: LExpr, name: Identifier, expr2: LExpr) -> Result<(), InterpError> {
         let expr = self.visit_expr(expr1)?;
         let ValueType::Instance(_, mut fields) = expr.val else {
             return Err(Error {
@@ -256,7 +256,7 @@ impl Interpreter {
         fields.insert(name.val, val.val);
         Ok(())
     }
-    fn imp(&mut self, _: Location, name: Identifier, block: Vec<Stmt>) -> Result<(), InterpError> {
+    fn imp(&mut self, _: Location, name: Identifier, block: Vec<LStmt>) -> Result<(), InterpError> {
         // its existence is checked in varcheck
         // and though it may be reassigned, the name still MUST exist
         // it does not have to be a struct anymore though
@@ -269,7 +269,7 @@ impl Interpreter {
             .into());
         };
         for s in block {
-            let StmtType::VarDecl(name, fun) = s.val else {
+            let Stmt::VarDecl(name, fun) = s.val else {
                 unreachable!("Checked for in varcheck");
             };
             methods.insert(name.val, self.visit_expr(fun)?.val);
@@ -279,21 +279,21 @@ impl Interpreter {
 }
 
 impl Interpreter {
-    fn visit_expr(&mut self, expr: Expr) -> Result<Value, Error> {
+    fn visit_expr(&mut self, expr: LExpr) -> Result<Value, Error> {
         let loc = expr.loc;
         let val = match expr.val {
-            ExprType::Unit => self.unit(),
-            ExprType::Int(n) => self.int(n),
-            ExprType::Float(n) => self.float(n),
-            ExprType::String(s) => self.string(s),
-            ExprType::Bool(b) => self.bool(b),
-            ExprType::Identifier(ident) => self.identifier(ident, loc),
-            ExprType::Call(callee, args) => self.call(*callee, args, loc),
-            ExprType::List(ls) => self.list(loc, ls),
-            ExprType::Index(expr2, idx) => self.index(loc, *expr2, *idx),
-            ExprType::Lambda(params, body) => self.lambda(loc, params, body),
-            ExprType::FieldAccess(expr, name) => self.field(loc, *expr, name),
-            ExprType::MethodAccess(expr, name, args) => self.method(loc, *expr, name, args),
+            Expr::Unit => self.unit(),
+            Expr::Int(n) => self.int(n),
+            Expr::Float(n) => self.float(n),
+            Expr::String(s) => self.string(s),
+            Expr::Bool(b) => self.bool(b),
+            Expr::Identifier(ident) => self.identifier(ident, loc),
+            Expr::Call(callee, args) => self.call(*callee, args, loc),
+            Expr::List(ls) => self.list(loc, ls),
+            Expr::Index(expr2, idx) => self.index(loc, *expr2, *idx),
+            Expr::Lambda(params, body) => self.lambda(loc, params, body),
+            Expr::FieldAccess(expr, name) => self.field(loc, *expr, name),
+            Expr::MethodAccess(expr, name, args) => self.method(loc, *expr, name, args),
         }?;
         Ok(Value { val, loc: expr.loc })
     }
@@ -317,7 +317,7 @@ impl Interpreter {
     fn bool(&mut self, b: bool) -> Result<ValueType, Error> {
         Ok(ValueType::Bool(b))
     }
-    fn call(&mut self, callee: Expr, args: Vec<Expr>, loc: Location) -> Result<ValueType, Error> {
+    fn call(&mut self, callee: LExpr, args: Vec<LExpr>, loc: Location) -> Result<ValueType, Error> {
         let mut args2 = vec![];
         for arg in args {
             args2.push(self.visit_expr(arg)?.val);
@@ -334,7 +334,7 @@ impl Interpreter {
             }),
         }
     }
-    fn list(&mut self, _: Location, ls: Vec<Expr>) -> Result<ValueType, Error> {
+    fn list(&mut self, _: Location, ls: Vec<LExpr>) -> Result<ValueType, Error> {
         // a nicer version, but requires cloning...
         /*
         let ls2 = ls.into_iter()
@@ -347,7 +347,7 @@ impl Interpreter {
         }
         Ok(ValueType::List(ls2.into()))
     }
-    fn index(&mut self, loc: Location, expr2: Expr, idx: Expr) -> Result<ValueType, Error> {
+    fn index(&mut self, loc: Location, expr2: LExpr, idx: LExpr) -> Result<ValueType, Error> {
         let val = self.visit_expr(expr2)?;
         let idx2 = self.visit_expr(idx)?;
         let ValueType::Int(n) = idx2.val else {
@@ -377,14 +377,14 @@ impl Interpreter {
             }),
         }
     }
-    fn lambda(&mut self, _: Location, params: Vec<Identifier>, body: Vec<Stmt>) -> Result<ValueType, Error> {
+    fn lambda(&mut self, _: Location, params: Vec<Identifier>, body: Vec<LStmt>) -> Result<ValueType, Error> {
         let mut params2 = vec![];
         for p in params {
             params2.push(p.val);
         }
         Ok(ValueType::Function(params2, body, self.environment.scopes.clone()))
     }
-    fn field(&mut self, loc: Location, expr: Expr, name: Identifier) -> Result<ValueType, Error> {
+    fn field(&mut self, loc: Location, expr: LExpr, name: Identifier) -> Result<ValueType, Error> {
         let expr2 = self.visit_expr(expr)?;
         let ValueType::Instance(struct_name, fields) = expr2.val else {
             return Err(Error {
@@ -400,7 +400,7 @@ impl Interpreter {
             })?
             .clone())
     }
-    fn method(&mut self, loc: Location, callee: Expr, name: Identifier, args: Vec<Expr>) -> Result<ValueType, Error> {
+    fn method(&mut self, loc: Location, callee: LExpr, name: Identifier, args: Vec<LExpr>) -> Result<ValueType, Error> {
         let callee2 = self.visit_expr(callee)?;
 
         let mut args2 = vec![callee2.val.clone()];
@@ -436,7 +436,7 @@ impl Interpreter {
     fn call_fn(
         &mut self,
         params: Vec<String>,
-        body: Vec<Stmt>,
+        body: Vec<LStmt>,
         closure: Closure,
         args: Vec<ValueType>,
         loc: Location,
